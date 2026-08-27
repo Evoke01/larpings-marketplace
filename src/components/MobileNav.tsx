@@ -43,7 +43,7 @@ const tabs = [
   { to: "/marketplace", label: "Marketplace", Icon: SearchIcon },
   { to: "/messages", label: "Messages", Icon: AtIcon },
   { to: "/orders", label: "Orders", Icon: ShopIcon },
-  { to: "/signin", label: "Account", Icon: AccountIcon },
+  { to: "/dashboard", label: "Profile", Icon: AccountIcon },
 ];
 
 export default function MobileNav() {

@@ -75,7 +75,7 @@ export default function App() {
       <Routes>
         {/* Full-screen pages without Layout */}
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/account" element={<SignInPage />} />
+        <Route path="/account" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         
         {/* Pages with standard Layout */}
         <Route path="*" element={

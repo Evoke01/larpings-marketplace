@@ -61,7 +61,7 @@ export default function Navbar() {
                 {/* Notification dot */}
                 <span className="absolute top-1 right-1 w-2 h-2 bg-[#ff0000] rounded-full border-[1.5px] border-[#111113]" />
               </Link>
-              <Link to="/account" aria-label="Account" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors">
+              <Link to="/dashboard" aria-label="Profile" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
