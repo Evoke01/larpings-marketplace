@@ -88,12 +88,12 @@ export default function ListingPage() {
     setBuying(true);
     setBuyError("");
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
         navigate(`/signin?returnTo=/listing/${handle}`);
         return;
       }
-      if (session.user.id === listing.seller_id) {
+      if (user.id === listing.seller_id) {
         throw new Error("You cannot buy your own listing.");
       }
 
