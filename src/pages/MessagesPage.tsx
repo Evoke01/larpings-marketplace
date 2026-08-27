@@ -60,6 +60,14 @@ export default function MessagesPage() {
       setConversations(Object.values(convMap));
       let requestedPartnerId = searchParams.get('user');
       const requestedUsername = searchParams.get('username');
+      if (requestedPartnerId && !profileMap.has(requestedPartnerId)) {
+        const { data: requestedProfile } = await supabase
+          .from('profiles')
+          .select('id, username, display_name')
+          .eq('id', requestedPartnerId)
+          .maybeSingle();
+        if (requestedProfile) profileMap.set(requestedProfile.id, requestedProfile);
+      }
       if (!requestedPartnerId && requestedUsername) {
         const { data: requestedProfile } = await supabase
           .from('profiles')
@@ -222,7 +230,7 @@ export default function MessagesPage() {
                 return (
                   <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[75%] px-4 py-2.5 rounded-[14px] text-sm ${isMine ? 'bg-[#ff0000] text-white rounded-br-sm' : 'bg-[#111113] border border-[#222226] rounded-bl-sm'}`}>
-                      {!isMine && <p className="font-semibold text-[11px] mb-1 text-[#93939f]">@{msg.sender?.username}</p>}
+                      {!isMine && <p className="font-semibold text-[11px] mb-1 text-[#93939f]">@{selectedConv.partnerName}</p>}
                       <p>{msg.content}</p>
                       <p className={`text-[10px] mt-1 ${isMine ? 'text-white/60' : 'text-[#555]'}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
