@@ -12,6 +12,12 @@ const ClipboardIcon = () => (
 
 const STATUS_COLORS: Record<string, string> = {
   pending: "text-amber-400 bg-amber-400/10 border-amber-400/30",
+  Waiting: "text-amber-400 bg-amber-400/10 border-amber-400/30",
+  Confirming: "text-blue-400 bg-blue-400/10 border-blue-400/30",
+  Paid: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  Underpaid: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
+  Failed: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
+  Expired: "text-[#93939f] bg-[rgba(147,147,159,0.1)] border-[rgba(147,147,159,0.3)]",
   delivered: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
   confirmed: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
   cancelled: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
@@ -105,7 +111,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <span className="font-mono font-semibold">${Number(order.listings?.price).toLocaleString()}</span>
-                  {order.status === 'pending' && (
+                  {((order.status === 'pending') || (order.status === 'Paid')) && (
                     <button
                       onClick={() => confirmDelivery(order.id)}
                       className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-emerald-600 transition-colors"

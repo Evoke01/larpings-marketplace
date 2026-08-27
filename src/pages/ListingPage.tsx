@@ -97,20 +97,28 @@ export default function ListingPage() {
         throw new Error("You cannot buy your own listing.");
       }
 
-      const { error } = await supabase.from('orders').insert({
-        listing_id: listing.id,
-        buyer_id: session.user.id,
-        status: 'pending'
+      // Call the Edge Function to create an invoice
+      const { data, error } = await supabase.functions.invoke('create-invoice', {
+        body: { listing_id: listing.id }
       });
 
-      if (error) throw error;
-      
-      // Update listing status
-      await supabase.from('listings').update({ status: 'sold' }).eq('id', listing.id);
+      if (error) {
+        console.error("Function error:", error);
+        throw new Error("Failed to initialize payment");
+      }
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       setBuySuccess(true);
-      setTimeout(() => navigate('/orders'), 2000);
+      // Redirect to Rune Pay checkout
+      if (data?.payment_url) {
+        window.location.href = data.payment_url;
+      } else {
+        throw new Error("No payment URL received");
+      }
     } catch (err: any) {
+      console.error(err);
       setBuyError(err.message || "Checkout failed");
     } finally {
       setBuying(false);
