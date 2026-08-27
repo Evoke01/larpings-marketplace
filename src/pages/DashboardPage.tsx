@@ -2,6 +2,52 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
+function ListingVerification({ listing, onVerified }: { listing: any; onVerified: () => void }) {
+  const [code, setCode] = React.useState("");
+  const [challenge, setChallenge] = React.useState("");
+  const [busy, setBusy] = React.useState(false);
+  const [message, setMessage] = React.useState("");
+
+  async function start() {
+    setBusy(true); setMessage("");
+    const { data, error } = await supabase.functions.invoke("start-listing-verification", { body: { listing_id: listing.id } });
+    if (error || data?.error) setMessage(data?.error || "Could not start verification");
+    else setChallenge(data.code);
+    setBusy(false);
+  }
+
+  async function complete() {
+    setBusy(true); setMessage("");
+    const { data, error } = await supabase.functions.invoke("complete-listing-verification", { body: { listing_id: listing.id, code } });
+    if (error || data?.error) setMessage(data?.error || "Could not verify listing");
+    else { setChallenge(""); setCode(""); setMessage("Verified successfully"); onVerified(); }
+    setBusy(false);
+  }
+
+  if (listing.verification_status === "verified") return <span className="text-xs text-emerald-300">✓ Verified</span>;
+  return (
+    <div className="mt-3 rounded-lg border border-border bg-secondary/40 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className={`text-xs ${listing.verification_status === "pending" ? "text-amber-300" : "text-muted-foreground"}`}>
+          {listing.verification_status === "pending" ? "Verification pending" : "Unverified listing"}
+        </span>
+        {!challenge && <button type="button" onClick={start} disabled={busy} className="text-xs text-accent hover:underline disabled:opacity-50">{busy ? "Starting…" : "Verify ownership"}</button>}
+      </div>
+      {challenge && (
+        <div className="mt-2 space-y-2">
+          <p className="text-xs text-muted-foreground">Add this code to the username account’s bio for 15 minutes:</p>
+          <code className="block rounded bg-background px-2 py-1.5 text-xs text-amber-200">{challenge}</code>
+          <div className="flex gap-2">
+            <input value={code} onChange={e => setCode(e.target.value)} placeholder="Paste code" className="min-w-0 flex-1 rounded border border-border bg-background px-2 py-1.5 text-xs" />
+            <button type="button" onClick={complete} disabled={busy || !code.trim()} className="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-50">{busy ? "Checking…" : "Verify"}</button>
+          </div>
+        </div>
+      )}
+      {message && <p className="mt-2 text-xs text-amber-200">{message}</p>}
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<{ username: string; rating: number; reviews: number } | null>(null);
@@ -114,12 +160,15 @@ export default function DashboardPage() {
             ) : (
               <div className="rounded-[14px] border border-border bg-card divide-y divide-border">
                 {listings.map((l) => (
-                  <div key={l.id} className="flex items-center justify-between px-5 py-4">
-                    <div>
+                  <div key={l.id} className="px-5 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
                       <p className="font-medium">@{l.handle}</p>
                       <p className="text-xs text-muted-foreground">{l.platform} · {l.category}</p>
+                      </div>
+                      <p className="font-mono font-semibold">${l.price.toLocaleString()}</p>
                     </div>
-                    <p className="font-mono font-semibold">${l.price.toLocaleString()}</p>
+                    <ListingVerification listing={l} onVerified={() => setListings(prev => prev.map(item => item.id === l.id ? { ...item, verification_status: "verified" } : item))} />
                   </div>
                 ))}
               </div>
