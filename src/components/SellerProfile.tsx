@@ -11,6 +11,7 @@ const formatPrice = (value: number) => new Intl.NumberFormat("en-US", { style: "
 export default function SellerProfile({ handle }: { handle: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
+  const [salesCount, setSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,15 +41,16 @@ export default function SellerProfile({ handle }: { handle: string }) {
         return;
       }
 
-      const { data: sellerListings, error: listingsError } = await supabase
+      const [{ data: sellerListings, error: listingsError }, { data: sales }] = await Promise.all([supabase
         .from("listings")
         .select("id, handle, description, category, platform, price, created_at")
         .eq("seller_id", seller.id)
         .eq("status", "active")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }), supabase.from("orders").select("id").eq("seller_id", seller.id).eq("status", "confirmed")]);
 
       if (!active) return;
       setProfile(seller);
+      setSalesCount(sales?.length ?? 0);
       if (listingsError) {
         setError("The seller loaded, but their listings couldn’t be loaded.");
         setListings([]);
@@ -74,6 +76,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
     { label: "Member", show: true, tone: "text-[#b7b7c2] border-[#333338] bg-[#1b1b20]" },
     { label: "Active seller", show: listings.length > 0, tone: "text-red-300 border-red-500/30 bg-red-500/10" },
     { label: "Top rated", show: (profile.rating ?? 0) >= 4.5 && (profile.reviews ?? 0) >= 3, tone: "text-yellow-300 border-yellow-400/30 bg-yellow-400/10" },
+    ...[1, 10, 30, 50, 100, 500, 1000, 2000].filter((threshold) => salesCount >= threshold).map((threshold) => ({ label: `${threshold} Sales`, show: true, tone: "text-amber-200 border-amber-300/40 bg-amber-300/10" })),
   ].filter((badge) => badge.show);
 
   return (

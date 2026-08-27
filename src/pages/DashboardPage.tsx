@@ -7,6 +7,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<{ username: string; rating: number; reviews: number } | null>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [salesCount, setSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,15 +15,17 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/signin'); return; }
 
-      const [{ data: prof }, { data: listingsData }, { data: ordersData }] = await Promise.all([
+      const [{ data: prof }, { data: listingsData }, { data: ordersData }, { data: salesData }] = await Promise.all([
         supabase.from('profiles').select('username, rating, reviews').eq('id', user.id).single(),
         supabase.from('listings').select('*').eq('seller_id', user.id).eq('status', 'active'),
         supabase.from('orders').select('*, listings(handle, price)').eq('buyer_id', user.id),
+        supabase.from('orders').select('id').eq('seller_id', user.id).eq('status', 'confirmed'),
       ]);
 
       setProfile(prof);
       setListings(listingsData ?? []);
       setOrders(ordersData ?? []);
+      setSalesCount(salesData?.length ?? 0);
       setLoading(false);
     };
     init();
@@ -36,7 +39,7 @@ export default function DashboardPage() {
     );
   }
 
-  const confirmedSales = orders.filter(o => o.status === 'confirmed').length;
+  const confirmedSales = salesCount;
   const salesProgress = Math.min((confirmedSales / 10) * 100, 100);
 
   return (
@@ -150,20 +153,27 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border font-medium border-yellow-400/40 bg-yellow-400/10 text-yellow-300 px-2.5 py-1 text-xs">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap h-3.5 w-3.5"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
-                  10 Sales
+                  {confirmedSales >= 2000 ? "2000" : confirmedSales >= 1000 ? "1000" : confirmedSales >= 500 ? "500" : confirmedSales >= 100 ? "100" : confirmedSales >= 50 ? "50" : confirmedSales >= 30 ? "30" : confirmedSales >= 10 ? "10" : "1"} Sales
                 </span>
                 <p className="shrink-0 text-xs text-muted-foreground"><span className="font-mono text-foreground">{confirmedSales}</span><span className="font-mono">/10</span> sales</p>
               </div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${salesProgress}%` }}></div>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground"><span className="font-mono text-foreground">{Math.max(10 - confirmedSales, 0)}</span> more confirmed sales to unlock it.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground"><span className="font-mono text-foreground">{Math.max((confirmedSales >= 2000 ? 2000 : confirmedSales >= 1000 ? 1000 : confirmedSales >= 500 ? 500 : confirmedSales >= 100 ? 100 : confirmedSales >= 50 ? 50 : confirmedSales >= 30 ? 30 : confirmedSales >= 10 ? 10 : 1) - confirmedSales, 0)}</span> more confirmed sales to unlock it.</p>
             </div>
           </div>
           <div className="mkt-enter rounded-[14px] border border-border bg-card p-5" style={{ animationDelay: "155ms" }}>
             <p className="mono-label text-muted-foreground">Storefront profile</p>
             <p className="mt-2 text-sm text-muted-foreground">Add your avatar, banner, bio, and social links so buyers know who they’re dealing with.</p>
             <Link to="/account#customize" className="btn-white mt-4 inline-flex !py-2.5 !text-xs">Edit storefront profile</Link>
+          </div>
+          <div className="mkt-enter rounded-[14px] border border-border bg-card p-5" style={{ animationDelay: "175ms" }}>
+            <p className="mono-label text-muted-foreground">Sales badges</p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[1, 10, 30, 50, 100, 500, 1000, 2000].filter((threshold) => confirmedSales >= threshold).map((threshold) => <span key={threshold} className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-medium text-amber-200">✦ {threshold} Sales</span>)}
+              {confirmedSales === 0 && <span className="text-xs text-muted-foreground">Complete your first confirmed sale to unlock a badge.</span>}
+            </div>
           </div>
           <div className="mkt-enter" style={{ animationDelay: "190ms" }}>
             <div className="rounded-[14px] border border-border bg-card p-5 md:p-6">
