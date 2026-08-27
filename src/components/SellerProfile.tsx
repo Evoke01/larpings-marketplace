@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-type Profile = { id: string; username: string; rating: number | null; reviews: number | null; created_at: string };
+type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rating: number | null; reviews: number | null; created_at: string };
 type Listing = { id: string; handle: string; description: string | null; category: string | null; platform: string | null; price: number; created_at: string };
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(value));
@@ -23,7 +23,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
       setError(null);
       const { data: seller, error: profileError } = await supabase
         .from("profiles")
-        .select("id, username, rating, reviews, created_at")
+        .select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rating, reviews, created_at")
         .eq("username", normalizedHandle)
         .maybeSingle();
 
@@ -72,12 +72,12 @@ export default function SellerProfile({ handle }: { handle: string }) {
 
   return (
     <main className="w-full max-w-[1152px] mx-auto px-4 pb-24 pt-4">
-      <div className="h-56 relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#241014] via-[#111113] to-[#09090b]"><div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(255,0,0,.35),transparent_40%)]" /><div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#09090b] to-transparent" /></div>
+      <div className="h-56 relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#241014] via-[#111113] to-[#09090b]" style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}><div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(255,0,0,.35),transparent_40%)]" /><div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#09090b] to-transparent" /></div>
       <div className="relative z-10 -mt-12 flex flex-wrap items-end justify-between gap-4 px-6">
-        <div className="flex items-end gap-5 min-w-0"><div className="w-24 h-24 shrink-0 rounded-full bg-[#1c1c20] border-4 border-[#09090b] flex items-center justify-center text-2xl font-semibold text-white">{profile.username.slice(0, 2).toUpperCase()}</div><div className="pb-1 min-w-0"><h1 className="text-3xl font-medium tracking-tight truncate">{profile.username}</h1><p className="text-[#93939f] text-sm">@{profile.username}</p></div></div>
+        <div className="flex items-end gap-5 min-w-0"><div className="w-24 h-24 shrink-0 overflow-hidden rounded-full bg-[#1c1c20] border-4 border-[#09090b] flex items-center justify-center text-2xl font-semibold text-white">{profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : profile.username.slice(0, 2).toUpperCase()}</div><div className="pb-1 min-w-0"><h1 className="text-3xl font-medium tracking-tight truncate">{profile.display_name || profile.username}</h1><p className="text-[#93939f] text-sm">@{profile.username}</p></div></div>
         <Link to={`/messages?user=${encodeURIComponent(profile.id)}`} className="bg-[#ff0000] text-white font-medium px-4 py-2.5 rounded-[10px]">Message</Link>
       </div>
-      <p className="text-[#93939f] text-sm mt-6 px-6">Verified seller storefront on larpings.com.</p>
+      <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
       <section aria-label="Seller stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rating</p><p className="font-mono text-xl mt-1.5">{profile.rating && profile.rating > 0 ? profile.rating.toFixed(1) : "—"}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Reviews</p><p className="font-mono text-xl mt-1.5">{profile.reviews ?? 0}</p></div>

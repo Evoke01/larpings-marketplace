@@ -2,6 +2,36 @@
 -- marketplace data; the database remains the final enforcement layer.
 
 alter table if exists public.profiles enable row level security;
+
+alter table if exists public.profiles add column if not exists display_name text;
+alter table if exists public.profiles add column if not exists bio text;
+alter table if exists public.profiles add column if not exists avatar_url text;
+alter table if exists public.profiles add column if not exists banner_url text;
+alter table if exists public.profiles add column if not exists website_url text;
+alter table if exists public.profiles add column if not exists twitter_url text;
+alter table if exists public.profiles add column if not exists instagram_url text;
+alter table if exists public.profiles add column if not exists discord_url text;
+
+insert into storage.buckets (id, name, public)
+values ('profile-media', 'profile-media', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "public profile media is readable" on storage.objects;
+create policy "public profile media is readable" on storage.objects for select to anon, authenticated
+using (bucket_id = 'profile-media');
+
+drop policy if exists "users can upload profile media" on storage.objects;
+create policy "users can upload profile media" on storage.objects for insert to authenticated
+with check (bucket_id = 'profile-media' and (storage.foldername(name))[1] = (select auth.uid())::text);
+
+drop policy if exists "users can update profile media" on storage.objects;
+create policy "users can update profile media" on storage.objects for update to authenticated
+using (bucket_id = 'profile-media' and owner_id = (select auth.uid())::text)
+with check (bucket_id = 'profile-media' and owner_id = (select auth.uid())::text);
+
+drop policy if exists "users can delete profile media" on storage.objects;
+create policy "users can delete profile media" on storage.objects for delete to authenticated
+using (bucket_id = 'profile-media' and owner_id = (select auth.uid())::text);
 alter table if exists public.listings enable row level security;
 alter table if exists public.orders enable row level security;
 alter table if exists public.messages enable row level security;
