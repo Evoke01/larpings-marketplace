@@ -25,7 +25,11 @@ serve(async (req) => {
   try {
     const rawBody = await req.arrayBuffer();
     
-    const runepayKey = Deno.env.get("RUNEPAY_API_KEY") || "rp_sec_txOHTCg5aJqGYW9sqqfGsjMSJS0DZDgT5BNS39UvdG1XW0L4";
+    const runepayKey = Deno.env.get("RUNEPAY_API_KEY");
+    if (!runepayKey) {
+      console.error("RUNEPAY_API_KEY is not configured");
+      return new Response("Payment provider is not configured", { status: 503 });
+    }
     
     // The secret is the SHA-256 hex digest of the API key (as per Rune Pay docs)
     const secretBuffer = await crypto.subtle.digest(

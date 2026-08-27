@@ -46,6 +46,11 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Payment provider is not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
+    const amount = Number(listing.price);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      return new Response(JSON.stringify({ error: "Listing has an invalid price" }), { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const orderRef = `ORDER_${crypto.randomUUID()}`;
 
     // IMPORTANT: Note on callback_url below:
@@ -58,7 +63,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: String(listing.price),
+        amount,
         currency: "USD",
         order_id: orderRef,
         description: `Payment for listing ${listing_id}`,
@@ -70,9 +75,10 @@ serve(async (req) => {
 
     const runepayData = await response.json();
 
-    if (runepayData.error) {
+    if (!response.ok || runepayData.error || !runepayData.data?.track_id || !runepayData.data?.payment_url) {
        console.error("RunePay error:", runepayData);
-       return new Response(JSON.stringify({ error: runepayData.message }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+       const providerMessage = runepayData.error?.message || runepayData.message || `Payment provider returned HTTP ${response.status}`;
+       return new Response(JSON.stringify({ error: providerMessage }), { status: response.ok ? 502 : response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Use a service role client to insert the order since normal user might not have insert RLS depending on setup, 
