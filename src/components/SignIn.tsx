@@ -125,12 +125,36 @@ export default function SignIn() {
         return;
       }
 
+      const normalizedUsername = username.trim().toLowerCase().replace(/^@+/, "");
+      if (!/^[a-z0-9._-]{3,30}$/.test(normalizedUsername)) {
+        setError("Username must be 3–30 characters using letters, numbers, dots, underscores, or hyphens");
+        setLoading(false);
+        return;
+      }
+
+      const { data: existingProfile, error: usernameCheckError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", normalizedUsername)
+        .maybeSingle();
+
+      if (usernameCheckError) {
+        setError("Could not verify username availability. Please try again.");
+        setLoading(false);
+        return;
+      }
+      if (existingProfile) {
+        setError("That username is already taken. Please choose another one.");
+        setLoading(false);
+        return;
+      }
+
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: {
-            username,
+            username: normalizedUsername,
           },
         },
       });
