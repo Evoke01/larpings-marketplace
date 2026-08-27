@@ -4,6 +4,7 @@ import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SectionTour from "./components/SectionTour";
 
 // Lazy-load pages for code splitting
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -82,6 +83,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       </main>
       <Footer />
       <MobileNav />
+      <SectionTour pathname={location.pathname} />
       
       {/* Floating Chat Button */}
       <button
@@ -104,7 +106,7 @@ export default function App() {
       <Routes>
         {/* Full-screen pages without Layout */}
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
+        <Route path="/account" element={<ProtectedRoute><><AccountPage /><SectionTour pathname="/account" /></></ProtectedRoute>} />
         
         {/* Pages with standard Layout */}
         <Route path="*" element={

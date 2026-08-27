@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import TourTooltip from "../components/TourTooltip";
 import { supabase } from "../lib/supabase";
 
 const PLATFORMS = ["Instagram", "TikTok", "Twitter / X", "Snapchat", "Telegram", "YouTube"];
@@ -13,7 +12,6 @@ export default function SellPage() {
   const [platform, setPlatform] = useState("Instagram");
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [showTour, setShowTour] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -24,24 +22,8 @@ export default function SellPage() {
         navigate("/signin?returnTo=/sell");
         return;
       }
-      setShowTour(localStorage.getItem(`larpings:sell-tour-complete:${session.user.id}`) !== "1");
     });
   }, [navigate]);
-
-  const TOUR_STEPS = [
-    {
-      title: "Pick your handle name",
-      body: "Enter the exact username — no @, no spaces. This is what the buyer is purchasing.",
-    },
-    {
-      title: "Set a fair price",
-      body: "We charge a 9% platform fee. Whatever you type here, you keep 91% of it when the buyer confirms.",
-    },
-    {
-      title: "You get paid after delivery",
-      body: "Once the buyer confirms they received the handle, your earnings unlock. They sit in a 3-day hold then go straight to your wallet.",
-    },
-  ];
 
   const fee = price ? (parseFloat(price) * 0.09).toFixed(2) : null;
   const payout = price ? (parseFloat(price) * 0.91).toFixed(2) : null;
@@ -258,14 +240,6 @@ export default function SellPage() {
           ))}
         </div>
       </main>
-      {showTour && (
-        <TourTooltip steps={TOUR_STEPS} onDone={() => {
-          supabase.auth.getUser().then(({ data: { user } }) => {
-            if (user) localStorage.setItem(`larpings:sell-tour-complete:${user.id}`, "1");
-          });
-          setShowTour(false);
-        }} />
-      )}
     </div>
   );
 }
