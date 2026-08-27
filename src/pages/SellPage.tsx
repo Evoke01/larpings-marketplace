@@ -13,7 +13,7 @@ export default function SellPage() {
   const [platform, setPlatform] = useState("Instagram");
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [showTour, setShowTour] = useState(true);
+  const [showTour, setShowTour] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -22,7 +22,9 @@ export default function SellPage() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
         navigate("/signin?returnTo=/sell");
+        return;
       }
+      setShowTour(localStorage.getItem(`larpings:sell-tour-complete:${session.user.id}`) !== "1");
     });
   }, [navigate]);
 
@@ -257,7 +259,12 @@ export default function SellPage() {
         </div>
       </main>
       {showTour && (
-        <TourTooltip steps={TOUR_STEPS} onDone={() => setShowTour(false)} />
+        <TourTooltip steps={TOUR_STEPS} onDone={() => {
+          supabase.auth.getUser().then(({ data: { user } }) => {
+            if (user) localStorage.setItem(`larpings:sell-tour-complete:${user.id}`, "1");
+          });
+          setShowTour(false);
+        }} />
       )}
     </div>
   );
