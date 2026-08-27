@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,34 +21,81 @@ export default function MessagesPage() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+    let active = true;
+    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
+      if (!active) return;
+      const s = user ? { user } : null;
       setSession(s);
-      if (!s) { setLoading(false); return; }
+      if (error || !s) { setLoading(false); return; }
 
       // Fetch all messages for this user (sent and received)
-      const { data } = await supabase
+      const { data, error: messageError } = await supabase
         .from('messages')
-        .select('*, sender:profiles!messages_sender_id_fkey(username), receiver:profiles!messages_receiver_id_fkey(username)')
+        .select('*')
         .or(`sender_id.eq.${s.user.id},receiver_id.eq.${s.user.id}`)
         .order('created_at', { ascending: false });
+
+      if (messageError) console.error('Message load error:', messageError);
+      const partnerIds = [...new Set((data ?? []).map(msg => msg.sender_id === s.user.id ? msg.receiver_id : msg.sender_id))];
+      const { data: profiles } = partnerIds.length
+        ? await supabase.from('profiles').select('id, username, display_name').in('id', partnerIds)
+        : { data: [] };
+      const profileMap = new Map((profiles ?? []).map(profile => [profile.id, profile]));
 
       // Group into conversations by partner
       const convMap: Record<string, any> = {};
       (data ?? []).forEach(msg => {
         const partnerId = msg.sender_id === s.user.id ? msg.receiver_id : msg.sender_id;
-        const partnerName = msg.sender_id === s.user.id ? msg.receiver?.username : msg.sender?.username;
+        const partner = profileMap.get(partnerId);
+        const partnerName = partner?.username || partner?.display_name;
         if (!convMap[partnerId]) {
           convMap[partnerId] = { partnerId, partnerName: partnerName || partnerId, lastMessage: msg.content, lastTime: msg.created_at, unread: 0 };
         }
         if (msg.receiver_id === s.user.id && !msg.read) convMap[partnerId].unread++;
       });
       setConversations(Object.values(convMap));
+      const requestedPartnerId = searchParams.get('user');
+      if (requestedPartnerId && requestedPartnerId !== s.user.id) {
+        const partner = profileMap.get(requestedPartnerId);
+        const conversation = convMap[requestedPartnerId] ?? {
+          partnerId: requestedPartnerId,
+          partnerName: partner?.username || partner?.display_name || requestedPartnerId,
+          lastMessage: '',
+          lastTime: null,
+          unread: 0,
+        };
+        setSelectedConv(conversation);
+        const { data: thread } = await supabase
+          .from('messages')
+          .select('*')
+          .or(`and(sender_id.eq.${s.user.id},receiver_id.eq.${requestedPartnerId}),and(sender_id.eq.${requestedPartnerId},receiver_id.eq.${s.user.id})`)
+          .order('created_at', { ascending: true });
+        setMessages(thread ?? []);
+      }
       setLoading(false);
     });
-  }, []);
+
+    return () => { active = false; };
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!session?.user?.id) return;
+    const channel = supabase
+      .channel(`messages-${session.user.id}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, (payload) => {
+        const incoming = payload.new as any;
+        setMessages(prev => selectedConv?.partnerId === incoming.sender_id ? [...prev, incoming] : prev);
+        setConversations(prev => prev.map(conv => conv.partnerId === incoming.sender_id
+          ? { ...conv, lastMessage: incoming.content, lastTime: incoming.created_at, unread: conv.partnerId === selectedConv?.partnerId ? 0 : conv.unread + 1 }
+          : conv));
+      })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [session?.user?.id, selectedConv?.partnerId]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -58,7 +105,7 @@ export default function MessagesPage() {
     setSelectedConv(conv);
     const { data } = await supabase
       .from('messages')
-      .select('*, sender:profiles!messages_sender_id_fkey(username)')
+      .select('*')
       .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${conv.partnerId}),and(sender_id.eq.${conv.partnerId},receiver_id.eq.${session.user.id})`)
       .order('created_at', { ascending: true });
     setMessages(data ?? []);
@@ -70,11 +117,12 @@ export default function MessagesPage() {
     e.preventDefault();
     if (!newMessage.trim() || !selectedConv || sending) return;
     setSending(true);
-    const { data: sent } = await supabase.from('messages').insert({
+    const { data: sent, error } = await supabase.from('messages').insert({
       sender_id: session.user.id,
       receiver_id: selectedConv.partnerId,
       content: newMessage.trim(),
-    }).select('*, sender:profiles!messages_sender_id_fkey(username)').single();
+    }).select('*').single();
+    if (error) console.error('Message send error:', error);
     if (sent) setMessages(prev => [...prev, sent]);
     setNewMessage("");
     setSending(false);

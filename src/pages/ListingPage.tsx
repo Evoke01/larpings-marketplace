@@ -421,9 +421,9 @@ export default function ListingPage() {
               </span>
             </div>
             
-            <button className="bg-[#ff0000] text-white font-medium text-[12px] w-full inline-flex justify-center items-center gap-2 mt-4 px-[22px] py-2.5 rounded-[10px] hover:bg-[#cc0000] transition-colors shadow-[0_10px_30px_-12px_rgba(255,0,0,0.5)]">
+            <Link to={seller ? `/messages?user=${encodeURIComponent(seller.id)}` : '/messages'} className="bg-[#ff0000] text-white font-medium text-[12px] w-full inline-flex justify-center items-center gap-2 mt-4 px-[22px] py-2.5 rounded-[10px] hover:bg-[#cc0000] transition-colors shadow-[0_10px_30px_-12px_rgba(255,0,0,0.5)]">
               <ContactIcon /> Contact the seller
-            </button>
+            </Link>
             <Link to={seller ? `/seller/${seller.username}` : '#'} className="bg-transparent text-[#b7b7c2] font-medium text-[12px] flex grow justify-center items-center gap-1.5 px-3 py-2 rounded-[10px] border border-[#222226] hover:bg-white/5 transition-colors mt-2">
                 <ProfileIcon /> Profile
             </Link>
