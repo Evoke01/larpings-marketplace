@@ -14,6 +14,7 @@ const AboutPage = lazy(() => import("./pages/AboutPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
 const SellPage = lazy(() => import("./pages/SellPage"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage"));
+const AccountPage = lazy(() => import("./pages/AccountPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const BadgesPage = lazy(() => import("./pages/BadgesPage"));
@@ -75,7 +76,7 @@ export default function App() {
       <Routes>
         {/* Full-screen pages without Layout */}
         <Route path="/signin" element={<SignInPage />} />
-        <Route path="/account" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/account" element={<ProtectedRoute><AccountPage /></ProtectedRoute>} />
         
         {/* Pages with standard Layout */}
         <Route path="*" element={
