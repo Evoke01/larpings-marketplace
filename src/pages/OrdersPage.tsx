@@ -1,22 +1,59 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 const ClipboardIcon = () => (
   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-    <path d="M12 11h4" />
-    <path d="M12 16h4" />
-    <path d="M8 11h.01" />
-    <path d="M8 16h.01" />
+    <path d="M12 11h4" /><path d="M12 16h4" /><path d="M8 11h.01" /><path d="M8 16h.01" />
   </svg>
 );
 
+const STATUS_COLORS: Record<string, string> = {
+  pending: "text-amber-400 bg-amber-400/10 border-amber-400/30",
+  delivered: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  confirmed: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  cancelled: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
+};
+
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
+      setSession(s);
+      if (s) {
+        const { data } = await supabase
+          .from('orders')
+          .select('*, listings(handle, price, platform, category)')
+          .eq('buyer_id', s.user.id)
+          .order('created_at', { ascending: false });
+        setOrders(data ?? []);
+      }
+      setLoading(false);
+    });
+  }, []);
+
+  async function confirmDelivery(orderId: string) {
+    await supabase.from('orders').update({ status: 'confirmed' }).eq('id', orderId);
+    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'confirmed' } : o));
+  }
+
+  if (loading) {
+    return (
+      <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif] flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       <div className="w-full max-w-[672px] mx-auto pt-8 px-4">
-        {/* Header */}
         <div className="mb-8">
           <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">
             Purchases &amp; sales
@@ -29,29 +66,59 @@ export default function OrdersPage() {
           </p>
         </div>
 
-        {/* Sign-in card */}
-        <div className="bg-[#111113] p-6 rounded-[14px] border border-[#222226]">
-          <div className="bg-[rgba(255,0,0,0.1)] w-14 h-14 flex justify-center items-center mx-auto rounded-[12px] text-[#ff0000]">
-            <ClipboardIcon />
+        {!session ? (
+          <div className="bg-[#111113] p-6 rounded-[14px] border border-[#222226]">
+            <div className="bg-[rgba(255,0,0,0.1)] w-14 h-14 flex justify-center items-center mx-auto rounded-[12px] text-[#ff0000]">
+              <ClipboardIcon />
+            </div>
+            <div className="text-center mt-4">
+              <h2 className="leading-7 font-medium text-lg tracking-[-0.54px]">Track your orders</h2>
+              <p className="text-[#93939f] leading-5 text-sm mt-1">Sign in to view purchases, sales, and manage delivery.</p>
+            </div>
+            <Link to="/signin?returnTo=/orders" className="bg-[#ff0000] text-white leading-none font-medium text-sm w-full inline-flex justify-center items-center gap-2 shadow-[rgba(255,255,255,0.18)_0px_1px_0px_0px_inset,rgba(255,0,0,0.55)_0px_8px_24px_-12px] mt-5 px-[22px] py-3 rounded-[10px] hover:bg-[#cc0000] hover:-translate-y-px active:translate-y-0 transition-all">
+              Sign in
+            </Link>
           </div>
-          <div className="text-center mt-4">
-            <h2 className="leading-7 font-medium text-lg tracking-[-0.54px]">Track your orders</h2>
-            <p className="text-[#93939f] leading-5 text-sm mt-1">
-              Sign in to view purchases, sales, and manage delivery.
-            </p>
+        ) : orders.length === 0 ? (
+          <div className="bg-[#111113] p-8 rounded-[14px] border border-[#222226] text-center">
+            <div className="bg-[rgba(255,0,0,0.1)] w-14 h-14 flex justify-center items-center mx-auto rounded-[12px] text-[#ff0000]">
+              <ClipboardIcon />
+            </div>
+            <h2 className="mt-4 font-medium text-lg">No orders yet</h2>
+            <p className="text-[#93939f] text-sm mt-1">Browse the marketplace to find something you want.</p>
+            <Link to="/marketplace" className="mt-5 inline-flex items-center gap-2 bg-[#ff0000] text-white font-medium text-sm px-6 py-3 rounded-[10px] hover:bg-[#cc0000] transition-colors">
+              Browse Marketplace
+            </Link>
           </div>
-          <Link
-            to="/signin"
-            className="bg-[#ff0000] text-white leading-none font-medium text-sm w-full inline-flex justify-center items-center gap-2 shadow-[rgba(255,255,255,0.18)_0px_1px_0px_0px_inset,rgba(255,0,0,0.55)_0px_8px_24px_-12px] mt-5 px-[22px] py-3 rounded-[10px] hover:bg-[#cc0000] hover:-translate-y-px active:translate-y-0 transition-all"
-          >
-            Sign in
-          </Link>
-        </div>
-
-        {/* Info blurb */}
-        <p className="text-[#93939f] text-xs leading-relaxed text-center mt-6 pb-8">
-          Once signed in, both your buyer purchases and seller sales will appear here. Confirm delivery on any open order to release the held payment to the seller.
-        </p>
+        ) : (
+          <div className="space-y-3 pb-8">
+            {orders.map(order => (
+              <div key={order.id} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226]">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-semibold text-lg">@{order.listings?.handle}</p>
+                    <p className="text-[#93939f] text-sm capitalize">{order.listings?.platform} · {order.listings?.category}</p>
+                  </div>
+                  <span className={`font-mono font-medium text-[11px] tracking-widest uppercase px-2.5 py-1.5 rounded-[8px] border ${STATUS_COLORS[order.status] ?? 'text-[#93939f] bg-[#111113] border-[#222226]'}`}>
+                    {order.status}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-4">
+                  <span className="font-mono font-semibold">${Number(order.listings?.price).toLocaleString()}</span>
+                  {order.status === 'pending' && (
+                    <button
+                      onClick={() => confirmDelivery(order.id)}
+                      className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-emerald-600 transition-colors"
+                    >
+                      Confirm Delivery
+                    </button>
+                  )}
+                </div>
+                <p className="text-[#93939f] font-mono text-[10px] mt-3">{new Date(order.created_at).toLocaleString()}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import TourTooltip from "../components/TourTooltip";
+import { supabase } from "../lib/supabase";
 
 const PLATFORMS = ["Instagram", "TikTok", "Twitter / X", "Snapchat", "Telegram", "YouTube"];
 const CATEGORIES = ["Username", "Account", "Fansign", "Service"];
@@ -12,6 +14,17 @@ export default function SellPage() {
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [showTour, setShowTour] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate("/signin?returnTo=/sell");
+      }
+    });
+  }, [navigate]);
 
   const TOUR_STEPS = [
     {
@@ -31,10 +44,37 @@ export default function SellPage() {
   const fee = price ? (parseFloat(price) * 0.09).toFixed(2) : null;
   const payout = price ? (parseFloat(price) * 0.91).toFixed(2) : null;
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !price) return;
-    setSubmitted(true);
+    setLoading(true);
+    setError("");
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        navigate("/signin?returnTo=/sell");
+        return;
+      }
+
+      const { error: insertError } = await supabase.from('listings').insert({
+        seller_id: session.user.id,
+        handle: title.trim(),
+        description: description.trim(),
+        category: category.toLowerCase(),
+        platform: platform.toLowerCase().replace(' / x', '').replace('youtube', 'youtube'), // normalize
+        price: parseFloat(price),
+        status: 'active'
+      });
+
+      if (insertError) throw insertError;
+
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || "Failed to create listing.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (submitted) {
@@ -185,13 +225,19 @@ export default function SellPage() {
             </div>
           )}
 
+          {error && (
+            <div className="bg-[rgba(255,0,0,0.1)] text-[#ff0000] p-3 rounded-[8px] text-sm text-center">
+              {error}
+            </div>
+          )}
+
           {/* Submit */}
           <button
             type="submit"
             className="w-full bg-white text-[#0e0e11] font-semibold text-sm py-3.5 rounded-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] hover:shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(255,0,0,0.45)_0px_14px_34px_-12px] hover:-translate-y-px active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!title.trim() || !price}
+            disabled={!title.trim() || !price || loading}
           >
-            Create Listing
+            {loading ? "Creating..." : "Create Listing"}
           </button>
         </form>
 
