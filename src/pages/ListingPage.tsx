@@ -58,6 +58,8 @@ export default function ListingPage() {
   const [buying, setBuying] = useState(false);
   const [buyError, setBuyError] = useState("");
   const [buySuccess, setBuySuccess] = useState(false);
+  const [simulating, setSimulating] = useState(false);
+  const [simulateMessage, setSimulateMessage] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -141,6 +143,29 @@ export default function ListingPage() {
 
   if (!listing) {
     return <div className="pt-24 px-4 pb-24 text-center">Listing not found.</div>;
+  }
+
+  async function handleSandboxSimulation() {
+    setSimulating(true);
+    setSimulateMessage("");
+    try {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        navigate(`/signin?returnTo=/listing/${handle}`);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke("simulate-sandbox-payment", {
+        body: { listing_id: listing.id },
+      });
+      if (error) throw new Error("Sandbox simulator is unavailable");
+      if (data?.error) throw new Error(data.error);
+      setSimulateMessage("Sandbox payment marked Paid. Open Orders to verify the flow.");
+    } catch (error: any) {
+      setSimulateMessage(error.message || "Sandbox simulation failed");
+    } finally {
+      setSimulating(false);
+    }
   }
 
   const handleLength = listing.handle.replace(/^@+/, '').length;
@@ -286,6 +311,20 @@ export default function ListingPage() {
               </div>
               {buyError && <p className="text-[#ff0000] text-sm mt-3 text-center">{buyError}</p>}
               {buySuccess && <p className="text-emerald-400 text-sm mt-3 text-center">Order created! Redirecting...</p>}
+              {listing.handle === "sandbox-payment-test" && (
+                <div className="mt-4 rounded-[10px] border border-amber-400/30 bg-amber-400/5 p-3">
+                  <p className="text-amber-300 text-xs text-center">TEST ONLY — no real crypto required</p>
+                  <button
+                    type="button"
+                    onClick={handleSandboxSimulation}
+                    disabled={simulating}
+                    className="w-full mt-2 rounded-[8px] border border-amber-400/40 px-3 py-2 text-xs font-medium text-amber-200 hover:bg-amber-400/10 disabled:opacity-50"
+                  >
+                    {simulating ? "Simulating…" : "Simulate sandbox payment"}
+                  </button>
+                  {simulateMessage && <p className="text-amber-200 text-xs text-center mt-2">{simulateMessage}</p>}
+                </div>
+              )}
             </div>
             
             <div className="mt-5">
