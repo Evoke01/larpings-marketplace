@@ -70,6 +70,12 @@ export default function SellerProfile({ handle }: { handle: string }) {
   if (error) return <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"><p className="text-[#ff0000] font-mono text-[11px] tracking-[2px] uppercase mb-3">Storefront unavailable</p><h1 className="text-2xl font-medium mb-3">Something went wrong</h1><p className="text-[#93939f] max-w-md mb-6">{error}</p><Link to="/marketplace" className="bg-white text-[#0e0e11] font-medium px-5 py-3 rounded-[10px]">Browse marketplace</Link></div>;
   if (!profile) return <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4"><p className="text-[#ff0000] font-mono text-[11px] tracking-[2px] uppercase mb-3">404</p><h1 className="text-2xl font-medium mb-3">Seller not found</h1><p className="text-[#93939f] max-w-md mb-6">This storefront doesn’t exist or the seller has changed their username.</p><Link to="/marketplace" className="bg-white text-[#0e0e11] font-medium px-5 py-3 rounded-[10px]">Browse marketplace</Link></div>;
 
+  const badges = [
+    { label: "Member", show: true, tone: "text-[#b7b7c2] border-[#333338] bg-[#1b1b20]" },
+    { label: "Active seller", show: listings.length > 0, tone: "text-red-300 border-red-500/30 bg-red-500/10" },
+    { label: "Top rated", show: (profile.rating ?? 0) >= 4.5 && (profile.reviews ?? 0) >= 3, tone: "text-yellow-300 border-yellow-400/30 bg-yellow-400/10" },
+  ].filter((badge) => badge.show);
+
   return (
     <main className="w-full max-w-[1152px] mx-auto px-4 pb-24 pt-4">
       <div className="h-56 relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#241014] via-[#111113] to-[#09090b]" style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}><div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(255,0,0,.35),transparent_40%)]" /><div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#09090b] to-transparent" /></div>
@@ -78,6 +84,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
         <Link to={`/messages?user=${encodeURIComponent(profile.id)}`} className="bg-[#ff0000] text-white font-medium px-4 py-2.5 rounded-[10px]">Message</Link>
       </div>
       <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
+      <div className="flex flex-wrap gap-2 mt-4 px-6">{badges.map((badge) => <span key={badge.label} className={`rounded-full border px-3 py-1 text-xs font-medium ${badge.tone}`}>{badge.label}</span>)}</div>
       <section aria-label="Seller stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rating</p><p className="font-mono text-xl mt-1.5">{profile.rating && profile.rating > 0 ? profile.rating.toFixed(1) : "—"}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Reviews</p><p className="font-mono text-xl mt-1.5">{profile.reviews ?? 0}</p></div>

@@ -54,9 +54,7 @@ export default function DashboardPage() {
           <p className="mono-label mt-0.5 text-muted-foreground">Seller dashboard</p>
         </div>
         {profile?.username && (
-          <Link className="btn-outline-dim shrink-0 !px-3.5 !py-2 !text-xs" to={`/seller/${profile.username}`}>
-            Storefront <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-external-link h-3.5 w-3.5"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>
-          </Link>
+          <div className="flex shrink-0 gap-2"><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to="/account#customize">Customize profile</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to={`/seller/${profile.username}`}>Storefront</Link></div>
         )}
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
@@ -161,6 +159,11 @@ export default function DashboardPage() {
               </div>
               <p className="mt-2 text-[11px] text-muted-foreground"><span className="font-mono text-foreground">{Math.max(10 - confirmedSales, 0)}</span> more confirmed sales to unlock it.</p>
             </div>
+          </div>
+          <div className="mkt-enter rounded-[14px] border border-border bg-card p-5" style={{ animationDelay: "155ms" }}>
+            <p className="mono-label text-muted-foreground">Storefront profile</p>
+            <p className="mt-2 text-sm text-muted-foreground">Add your avatar, banner, bio, and social links so buyers know who they’re dealing with.</p>
+            <Link to="/account#customize" className="btn-white mt-4 inline-flex !py-2.5 !text-xs">Edit storefront profile</Link>
           </div>
           <div className="mkt-enter" style={{ animationDelay: "190ms" }}>
             <div className="rounded-[14px] border border-border bg-card p-5 md:p-6">
