@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 // ── Inline icons ──────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -101,28 +102,13 @@ const YtIcon = () => (
 
 // ── Data ──────────────────────────────────────────────────────────────────
 const PLATFORMS = [
-  { id: "all", label: "All platforms", dot: "#ff0000", count: 1102 },
-  { id: "instagram", label: "Instagram", dot: "#ed459c", count: 1070, Icon: IgIcon },
-  { id: "tiktok", label: "TikTok", dot: "#1fe0f9", count: 14, Icon: TtIcon },
-  { id: "twitter", label: "X / Twitter", dot: "#d3d9de", count: 8, Icon: XIcon },
-  { id: "snapchat", label: "Snapchat", dot: "#fbcf23", count: 5, Icon: SnapIcon },
-  { id: "telegram", label: "Telegram", dot: "#26a5e4", count: 3, Icon: TgIcon },
-  { id: "youtube", label: "YouTube", dot: "#ff0000", count: 2, Icon: YtIcon },
-];
-
-const MOCK_LISTINGS = [
-  { id: 1, handle: "ghost", category: "username", platform: "instagram", price: 1200, seller: "seller_x", verified: true, rating: 4.9, reviews: 38, followers: "12.4k", timeAgo: "2h ago", hot: true },
-  { id: 2, handle: "zen", category: "username", platform: "instagram", price: 850, seller: "handle_broker", verified: true, rating: 4.7, reviews: 22, followers: "8.1k", timeAgo: "4h ago", hot: false },
-  { id: 3, handle: "luxe", category: "account", platform: "tiktok", price: 3400, seller: "username_king", verified: true, rating: 5.0, reviews: 61, followers: "890k", timeAgo: "1h ago", hot: true },
-  { id: 4, handle: "arc", category: "username", platform: "twitter", price: 500, seller: "og_handles", verified: false, rating: 4.2, reviews: 9, followers: "—", timeAgo: "6h ago", hot: false },
-  { id: 5, handle: "void", category: "fansign", platform: "instagram", price: 2100, seller: "seller_x", verified: true, rating: 4.8, reviews: 44, followers: "34.2k", timeAgo: "3h ago", hot: true },
-  { id: 6, handle: "snap_og", category: "account", platform: "snapchat", price: 400, seller: "snap_dealer", verified: false, rating: 4.0, reviews: 6, followers: "—", timeAgo: "8h ago", hot: false },
-  { id: 7, handle: "pulse", category: "service", platform: "instagram", price: 750, seller: "handle_broker", verified: true, rating: 4.6, reviews: 18, followers: "6.7k", timeAgo: "5h ago", hot: false },
-  { id: 8, handle: "nova", category: "username", platform: "instagram", price: 1800, seller: "og_handles", verified: true, rating: 4.9, reviews: 52, followers: "21.8k", timeAgo: "1d ago", hot: true },
-  { id: 9, handle: "drift", category: "service", platform: "telegram", price: 290, seller: "tg_broker", verified: false, rating: 3.9, reviews: 4, followers: "—", timeAgo: "12h ago", hot: false },
-  { id: 10, handle: "apex", category: "fansign", platform: "instagram", price: 5500, seller: "username_king", verified: true, rating: 5.0, reviews: 89, followers: "102k", timeAgo: "2d ago", hot: true },
-  { id: 11, handle: "luma", category: "account", platform: "youtube", price: 900, seller: "yt_handles", verified: true, rating: 4.5, reviews: 11, followers: "45k subs", timeAgo: "3d ago", hot: false },
-  { id: 12, handle: "ink", category: "username", platform: "instagram", price: 380, seller: "seller_x", verified: false, rating: 4.1, reviews: 7, followers: "1.2k", timeAgo: "10h ago", hot: false },
+  { id: "all", label: "All platforms", dot: "#ff0000" },
+  { id: "instagram", label: "Instagram", dot: "#ed459c", Icon: IgIcon },
+  { id: "tiktok", label: "TikTok", dot: "#1fe0f9", Icon: TtIcon },
+  { id: "twitter", label: "X / Twitter", dot: "#d3d9de", Icon: XIcon },
+  { id: "snapchat", label: "Snapchat", dot: "#fbcf23", Icon: SnapIcon },
+  { id: "telegram", label: "Telegram", dot: "#26a5e4", Icon: TgIcon },
+  { id: "youtube", label: "YouTube", dot: "#ff0000", Icon: YtIcon },
 ];
 
 const PlatformIcon = ({ platform }: { platform: string }) => {
@@ -136,7 +122,7 @@ const PlatformIcon = ({ platform }: { platform: string }) => {
 const platformDot = (p: string) => PLATFORMS.find(x => x.id === p)?.dot ?? "#ff0000";
 
 // ── Card ──────────────────────────────────────────────────────────────────
-function ListingCard({ item, grid }: { item: typeof MOCK_LISTINGS[0]; grid: boolean }) {
+function ListingCard({ item, grid }: { item: any; grid: boolean }) {
   const dot = platformDot(item.platform);
   if (grid) {
     return (
@@ -215,19 +201,44 @@ export default function MarketplacePage() {
   const [view, setView] = useState<"grid" | "list">("grid");
   const [quickView, setQuickView] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [allListings, setAllListings] = useState<any[]>([]);
+  const [loadingListings, setLoadingListings] = useState(true);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      setLoadingListings(true);
+      const { data } = await supabase
+        .from('listings')
+        .select('*, profiles(username, rating, reviews)')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
+      setAllListings(data ?? []);
+      setLoadingListings(false);
+    };
+    fetchListings();
+  }, []);
+
+  const platformCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: allListings.length };
+    for (const l of allListings) {
+      counts[l.platform] = (counts[l.platform] ?? 0) + 1;
+    }
+    return counts;
+  }, [allListings]);
 
   const filtered = useMemo(() => {
-    let list = MOCK_LISTINGS;
+    let list = allListings;
     if (platform !== "all") list = list.filter(l => l.platform === platform);
     if (categoryFilter !== "all") list = list.filter(l => l.category === categoryFilter);
     if (search.trim()) list = list.filter(l => l.handle.toLowerCase().includes(search.toLowerCase()));
     if (quickView === "hot") list = list.filter(l => l.hot);
-    if (quickView === "recent") list = [...list].sort((a, b) => a.id - b.id);
+    if (quickView === "recent") list = [...list];
+    if (sort === "newest") list = [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     if (sort === "name-asc") list = [...list].sort((a, b) => a.handle.localeCompare(b.handle));
     return list;
-  }, [platform, categoryFilter, search, sort, quickView]);
+  }, [allListings, platform, categoryFilter, search, sort, quickView]);
 
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
@@ -281,10 +292,13 @@ export default function MarketplacePage() {
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-14 gap-y-5 w-fit mt-9">
                 {[
-                  { val: "1,102", label: "Live listings" },
-                  { val: "+522", label: "New this week" },
-                  { val: "$40,000", label: "Top ask" },
-                  { val: "$39", label: "Floor price" },
+                  { val: allListings.length.toLocaleString(), label: "Live listings" },
+                  { val: allListings.filter(l => {
+                    const d = new Date(l.created_at);
+                    return Date.now() - d.getTime() < 7 * 86400000;
+                  }).length.toString(), label: "New this week" },
+                  { val: allListings.length > 0 ? `$${Math.max(...allListings.map(l => l.price)).toLocaleString()}` : '—', label: "Top ask" },
+                  { val: allListings.length > 0 ? `$${Math.min(...allListings.map(l => l.price)).toLocaleString()}` : '—', label: "Floor price" },
                 ].map(({ val, label }) => (
                   <div key={label}>
                     <div className="font-mono text-[30px] leading-9">{val}</div>
@@ -377,7 +391,7 @@ export default function MarketplacePage() {
             {/* Platforms */}
             <div className="mt-7">
               <p className="text-[#93939f] font-mono text-[11px] tracking-[1.76px] uppercase mb-2.5 px-3">Platforms</p>
-              {PLATFORMS.map(({ id, label, dot, count }) => (
+            {PLATFORMS.map(({ id, label, dot }) => (
                 <button
                   key={id}
                   onClick={() => setPlatform(id)}
@@ -385,7 +399,7 @@ export default function MarketplacePage() {
                 >
                   <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
                   {label}
-                  <span className="ml-auto font-mono text-xs text-[#93939f]">{count > 0 ? count : "—"}</span>
+                  <span className="ml-auto font-mono text-xs text-[#93939f]">{platformCounts[id] ?? 0}</span>
                 </button>
               ))}
             </div>
@@ -425,10 +439,14 @@ export default function MarketplacePage() {
               ))}
             </div>
 
-            {filtered.length === 0 ? (
+            {loadingListings ? (
+              <div className="flex justify-center py-24">
+                <div className="w-6 h-6 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="text-center py-24 text-[#93939f]">
-                <p className="text-lg font-medium">No listings found</p>
-                <p className="text-sm mt-2">Try a different search or platform filter.</p>
+                <p className="text-lg font-medium">{allListings.length === 0 ? 'No listings yet' : 'No listings found'}</p>
+                <p className="text-sm mt-2">{allListings.length === 0 ? 'Be the first to list something!' : 'Try a different search or platform filter.'}</p>
               </div>
             ) : view === "grid" ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">

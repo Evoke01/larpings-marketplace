@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 // Platform icons inline
 const InstagramIcon = () => (
@@ -31,22 +32,19 @@ const XIcon = () => (
   </svg>
 );
 
-const listings = [
-  { handle: "@total", price: "$11,700", platform: "instagram" },
-  { handle: "@handled", price: "$4,680", platform: "tiktok" },
-  { handle: "@katt", price: "$4,420", platform: "instagram" },
-  { handle: "@knighted", price: "$2,340", platform: "twitter" },
-  { handle: "@charme", price: "$2,340", platform: "instagram" },
-  { handle: "@gatt", price: "$2,340", platform: "tiktok" },
-  { handle: "@sombre", price: "$1,872", platform: "instagram" },
-  { handle: "@za3", price: "$1,872", platform: "instagram" },
-  { handle: "@bjr", price: "$1,638", platform: "twitter" },
-  { handle: "@3vx", price: "$1,404", platform: "tiktok" },
-  { handle: "@p5m", price: "$1,287", platform: "instagram" },
-  { handle: "@8yb", price: "$1,170", platform: "instagram" },
-];
-
 export default function HomePage() {
+  const [listings, setListings] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('listings')
+      .select('id, handle, price, platform, category')
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(12)
+      .then(({ data }) => setListings(data ?? []));
+  }, []);
+
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       {/* Hero */}
@@ -136,6 +134,7 @@ export default function HomePage() {
       {/* Scrolling ticker */}
       <section className="py-10">
         <p className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase text-center mb-6">Live catalog</p>
+        {listings.length > 0 ? (
         <div className="relative overflow-hidden">
           <div className="absolute left-0 inset-y-0 w-24 z-10 pointer-events-none" style={{ backgroundImage: "linear-gradient(to right, rgb(9,9,11), rgba(0,0,0,0))" }} />
           <div className="absolute right-0 inset-y-0 w-24 z-10 pointer-events-none" style={{ backgroundImage: "linear-gradient(to left, rgb(9,9,11), rgba(0,0,0,0))" }} />
@@ -143,12 +142,15 @@ export default function HomePage() {
             {[...listings, ...listings].map((l, i) => (
               <span key={i} className="bg-[#111113] flex-none flex items-center gap-2.5 px-3.5 py-2 rounded-[8px] border border-[#222226]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#ed459c] flex-none" />
-                <span className="font-medium text-sm whitespace-nowrap">{l.handle}</span>
-                <span className="text-[#93939f] font-mono text-[12px] whitespace-nowrap">{l.price}</span>
+                <span className="font-medium text-sm whitespace-nowrap">@{l.handle}</span>
+                <span className="text-[#93939f] font-mono text-[12px] whitespace-nowrap">${Number(l.price).toLocaleString()}</span>
               </span>
             ))}
           </div>
         </div>
+        ) : (
+          <p className="text-center text-[#93939f] text-sm">No listings yet — be the first to sell!</p>
+        )}
       </section>
 
       {/* Stats */}
@@ -212,15 +214,20 @@ export default function HomePage() {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {listings.slice(0, 8).map((l) => (
-              <Link key={l.handle} to={`/listing/${l.handle.replace('@', '')}`} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226] group hover:border-[#333338] transition-colors block">
+            {listings.slice(0, 8).length === 0 ? (
+              <div className="col-span-4 text-center py-12 text-[#93939f]">
+                <p className="text-base font-medium">No listings yet</p>
+                <Link to="/sell" className="mt-3 inline-flex items-center gap-1.5 text-sm text-[#ff0000] font-medium">Be the first to sell →</Link>
+              </div>
+            ) : listings.slice(0, 8).map((l) => (
+              <Link key={l.id} to={`/listing/${l.handle}`} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226] group hover:border-[#333338] transition-colors block">
                 <div className="flex justify-between items-center mb-6">
-                  <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Exclusive</span>
+                  <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">{l.platform}</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-[#ed459c]" />
                 </div>
-                <p className="text-2xl font-medium mb-4 truncate">{l.handle}</p>
+                <p className="text-2xl font-medium mb-4 truncate">@{l.handle}</p>
                 <div className="flex justify-between items-center">
-                  <span className="font-mono text-sm">{l.price}</span>
+                  <span className="font-mono text-sm">${Number(l.price).toLocaleString()}</span>
                   <span className="text-[#93939f] text-xs font-medium flex items-center gap-1 group-hover:text-white transition-colors">
                     View
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
