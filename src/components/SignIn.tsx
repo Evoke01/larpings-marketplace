@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Icon1 = (props: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(147, 147, 159)" strokeWidth="2px" strokeLinecap="round" strokeLinejoin="round" className="text-center align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]" {...props}>
@@ -99,6 +99,12 @@ export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectAfterAuth = () => {
+    const returnTo = new URLSearchParams(location.search).get("returnTo");
+    navigate(returnTo?.startsWith("/") ? returnTo : "/dashboard", { replace: true });
+  };
 
   const isSignup = tab === "signup";
 
@@ -133,7 +139,7 @@ export default function SignIn() {
         setError(signUpError.message);
       } else {
         if (data.session) {
-           navigate('/dashboard');
+           redirectAfterAuth();
         } else {
            // Email confirmation required — show a friendly message
            setError("✅ Account created! Check your email and click the confirmation link to log in.");
@@ -151,7 +157,7 @@ export default function SignIn() {
           : signInError.message
         );
       } else {
-        navigate('/dashboard');
+        redirectAfterAuth();
       }
     }
     setLoading(false);

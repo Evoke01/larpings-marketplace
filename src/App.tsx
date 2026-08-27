@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Lazy-load pages for code splitting
 const HomePage = lazy(() => import("./pages/HomePage"));
@@ -85,10 +86,10 @@ export default function App() {
               <Route path="/fansigns" element={<FansignsPage />} />
               <Route path="/listing/:handle" element={<ListingPage />} />
               <Route path="/seller/:handle" element={<SellerProfilePage />} />
-              <Route path="/sell" element={<SellPage />} />
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/messages" element={<MessagesPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/sell" element={<ProtectedRoute><SellPage /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+              <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><OrdersPage /></ProtectedRoute>} />
               <Route path="/sold" element={<SoldPage />} />
               <Route path="/legit" element={<LegitPage />} />
               <Route path="/guides" element={<BadgesPage />} />
