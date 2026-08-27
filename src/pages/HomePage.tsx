@@ -64,18 +64,13 @@ export default function HomePage() {
       <section className="relative min-h-[90vh] flex flex-col items-center overflow-hidden">
         {/* Background image and gradient layers */}
         <div 
-          className="absolute inset-0 bg-zinc-950 bg-cover bg-center bg-no-repeat opacity-65 mix-blend-screen"
-          style={{ backgroundImage: "url('/hero-bg.jpg')", WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 78%)", maskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 78%)", filter: "saturate(.72) contrast(.92)" }}
+          className="absolute inset-0 bg-zinc-950 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/hero-bg.jpg')" }}
         />
         <div
           aria-hidden="true"
           className="absolute inset-0"
           style={{ backgroundImage: "radial-gradient(circle at 50% 40%, rgba(9,9,11,0.1) 0%, rgba(9,9,11,0.4) 50%, rgba(9,9,11,0.85) 100%)" }}
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{ backgroundImage: "linear-gradient(90deg, rgba(9,9,11,.9) 0%, transparent 18%, transparent 82%, rgba(9,9,11,.9) 100%), linear-gradient(180deg, rgba(9,9,11,.7) 0%, transparent 24%, transparent 58%, rgba(9,9,11,.98) 100%)" }}
         />
         <div
           aria-hidden="true"
