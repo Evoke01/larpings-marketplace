@@ -11,15 +11,15 @@ const ClipboardIcon = () => (
 );
 
 const STATUS_COLORS: Record<string, string> = {
-  pending: "text-amber-400 bg-amber-400/10 border-amber-400/30",
-  Waiting: "text-amber-400 bg-amber-400/10 border-amber-400/30",
-  Confirming: "text-blue-400 bg-blue-400/10 border-blue-400/30",
-  Paid: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  pending: "text-[#b7b7c2] bg-[#1b1b20] border-[#333338]",
+  Waiting: "text-[#b7b7c2] bg-[#1b1b20] border-[#333338]",
+  Confirming: "text-red-300 bg-red-500/10 border-red-500/30",
+  Paid: "text-red-300 bg-red-500/10 border-red-500/30",
   Underpaid: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
   Failed: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
   Expired: "text-[#93939f] bg-[rgba(147,147,159,0.1)] border-[rgba(147,147,159,0.3)]",
-  delivered: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
-  confirmed: "text-emerald-400 bg-emerald-400/10 border-emerald-400/30",
+  delivered: "text-[#b7b7c2] bg-[#1b1b20] border-[#333338]",
+  confirmed: "text-[#f9f9fb] bg-red-500/10 border-red-500/30",
   cancelled: "text-[#ff0000] bg-[rgba(255,0,0,0.1)] border-[rgba(255,0,0,0.3)]",
 };
 
@@ -114,7 +114,7 @@ export default function OrdersPage() {
                   {((order.status === 'pending') || (order.status === 'Paid')) && (
                     <button
                       onClick={() => confirmDelivery(order.id)}
-                      className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-emerald-600 transition-colors"
+                      className="bg-[#ff0000] text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-[#cc0000] transition-colors"
                     >
                       Confirm Delivery
                     </button>
