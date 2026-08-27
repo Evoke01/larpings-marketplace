@@ -14,20 +14,29 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [listingCount, setListingCount] = useState(0);
+  const [verificationStatus, setVerificationStatus] = useState<"pending" | "verified" | "rejected" | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => { if (!user) return; (async () => {
-    const [p, l] = await Promise.all([
+    const [p, l, v] = await Promise.all([
       supabase.from("profiles").select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rating, reviews, created_at").eq("id", user.id).maybeSingle(),
       supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", user.id).eq("status", "active"),
+      supabase.from("seller_verifications").select("status").eq("seller_id", user.id).maybeSingle(),
     ]);
     if (p.error) setError("We couldn’t load your profile details.");
     if (p.data) { setProfile(p.data); setForm({ username: p.data.username ?? "", display_name: p.data.display_name ?? "", bio: p.data.bio ?? "", avatar_url: p.data.avatar_url ?? "", banner_url: p.data.banner_url ?? "", website_url: p.data.website_url ?? "", twitter_url: p.data.twitter_url ?? "", instagram_url: p.data.instagram_url ?? "", discord_url: p.data.discord_url ?? "" }); }
-    setListingCount(l.count ?? 0); setLoading(false);
+    setListingCount(l.count ?? 0); setVerificationStatus(v.data?.status ?? null); setLoading(false);
   })(); }, [user]);
+
+  const requestVerification = async () => {
+    if (!user || verificationStatus === "pending" || verificationStatus === "verified") return;
+    const { error: requestError } = await supabase.from("seller_verifications").insert({ seller_id: user.id, status: "pending" });
+    if (requestError) setError("Couldn’t submit the verification request. Please try again.");
+    else { setVerificationStatus("pending"); setMessage("Verification request submitted for review."); }
+  };
 
   const update = (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
   const upload = async (kind: "avatar" | "banner", e: ChangeEvent<HTMLInputElement>) => {
@@ -58,5 +67,5 @@ export default function AccountPage() {
       <div className="grid gap-4 pt-5 sm:grid-cols-2">{fields.map(([key, label]) => <label key={key} className="text-sm">{label}<input value={form[key]} onChange={update(key)} placeholder={label.includes("URL") ? "https://" : "@username"} className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000]" /></label>)}</div>
       <button disabled={saving} className="mt-6 rounded-[10px] bg-[#ff0000] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving…" : "Save profile"}</button></form>
       <div className="grid gap-3 sm:grid-cols-3">{[["Rating", profile?.rating && profile.rating > 0 ? profile.rating.toFixed(1) : "—"], ["Reviews", profile?.reviews ?? 0], ["Active listings", listingCount]].map(([label, value]) => <div key={label} className="rounded-[12px] border border-[#222226] bg-[#111113] p-4"><p className="mono-label text-[#93939f]">{label}</p><p className="mt-2 font-mono text-2xl">{value}</p></div>)}</div></section>
-    <aside className="space-y-6 lg:col-span-4"><div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5"><p className="mono-label text-[#93939f]">Account actions</p><Link to={`/seller/${encodeURIComponent(username)}`} className="mt-4 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">View storefront →</Link><Link to="/messages" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Messages →</Link><Link to="/dashboard" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Seller dashboard →</Link></div><div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5"><p className="mono-label text-[#93939f]">Member since</p><p className="mt-3 text-sm">{profile?.created_at ? formatDate(profile.created_at) : "—"}</p></div><button onClick={() => void signOut()} className="w-full rounded-[10px] border border-[#222226] px-4 py-3 text-sm text-[#93939f] hover:border-red-500/50 hover:text-red-300">Sign out</button></aside></div></main>;
+    <aside className="space-y-6 lg:col-span-4"><div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5"><p className="mono-label text-[#93939f]">Account actions</p><Link to={`/seller/${encodeURIComponent(username)}`} className="mt-4 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">View storefront →</Link><Link to="/messages" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Messages →</Link><Link to="/dashboard" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Seller dashboard →</Link></div><div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5"><p className="mono-label text-[#93939f]">Seller verification</p>{verificationStatus === "verified" ? <p className="mt-3 flex items-center gap-2 text-sm text-[#5f9bff]">✓ Larpings Verified</p> : verificationStatus === "pending" ? <p className="mt-3 text-sm text-[#b7b7c2]">Request pending review.</p> : <><p className="mt-3 text-sm leading-relaxed text-[#93939f]">Request a blue Larpings Verified tick for your seller account. Approval requires manual ownership review.</p><button onClick={() => void requestVerification()} className="mt-4 rounded-[10px] bg-[#ff0000] px-4 py-2.5 text-sm font-medium text-white hover:bg-[#cc0000]">Request verification</button></>}</div><div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5"><p className="mono-label text-[#93939f]">Member since</p><p className="mt-3 text-sm">{profile?.created_at ? formatDate(profile.created_at) : "—"}</p></div><button onClick={() => void signOut()} className="w-full rounded-[10px] border border-[#222226] px-4 py-3 text-sm text-[#93939f] hover:border-red-500/50 hover:text-red-300">Sign out</button></aside></div></main>;
 }

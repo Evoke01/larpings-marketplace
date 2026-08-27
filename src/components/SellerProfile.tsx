@@ -7,11 +7,13 @@ type Listing = { id: string; handle: string; description: string | null; categor
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(value));
 const formatPrice = (value: number) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value);
+const VerifiedTick = () => <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-white" fill="#2575ff" stroke="currentColor" strokeWidth="1.5" aria-label="Larpings Verified"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" /><path d="m9 12 2 2 4-4" fill="none" /></svg>;
 
 export default function SellerProfile({ handle }: { handle: string }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [salesCount, setSalesCount] = useState(0);
+  const [accountVerified, setAccountVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,16 +43,17 @@ export default function SellerProfile({ handle }: { handle: string }) {
         return;
       }
 
-      const [{ data: sellerListings, error: listingsError }, { data: sales }] = await Promise.all([supabase
+      const [{ data: sellerListings, error: listingsError }, { data: sales }, { data: verification }] = await Promise.all([supabase
         .from("listings")
         .select("id, handle, description, category, platform, price, created_at, verification_status")
         .eq("seller_id", seller.id)
         .eq("status", "active")
-        .order("created_at", { ascending: false }), supabase.from("orders").select("id, listings!inner(seller_id)").eq("listings.seller_id", seller.id).eq("status", "confirmed")]);
+        .order("created_at", { ascending: false }), supabase.from("orders").select("id, listings!inner(seller_id)").eq("listings.seller_id", seller.id).eq("status", "confirmed"), supabase.from("seller_verifications").select("seller_id").eq("seller_id", seller.id).eq("status", "verified").maybeSingle()]);
 
       if (!active) return;
       setProfile(seller);
       setSalesCount(sales?.length ?? 0);
+      setAccountVerified(Boolean(verification));
       if (listingsError) {
         setError("The seller loaded, but their listings couldn’t be loaded.");
         setListings([]);
@@ -77,7 +80,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
     <main className="w-full max-w-[1152px] mx-auto px-4 pb-24 pt-4">
       <div className="h-56 relative overflow-hidden rounded-[18px] bg-gradient-to-br from-[#241014] via-[#111113] to-[#09090b]" style={profile.banner_url ? { backgroundImage: `url(${profile.banner_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}><div className="absolute inset-0 opacity-40 bg-[radial-gradient(circle_at_20%_20%,rgba(255,0,0,.35),transparent_40%)]" /><div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#09090b] to-transparent" /></div>
       <div className="relative z-10 -mt-12 flex flex-wrap items-end justify-between gap-4 px-6">
-        <div className="flex items-end gap-5 min-w-0"><div className="w-24 h-24 shrink-0 overflow-hidden rounded-full bg-[#1c1c20] border-4 border-[#09090b] flex items-center justify-center text-2xl font-semibold text-white">{profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : profile.username.slice(0, 2).toUpperCase()}</div><div className="pb-1 min-w-0"><h1 className="text-3xl font-medium tracking-tight truncate">{profile.display_name || profile.username}</h1><p className="text-[#93939f] text-sm">@{profile.username}</p></div></div>
+        <div className="flex items-end gap-5 min-w-0"><div className="w-24 h-24 shrink-0 overflow-hidden rounded-full bg-[#1c1c20] border-4 border-[#09090b] flex items-center justify-center text-2xl font-semibold text-white">{profile.avatar_url ? <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" /> : profile.username.slice(0, 2).toUpperCase()}</div><div className="pb-1 min-w-0"><h1 className="flex items-center gap-2 text-3xl font-medium tracking-tight truncate">{profile.display_name || profile.username}{accountVerified && <VerifiedTick />}</h1><p className="flex items-center gap-1.5 text-[#93939f] text-sm">@{profile.username}{accountVerified && <span className="text-[10px] text-[#5f9bff]">Larpings Verified</span>}</p></div></div>
         <Link to={`/messages?user=${encodeURIComponent(profile.id)}`} className="bg-[#ff0000] text-white font-medium px-4 py-2.5 rounded-[10px]">Message</Link>
       </div>
       <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
