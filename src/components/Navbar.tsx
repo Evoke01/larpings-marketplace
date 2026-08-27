@@ -54,6 +54,7 @@ export default function Navbar() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2 ml-auto">
+              <Link to="/sell" className="hidden md:inline-flex items-center rounded-[10px] bg-[#ff0000] px-3.5 py-2 text-sm font-medium text-white transition-all hover:-translate-y-px hover:bg-[#cc0000]">Sell</Link>
               <Link to="/messages" aria-label="Messages" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors relative">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
@@ -98,6 +99,7 @@ export default function Navbar() {
               ))}
               <div className="my-2 border-t border-[#222226]" />
               {[
+                { l: "Sell", path: "/sell" },
                 { l: "Fansigns", path: "/fansigns" },
                 { l: "Sold", path: "/sold" },
                 { l: "Blog", path: "/blog" },

@@ -54,7 +54,7 @@ export default function DashboardPage() {
           <p className="mono-label mt-0.5 text-muted-foreground">Seller dashboard</p>
         </div>
         {profile?.username && (
-          <div className="flex shrink-0 gap-2"><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to="/account#customize">Customize profile</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to={`/seller/${profile.username}`}>Storefront</Link></div>
+          <div className="flex shrink-0 gap-2"><Link className="btn-white !px-3.5 !py-2 !text-xs" to="/sell">+ Add listing</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to="/account#customize">Customize profile</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to={`/seller/${profile.username}`}>Storefront</Link></div>
         )}
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
