@@ -17,6 +17,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? "",
       { global: { headers: { Authorization: req.headers.get("Authorization")! } } }
     );
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
 
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
@@ -31,7 +35,7 @@ serve(async (req) => {
     // Get the listing price
     const { data: listing, error: listingError } = await supabaseClient
       .from("listings")
-      .select("price")
+      .select("price, seller_id")
       .eq("id", listing_id)
       .single();
 
@@ -81,13 +85,15 @@ serve(async (req) => {
        return new Response(JSON.stringify({ error: providerMessage }), { status: response.ok ? 502 : response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Use a service role client to insert the order since normal user might not have insert RLS depending on setup, 
-    // but the user is the buyer so they should have permission. We'll use the user's client.
-    const { data: order, error: orderError } = await supabaseClient
+    // The pending order is created server-side after the provider accepts the
+    // invoice. Use the service-role client so checkout cannot be blocked by
+    // buyer-facing RLS policies, while buyer identity still comes from auth.
+    const { data: order, error: orderError } = await supabaseAdmin
       .from("orders")
       .insert({
         listing_id,
         buyer_id: user.id,
+        seller_id: listing.seller_id,
         status: "Waiting",
         track_id: runepayData.data.track_id,
         payment_url: runepayData.data.payment_url,
