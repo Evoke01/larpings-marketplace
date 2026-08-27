@@ -63,9 +63,9 @@ export default function MobileNav() {
   return (
     <nav
       aria-label="Quick navigation"
-      className="fixed z-40 bottom-3 inset-x-3"
+      className="fixed z-40 bottom-3 left-1/2 w-[calc(100%-24px)] max-w-[448px] -translate-x-1/2"
     >
-      <div className="bg-[rgba(255,255,255,0.05)] h-16 max-w-[448px] relative grid items-center grid-cols-5 shadow-[rgba(255,255,255,0.14)_0px_1px_0px_0px_inset,rgba(0,0,0,0.35)_0px_-1px_0px_0px_inset,rgba(0,0,0,0.55)_0px_18px_50px_0px] backdrop-blur-2xl backdrop-saturate-150 mx-auto rounded-full border border-[rgba(255,255,255,0.1)]">
+      <div className="bg-[rgba(255,255,255,0.05)] h-16 w-full relative grid items-center grid-cols-5 shadow-[rgba(255,255,255,0.14)_0px_1px_0px_0px_inset,rgba(0,0,0,0.35)_0px_-1px_0px_0px_inset,rgba(0,0,0,0.55)_0px_18px_50px_0px] backdrop-blur-2xl backdrop-saturate-150 rounded-full border border-[rgba(255,255,255,0.1)]">
 
         {/* Sliding active pill */}
         <div
