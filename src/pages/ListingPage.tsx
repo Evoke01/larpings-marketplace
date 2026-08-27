@@ -104,7 +104,17 @@ export default function ListingPage() {
 
       if (error) {
         console.error("Function error:", error);
-        throw new Error("Failed to initialize payment");
+        let providerMessage = "Failed to initialize payment";
+        const response = (error as any).context;
+        if (response && typeof response.clone === "function") {
+          try {
+            const body = await response.clone().json();
+            if (body?.error) providerMessage = body.error;
+          } catch {
+            // Keep the friendly fallback when the function returns no JSON body.
+          }
+        }
+        throw new Error(providerMessage);
       }
       if (data?.error) {
         throw new Error(data.error);
