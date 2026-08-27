@@ -76,6 +76,9 @@ export default function SellerProfile({ handle }: { handle: string }) {
     { label: "Member", show: true, tone: "text-[#b7b7c2] border-[#333338] bg-[#1b1b20]" },
     { label: "Active seller", show: listings.length > 0, tone: "text-red-300 border-red-500/30 bg-red-500/10" },
     { label: "Top rated", show: (profile.rating ?? 0) >= 4.5 && (profile.reviews ?? 0) >= 3, tone: "text-yellow-300 border-yellow-400/30 bg-yellow-400/10" },
+    { label: "Top Seller", show: salesCount >= 10, tone: "text-amber-200 border-amber-300/40 bg-amber-300/10" },
+    { label: "OG User", show: new Date(profile.created_at).getTime() < new Date("2026-01-01").getTime(), tone: "text-emerald-300 border-emerald-400/40 bg-emerald-400/10" },
+    { label: "Admin", show: profile.username.toLowerCase() === "guardian", tone: "text-red-300 border-red-400/40 bg-red-400/10" },
     ...[1, 10, 30, 50, 100, 500, 1000, 2000].filter((threshold) => salesCount >= threshold).map((threshold) => ({ label: `${threshold} Sales`, show: true, tone: "text-amber-200 border-amber-300/40 bg-amber-300/10" })),
   ].filter((badge) => badge.show);
 

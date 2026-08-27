@@ -40,6 +40,10 @@ export default function DashboardPage() {
   }
 
   const confirmedSales = salesCount;
+  const badgeCatalog = ["Verified", "Top Seller", "1 Sales", "10 Sales", "30 Sales", "50 Sales", "100 Sales", "500 Sales", "1000 Sales", "2000 Sales", "God Seller", "OG User", "Admin"];
+  const earnedBadges = new Set([
+    ...(confirmedSales >= 1 ? ["1 Sales"] : []), ...(confirmedSales >= 10 ? ["10 Sales"] : []), ...(confirmedSales >= 30 ? ["30 Sales"] : []), ...(confirmedSales >= 50 ? ["50 Sales"] : []), ...(confirmedSales >= 100 ? ["100 Sales"] : []), ...(confirmedSales >= 500 ? ["500 Sales"] : []), ...(confirmedSales >= 1000 ? ["1000 Sales"] : []), ...(confirmedSales >= 2000 ? ["2000 Sales", "God Seller"] : []),
+  ]);
   const salesProgress = Math.min((confirmedSales / 10) * 100, 100);
 
   return (
@@ -171,8 +175,7 @@ export default function DashboardPage() {
           <div className="mkt-enter rounded-[14px] border border-border bg-card p-5" style={{ animationDelay: "175ms" }}>
             <p className="mono-label text-muted-foreground">Sales badges</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {[1, 10, 30, 50, 100, 500, 1000, 2000].filter((threshold) => confirmedSales >= threshold).map((threshold) => <span key={threshold} className="rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1.5 text-xs font-medium text-amber-200">✦ {threshold} Sales</span>)}
-              {confirmedSales === 0 && <span className="text-xs text-muted-foreground">Complete your first confirmed sale to unlock a badge.</span>}
+              {badgeCatalog.map((badge) => <span key={badge} className={`rounded-full border px-3 py-1.5 text-xs font-medium ${earnedBadges.has(badge) ? "border-amber-300/40 bg-amber-300/10 text-amber-200" : "border-border bg-secondary text-muted-foreground/50"}`}>{earnedBadges.has(badge) ? "✦" : "🔒"} {badge}</span>)}
             </div>
           </div>
           <div className="mkt-enter" style={{ animationDelay: "190ms" }}>
