@@ -49,6 +49,20 @@ const ProfileIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const CryptoMark = ({ coin }: { coin: string }) => {
+  const common = "w-4 h-4";
+  if (coin === "BTC") return <span className="text-[17px] leading-none font-semibold">₿</span>;
+  if (coin === "ETH") return <svg viewBox="0 0 24 24" className={common} fill="currentColor"><path d="m12 2-6.3 10.2L12 16l6.3-3.8L12 2Z" opacity=".9" /><path d="m12 17.5-6.3-3.8L12 22l6.3-8.3-6.3 3.8Z" opacity=".55" /></svg>;
+  if (coin === "USDT") return <span className="text-[15px] font-semibold">₮</span>;
+  if (coin === "USDC") return <span className="text-[13px] font-semibold">$</span>;
+  if (coin === "SOL") return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="2.2"><path d="M5 6h14l-3 3H2l3-3Z" /><path d="M8 11h14l-3 3H5l3-3Z" /><path d="M5 16h14l-3 3H2l3-3Z" /></svg>;
+  if (coin === "TON") return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M4 5h16l-8 14L4 5Z" /><path d="M8 5h8l-4 7-4-7Z" /></svg>;
+  if (coin === "TRX") return <svg viewBox="0 0 24 24" className={common} fill="currentColor"><path d="m4 4 16 3-9 14L4 4Zm3.2 3.1 4.6 9.8 5.4-8.2-10-1.6Z" /></svg>;
+  if (coin === "BNB") return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="m12 2 3.2 3.2-3.2 3.2-3.2-3.2L12 2Zm-6.4 6.4L8.8 11.6l-3.2 3.2-3.2-3.2 3.2-3.2Zm12.8 0 3.2 3.2-3.2 3.2-3.2-3.2 3.2-3.2ZM12 15.6l3.2 3.2-3.2 3.2-3.2-3.2 3.2-3.2ZM12 8.8l3.2 3.2-3.2 3.2-3.2-3.2L12 8.8Z" /></svg>;
+  if (coin === "DAI") return <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="12" cy="12" r="8" /><path d="M8 7v10M8 9h6a3 3 0 1 1 0 6H8M7 10h8M7 14h8" /></svg>;
+  return <span className="text-[12px] font-semibold">POL</span>;
+};
+
 export default function ListingPage() {
   const { handle } = useParams();
   const navigate = useNavigate();
@@ -294,18 +308,17 @@ export default function ListingPage() {
               <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mb-2.5">Pay with</div>
               
               <div className="grid grid-cols-5 gap-2">
-                {/* Simplified the crypto buttons for cleanliness */}
                 {['BTC', 'ETH', 'USDT', 'USDC', 'SOL', 'TON', 'TRX', 'BNB', 'DAI'].map(coin => (
                   <button key={coin} onClick={() => handleBuy(coin)} disabled={buying || listing.status === 'sold'} type="button" title={coin} className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
-                    <div className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] text-white">
-                      {coin.slice(0,3)}
+                    <div className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center text-[#b7b7c2]">
+                      <CryptoMark coin={coin} />
                     </div>
                     <span className="text-[#93939f] font-mono text-[10px] text-center block">{coin}</span>
                   </button>
                 ))}
                 
                 <button type="button" onClick={() => handleBuy('POL')} disabled={buying || listing.status === 'sold'} title="Polygon" className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
-                  <span className="bg-[#8247e5] text-white font-semibold text-[9px] w-7 h-7 flex justify-center items-center rounded-full">POL</span>
+                  <span className="bg-zinc-800 text-[#b7b7c2] w-7 h-7 flex justify-center items-center rounded-full"><CryptoMark coin="POL" /></span>
                   <span className="text-[#93939f] font-mono text-[10px] text-center block">POL</span>
                 </button>
               </div>
