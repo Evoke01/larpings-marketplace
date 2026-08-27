@@ -77,6 +77,38 @@ serve(async (req) => {
       })
       .eq("track_id", trackId);
 
+    const verificationUpdate: Record<string, unknown> = { status };
+    if (status === "Paid") verificationUpdate.paid_at = new Date().toISOString();
+    const { error: verificationError } = await supabaseAdmin
+      .from("seller_verification_payments")
+      .update(verificationUpdate)
+      .eq("track_id", trackId);
+    if (verificationError) console.error("Verification payment update error:", verificationError);
+
+    if (status === "Paid") {
+      const { data: verificationPayment } = await supabaseAdmin
+        .from("seller_verification_payments")
+        .select("seller_id")
+        .eq("track_id", trackId)
+        .maybeSingle();
+      if (verificationPayment?.seller_id) {
+        const { data: existingVerification } = await supabaseAdmin
+          .from("seller_verifications")
+          .select("status")
+          .eq("seller_id", verificationPayment.seller_id)
+          .maybeSingle();
+        if (existingVerification?.status !== "verified") {
+          const { error: requestError } = await supabaseAdmin.from("seller_verifications").upsert({
+            seller_id: verificationPayment.seller_id,
+            status: "pending",
+            evidence: "Paid $49 verification review",
+            requested_at: new Date().toISOString(),
+          });
+          if (requestError) console.error("Verification request update error:", requestError);
+        }
+      }
+    }
+
     if (error) {
       console.error("Database update error:", error);
       return new Response("Database error", { status: 500 });
