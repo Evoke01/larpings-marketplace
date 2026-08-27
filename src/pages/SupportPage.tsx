@@ -126,9 +126,9 @@ export default function SupportPage() {
           </p>
           
           <div className="flex flex-wrap items-center gap-3 mt-8">
-            <button className="bg-white text-[#0e0e11] leading-none font-medium text-[14px] flex justify-center items-center gap-2 shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] px-[22px] py-3 rounded-[10px] hover:shadow-[0_1px_#fff6_inset,0_14px_34px_-12px_rgba(255,0,0,0.45)] hover:-translate-y-px transition-all">
+            <Link to="/messages" className="bg-white text-[#0e0e11] leading-none font-medium text-[14px] flex justify-center items-center gap-2 shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] px-[22px] py-3 rounded-[10px] hover:shadow-[0_1px_#fff6_inset,0_14px_34px_-12px_rgba(255,0,0,0.45)] hover:-translate-y-px transition-all">
               <ChatIcon className="w-4 h-4" /> Chat with @Guardian
-            </button>
+            </Link>
           </div>
           
           <div className="flex flex-wrap gap-2 mt-8">
@@ -157,9 +157,9 @@ export default function SupportPage() {
             <p className="text-[#93939f] leading-relaxed text-[14px] grow mt-2 mb-0">
               The fastest way, and the only queue we have: message @Guardian, the admin, right in the site chat. Same inbox as your orders.
             </p>
-            <button className="bg-[#ff0000] text-white leading-none font-medium text-[14px] flex justify-center items-center gap-2 shadow-[0_1px_rgba(255,255,255,0.18)_inset,0_10px_30px_-12px_rgba(255,0,0,0.55)] mt-4 px-4 py-2.5 rounded-[10px] hover:bg-[#cc0000] hover:shadow-[0_1px_#ffffff2e_inset,0_16px_40px_-12px_rgba(255,0,0,0.65)] hover:-translate-y-px transition-all">
+            <Link to="/messages" className="bg-[#ff0000] text-white leading-none font-medium text-[14px] flex justify-center items-center gap-2 shadow-[0_1px_rgba(255,255,255,0.18)_inset,0_10px_30px_-12px_rgba(255,0,0,0.55)] mt-4 px-4 py-2.5 rounded-[10px] hover:bg-[#cc0000] hover:shadow-[0_1px_#ffffff2e_inset,0_16px_40px_-12px_rgba(255,0,0,0.65)] hover:-translate-y-px transition-all">
               <ChatIcon className="w-4 h-4" /> Chat with @Guardian
-            </button>
+            </Link>
           </div>
 
           {/* Business & press */}

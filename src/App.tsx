@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
@@ -45,6 +45,8 @@ function PageLoader() {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen flex flex-col font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       <Navbar />
@@ -59,6 +61,7 @@ function Layout({ children }: { children: React.ReactNode }) {
       {/* Floating Chat Button */}
       <button
         aria-label="Open chat"
+        onClick={() => navigate("/messages")}
         className="fixed bottom-24 right-3 sm:right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full bg-[#ff0000] text-white shadow-[0_20px_25px_-5px_rgba(255,0,0,0.2),0_8px_10px_-6px_rgba(255,0,0,0.1)] transition-transform hover:scale-105 active:scale-95"
       >
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
