@@ -7,7 +7,7 @@ export default function SellerProfilePage() {
 
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif] min-h-screen">
-      <SellerProfile />
+      <SellerProfile handle={handle ?? ""} />
     </div>
   );
 }
