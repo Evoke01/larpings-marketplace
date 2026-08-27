@@ -27,7 +27,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    const { listing_id } = await req.json();
+    const { listing_id, pay_currency } = await req.json();
     if (!listing_id) {
       return new Response(JSON.stringify({ error: "listing_id is required" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -69,6 +69,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount,
         currency: "USD",
+        ...(typeof pay_currency === "string" && pay_currency ? { pay_currency } : {}),
         order_id: orderRef,
         description: `Payment for listing ${listing_id}`,
         sandbox: true,

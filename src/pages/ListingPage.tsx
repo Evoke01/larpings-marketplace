@@ -84,7 +84,7 @@ export default function ListingPage() {
     loadData();
   }, [handle]);
 
-  async function handleBuy() {
+  async function handleBuy(payCurrency: string) {
     setBuying(true);
     setBuyError("");
     try {
@@ -99,7 +99,7 @@ export default function ListingPage() {
 
       // Call the Edge Function to create an invoice
       const { data, error } = await supabase.functions.invoke('create-invoice', {
-        body: { listing_id: listing.id }
+        body: { listing_id: listing.id, pay_currency: payCurrency }
       });
 
       if (error) {
@@ -261,7 +261,7 @@ export default function ListingPage() {
               <div className="grid grid-cols-5 gap-2">
                 {/* Simplified the crypto buttons for cleanliness */}
                 {['BTC', 'ETH', 'USDT', 'USDC', 'SOL', 'TON', 'TRX', 'BNB', 'DAI'].map(coin => (
-                  <button key={coin} onClick={handleBuy} disabled={buying || listing.status === 'sold'} type="button" title={coin} className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
+                  <button key={coin} onClick={() => handleBuy(coin)} disabled={buying || listing.status === 'sold'} type="button" title={coin} className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
                     <div className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center text-[10px] text-white">
                       {coin.slice(0,3)}
                     </div>
@@ -269,7 +269,7 @@ export default function ListingPage() {
                   </button>
                 ))}
                 
-                <button type="button" onClick={handleBuy} disabled={buying || listing.status === 'sold'} title="Polygon" className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
+                <button type="button" onClick={() => handleBuy('POL')} disabled={buying || listing.status === 'sold'} title="Polygon" className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
                   <span className="bg-[#8247e5] text-white font-semibold text-[9px] w-7 h-7 flex justify-center items-center rounded-full">POL</span>
                   <span className="text-[#93939f] font-mono text-[10px] text-center block">POL</span>
                 </button>
