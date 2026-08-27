@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import TourTooltip, { TourStep } from "./TourTooltip";
+import TourTooltip from "./TourTooltip";
+import type { TourStep } from "./TourTooltip";
 
 const TOURS: Record<string, TourStep[]> = {
   "/marketplace": [
