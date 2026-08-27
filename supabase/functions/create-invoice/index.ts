@@ -39,9 +39,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Call RunePay API to create invoice
-    // Using the secret key provided by user. We will fall back to Deno.env if available.
-    const runepayKey = Deno.env.get("RUNEPAY_API_KEY") || "rp_sec_txOHTCg5aJqGYW9sqqfGsjMSJS0DZDgT5BNS39UvdG1XW0L4";
+    // Call RunePay API to create a sandbox invoice. The key must be stored as a
+    // Supabase Function secret, never shipped to the browser or committed.
+    const runepayKey = Deno.env.get("RUNEPAY_API_KEY");
+    if (!runepayKey) {
+      return new Response(JSON.stringify({ error: "Payment provider is not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     const orderRef = `ORDER_${crypto.randomUUID()}`;
 
@@ -55,10 +58,11 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        amount: listing.price,
+        amount: String(listing.price),
         currency: "USD",
         order_id: orderRef,
         description: `Payment for listing ${listing_id}`,
+        sandbox: true,
         return_url: `${req.headers.get("origin") ?? "http://localhost:5173"}/orders`,
         callback_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/runepay-webhook`,
       }),
