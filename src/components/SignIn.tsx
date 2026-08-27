@@ -132,15 +132,13 @@ export default function SignIn() {
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        if (data.user) {
-          const { error: profileError } = await supabase.from('profiles').insert([
-            { id: data.user.id, username }
-          ]);
-          if (profileError) {
-             setError("Account created, but failed to setup profile: " + profileError.message);
-          } else {
-             navigate('/dashboard');
-          }
+        // Profile is created automatically by a database trigger
+        // However, if email confirmations are enabled in Supabase, the user won't be signed in yet.
+        // We navigate to dashboard assuming auto-signin works (requires email confirmations OFF)
+        if (data.session) {
+           navigate('/dashboard');
+        } else {
+           setError("Account created! Please check your email to verify your account, or disable email confirmations in Supabase.");
         }
       }
     } else {
