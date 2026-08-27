@@ -1,5 +1,5 @@
-import React, { Suspense, lazy } from "react";
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import React, { Suspense, lazy, useEffect } from "react";
+import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
@@ -48,6 +48,29 @@ function PageLoader() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("main section, main article, main [data-reveal]"));
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("scroll-reveal", "is-visible"));
+      return;
+    }
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08, rootMargin: "0px 0px -32px 0px" });
+    elements.forEach((element, index) => {
+      element.classList.add("scroll-reveal");
+      element.style.setProperty("--reveal-delay", `${Math.min(index * 45, 240)}ms`);
+      observer.observe(element);
+    });
+    return () => observer.disconnect();
+  }, [location.pathname]);
 
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen flex flex-col font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
