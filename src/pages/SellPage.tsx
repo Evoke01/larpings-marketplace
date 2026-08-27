@@ -25,8 +25,8 @@ export default function SellPage() {
     });
   }, [navigate]);
 
-  const fee = price ? (parseFloat(price) * 0.09).toFixed(2) : null;
-  const payout = price ? (parseFloat(price) * 0.91).toFixed(2) : null;
+  const fee = price ? (parseFloat(price) * 0.03).toFixed(2) : null;
+  const payout = price ? (parseFloat(price) * 0.97).toFixed(2) : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -197,14 +197,14 @@ export default function SellPage() {
               className="flex h-10 w-full rounded-[8px] border border-[#222226] bg-[#0e0e11] px-3 py-2 text-sm text-[#f9f9fb] placeholder-[#555] focus:outline-none focus:border-[#ff0000] transition-colors"
             />
             <p className="text-[10px] text-[#93939f]">
-              Buyers pay in USD at checkout. A 9% platform fee applies on sale.
+              Buyers pay in USD at checkout. A 3% platform fee applies on sale.
             </p>
           </div>
 
           {/* Live payout preview */}
           {price && parseFloat(price) > 0 && (
             <div className="bg-[rgba(255,0,0,0.06)] border border-[rgba(255,0,0,0.15)] rounded-[10px] px-4 py-3 flex justify-between text-sm">
-              <span className="text-[#93939f]">Your payout <span className="text-[10px] uppercase tracking-widest font-mono">(after 9% fee)</span></span>
+              <span className="text-[#93939f]">Your payout <span className="text-[10px] uppercase tracking-widest font-mono">(after 3% fee)</span></span>
               <span className="font-mono font-semibold">${payout}</span>
             </div>
           )}
@@ -229,7 +229,7 @@ export default function SellPage() {
         <div className="mt-6 grid grid-cols-3 gap-3">
           {[
             { icon: "🔒", title: "Protected checkout", desc: "Buyers pay into escrow. You get paid after delivery is confirmed." },
-            { icon: "💸", title: "9% flat fee", desc: "No listing cost. 9% only deducted when your item sells." },
+            { icon: "💸", title: "3% flat fee", desc: "No listing cost. 3% only deducted when your item sells." },
             { icon: "⚡", title: "Fast payouts", desc: "Crypto or bank transfer within 24h of confirmed delivery." },
           ].map(({ icon, title: t, desc }) => (
             <div key={t} className="bg-[#111113] border border-[#222226] rounded-[12px] p-4 flex flex-col gap-2">

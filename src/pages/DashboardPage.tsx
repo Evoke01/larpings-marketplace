@@ -118,7 +118,7 @@ export default function DashboardPage() {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chart-column h-3.5 w-3.5"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg><span className="mono-label">Revenue</span>
               </div>
               <p className="mt-2 truncate font-mono text-2xl text-foreground">$0.00</p>
-              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">after the 9% fee</p>
+              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">after the 3% fee</p>
             </div>
             <div className="rounded-[12px] border border-border bg-card p-4">
               <div className="flex items-center gap-1.5 text-muted-foreground">
