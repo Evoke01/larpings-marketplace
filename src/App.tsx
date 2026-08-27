@@ -18,6 +18,8 @@ const AccountPage = lazy(() => import("./pages/AccountPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
 const MessagesPage = lazy(() => import("./pages/MessagesPage"));
 const BadgesPage = lazy(() => import("./pages/BadgesPage"));
+const RanksPage = lazy(() => import("./pages/RanksPage"));
+const GetVerifiedPage = lazy(() => import("./pages/GetVerifiedPage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 const SoldPage = lazy(() => import("./pages/SoldPage"));
 const LegitPage = lazy(() => import("./pages/LegitPage"));
@@ -97,6 +99,9 @@ export default function App() {
               <Route path="/sold" element={<SoldPage />} />
               <Route path="/legit" element={<LegitPage />} />
               <Route path="/guides" element={<BadgesPage />} />
+              <Route path="/badges" element={<BadgesPage />} />
+              <Route path="/ranks" element={<RanksPage />} />
+              <Route path="/get-verified" element={<GetVerifiedPage />} />
               <Route path="/support" element={<SupportPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<NotFound />} />

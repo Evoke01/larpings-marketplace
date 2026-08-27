@@ -129,11 +129,11 @@ export default function BadgesPage() {
             <h2 className="leading-[28px] font-medium text-[18px] tracking-[-0.54px] my-0">Verified</h2>
           </div>
           <p className="text-[#93939f] leading-relaxed text-[14px] grow mt-4 mb-0">
-            The blue filled seal. Our team verified this seller's identity and track record — the strongest trust signal on larpings.com.
+            The verified seal. Ownership is checked through a temporary bio code on the account being listed — a clear trust signal on larpings.com.
           </p>
           <div className="mt-4 pt-3.5 border-t border-[#222226]">
             <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">How to earn</span>
-            <p className="text-[#b7b7c2] leading-relaxed text-[12px] mt-1.5 mb-0">Complete the one-time verification review from the Get Verified page.</p>
+            <p className="text-[#b7b7c2] leading-relaxed text-[12px] mt-1.5 mb-0">Complete ownership verification from the Get Verified page.</p>
           </div>
         </div>
 
