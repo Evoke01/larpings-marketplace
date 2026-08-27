@@ -58,7 +58,19 @@ export default function MessagesPage() {
         if (msg.receiver_id === s.user.id && !msg.read) convMap[partnerId].unread++;
       });
       setConversations(Object.values(convMap));
-      const requestedPartnerId = searchParams.get('user');
+      let requestedPartnerId = searchParams.get('user');
+      const requestedUsername = searchParams.get('username');
+      if (!requestedPartnerId && requestedUsername) {
+        const { data: requestedProfile } = await supabase
+          .from('profiles')
+          .select('id, username, display_name')
+          .eq('username', requestedUsername)
+          .maybeSingle();
+        if (requestedProfile) {
+          requestedPartnerId = requestedProfile.id;
+          profileMap.set(requestedProfile.id, requestedProfile);
+        }
+      }
       if (requestedPartnerId && requestedPartnerId !== s.user.id) {
         const partner = profileMap.get(requestedPartnerId);
         const conversation = convMap[requestedPartnerId] ?? {
