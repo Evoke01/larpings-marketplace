@@ -64,8 +64,8 @@ export default function HomePage() {
       <section className="relative min-h-[90vh] flex flex-col items-center overflow-hidden">
         {/* Background image and gradient layers */}
         <div 
-          className="absolute inset-0 bg-zinc-950 bg-cover bg-center bg-no-repeat opacity-80 mix-blend-screen"
-          style={{ backgroundImage: "url('/hero-bg.jpg')" }}
+          className="absolute inset-0 bg-zinc-950 bg-cover bg-center bg-no-repeat opacity-65 mix-blend-screen"
+          style={{ backgroundImage: "url('/hero-bg.jpg')", WebkitMaskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 78%)", maskImage: "linear-gradient(to bottom, black 0%, black 42%, transparent 78%)", filter: "saturate(.72) contrast(.92)" }}
         />
         <div
           aria-hidden="true"
