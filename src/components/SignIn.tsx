@@ -132,13 +132,11 @@ export default function SignIn() {
       if (signUpError) {
         setError(signUpError.message);
       } else {
-        // Profile is created automatically by a database trigger
-        // However, if email confirmations are enabled in Supabase, the user won't be signed in yet.
-        // We navigate to dashboard assuming auto-signin works (requires email confirmations OFF)
         if (data.session) {
            navigate('/dashboard');
         } else {
-           setError("Account created! Please check your email to verify your account, or disable email confirmations in Supabase.");
+           // Email confirmation required — show a friendly message
+           setError("✅ Account created! Check your email and click the confirmation link to log in.");
         }
       }
     } else {
@@ -148,7 +146,10 @@ export default function SignIn() {
       });
 
       if (signInError) {
-        setError(signInError.message);
+        setError(signInError.message === "Email not confirmed"
+          ? "Please confirm your email first. Check your inbox for the confirmation link."
+          : signInError.message
+        );
       } else {
         navigate('/dashboard');
       }
@@ -233,7 +234,7 @@ export default function SignIn() {
               {/* Form fields */}
               <form onSubmit={handleSubmit}>
                 {error && (
-                  <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-sm p-3 rounded-md mb-4">
+                  <div className={`text-sm p-3 rounded-md mb-4 border ${error.startsWith('✅') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
                     {error}
                   </div>
                 )}
