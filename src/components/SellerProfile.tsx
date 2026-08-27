@@ -46,7 +46,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
         .select("id, handle, description, category, platform, price, created_at")
         .eq("seller_id", seller.id)
         .eq("status", "active")
-        .order("created_at", { ascending: false }), supabase.from("orders").select("id").eq("seller_id", seller.id).eq("status", "confirmed")]);
+        .order("created_at", { ascending: false }), supabase.from("orders").select("id, listings!inner(seller_id)").eq("listings.seller_id", seller.id).eq("status", "confirmed")]);
 
       if (!active) return;
       setProfile(seller);

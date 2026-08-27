@@ -19,7 +19,7 @@ export default function DashboardPage() {
         supabase.from('profiles').select('username, rating, reviews').eq('id', user.id).single(),
         supabase.from('listings').select('*').eq('seller_id', user.id).eq('status', 'active'),
         supabase.from('orders').select('*, listings(handle, price)').eq('buyer_id', user.id),
-        supabase.from('orders').select('id').eq('seller_id', user.id).eq('status', 'confirmed'),
+        supabase.from('orders').select('id, listings!inner(seller_id)').eq('listings.seller_id', user.id).eq('status', 'confirmed'),
       ]);
 
       setProfile(prof);

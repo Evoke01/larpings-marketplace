@@ -35,7 +35,7 @@ serve(async (req) => {
     // Get the listing price
     const { data: listing, error: listingError } = await supabaseClient
       .from("listings")
-      .select("price, seller_id")
+      .select("price")
       .eq("id", listing_id)
       .single();
 
@@ -93,7 +93,6 @@ serve(async (req) => {
       .insert({
         listing_id,
         buyer_id: user.id,
-        seller_id: listing.seller_id,
         status: "Waiting",
         track_id: runepayData.data.track_id,
         payment_url: runepayData.data.payment_url,
