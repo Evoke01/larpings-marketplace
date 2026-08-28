@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import ReputationPanel from "../components/ReputationPanel";
 
 // Icons needed for the listing page
 const IgIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -26,11 +27,6 @@ const ClockIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const VerifiedIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="white" strokeWidth="2px" strokeLinecap="round" strokeLinejoin="round" aria-label="Verified" className="align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden shrink-0 fill-current stroke-white stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]" {...props}>
     <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" className="inline fill-current stroke-white stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]"></path><path d="m9 12 2 2 4-4" className="inline fill-current stroke-white stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]"></path>
-  </svg>
-);
-const StarIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2px" strokeLinecap="round" strokeLinejoin="round" className="align-middle w-3 h-3 block overflow-x-hidden overflow-y-hidden fill-current stroke-current stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]" {...props}>
-    <path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" className="inline fill-current stroke-current stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]"></path>
   </svg>
 );
 const TopSellerIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -416,11 +412,10 @@ export default function ListingPage() {
               <div className="min-w-0 grow">
                 <p className="font-medium text-[14px] flex items-center gap-1 mb-0.5">
                   @{seller?.username || 'unknown'}
-                  {seller?.rating >= 4.5 && <VerifiedIcon className="text-[#ff0000] w-4 h-4 fill-[#ff0000]" />}
                 </p>
                 <div className="text-[#93939f] text-[12px] flex items-center gap-2">
-                  <span className="flex items-center gap-0.5"><StarIcon className="text-amber-400" /> {seller?.rating || '0.0'}</span>
-                  <span>{seller?.reviews || 0} sales</span>
+                  <span>{seller?.rep_count || 0} Rep</span>
+                  <span>{seller?.vouch_count || 0} Vouch</span>
                 </div>
               </div>
             </div>
@@ -446,6 +441,7 @@ export default function ListingPage() {
             <Link to={seller ? `/seller/${seller.username}` : '#'} className="bg-transparent text-[#b7b7c2] font-medium text-[12px] flex grow justify-center items-center gap-1.5 px-3 py-2 rounded-[10px] border border-[#222226] hover:bg-white/5 transition-colors mt-2">
                 <ProfileIcon /> Profile
             </Link>
+            {seller && <ReputationPanel profileId={seller.id} profileHandle={seller.username} compact />}
           </div>
         </div>
       </div>

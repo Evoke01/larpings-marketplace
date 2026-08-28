@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import ReputationPanel from "./ReputationPanel";
 
-type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rating: number | null; reviews: number | null; created_at: string };
+type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rating: number | null; reviews: number | null; rep_count: number | null; vouch_count: number | null; created_at: string };
 type Listing = { id: string; handle: string; description: string | null; category: string | null; platform: string | null; price: number; created_at: string; verification_status: "unverified" | "pending" | "verified" | null };
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(value));
@@ -26,7 +27,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
       setError(null);
       const { data: seller, error: profileError } = await supabase
         .from("profiles")
-        .select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rating, reviews, created_at")
+        .select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rating, reviews, rep_count, vouch_count, created_at")
         .eq("username", normalizedHandle)
         .maybeSingle();
 
@@ -86,11 +87,12 @@ export default function SellerProfile({ handle }: { handle: string }) {
       <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
       <div className="mt-4 flex flex-wrap items-center gap-2 px-6"><Link to="/badges" className="rounded-full border border-[#333338] px-3 py-1 text-xs font-medium text-[#93939f] transition-colors hover:border-[#ff0000] hover:text-[#ff0000]">Badge guide →</Link></div>
       <section aria-label="Seller stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-        <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rating</p><p className="font-mono text-xl mt-1.5">{profile.rating && profile.rating > 0 ? profile.rating.toFixed(1) : "—"}</p></div>
-        <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Reviews</p><p className="font-mono text-xl mt-1.5">{profile.reviews ?? 0}</p></div>
+        <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rep</p><p className="font-mono text-xl mt-1.5">{profile.rep_count ?? 0}</p></div>
+        <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Vouch</p><p className="font-mono text-xl mt-1.5">{profile.vouch_count ?? 0}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Active listings</p><p className="font-mono text-xl mt-1.5">{listings.length}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Member since</p><p className="font-mono text-xl mt-1.5">{formatDate(profile.created_at)}</p></div>
       </section>
+      <ReputationPanel profileId={profile.id} />
       <section aria-labelledby="seller-listings" className="mt-12"><h2 id="seller-listings" className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Live listings from @{profile.username}</h2>
         {listings.length === 0 ? <div className="bg-[#111113] text-center mt-5 p-10 rounded-[14px] border border-[#222226]"><p className="text-[#93939f] text-sm">No active listings right now.</p><Link to="/marketplace" className="inline-block mt-5 text-sm text-white border border-[#222226] px-5 py-3 rounded-[10px]">Browse marketplace</Link></div> : <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mt-5">{listings.map((listing) => <Link key={listing.id} to={`/listing/${encodeURIComponent(listing.handle)}`} className="bg-[#111113] rounded-[14px] border border-[#222226] p-5 hover:border-[#ff0000]/50 transition-colors"><div className="flex items-start justify-between gap-3"><span className="text-xl font-medium truncate">@{listing.handle}</span><span className="font-mono text-sm shrink-0">{formatPrice(listing.price)}</span></div><p className="text-[#93939f] text-xs mt-3 line-clamp-2 min-h-8">{listing.description || "No description provided."}</p><div className="flex gap-2 mt-5 text-[10px] text-[#93939f] uppercase tracking-wider"><span>{listing.platform || "Marketplace"}</span><span>·</span><span>{listing.category || "Listing"}</span></div></Link>)}</div>}
       </section>
