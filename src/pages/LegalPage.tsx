@@ -15,7 +15,7 @@ const sections = {
       title: "2. Accounts and eligibility",
       paragraphs: [
         "You must provide accurate information, keep your sign-in details secure, and use only one account for ordinary marketplace activity. You are responsible for activity performed through your account. Tell us promptly through Support if you believe your account has been accessed without permission.",
-        "You may use Larpings only if you can legally enter a contract where you live. If you are under the age required by applicable law, do not use the marketplace or submit personal information without a parent or legal guardian's involvement.",
+        "You must be at least 18 years old, or the age of majority where you live, to buy, sell, or create an account on Larpings. If you are under 18, do not use marketplace features or submit personal information without a parent or legal guardian's involvement.",
       ],
     },
     {
@@ -37,7 +37,7 @@ const sections = {
       title: "5. Fees, taxes, and refunds",
       paragraphs: [
         "Applicable listing prices, platform fees, network charges, and payment-provider charges are shown during the relevant flow. Sellers are responsible for taxes and reporting obligations connected with their sales. Do not assume that a displayed price includes taxes, network charges, or third-party fees unless the checkout says so.",
-        "Refunds, cancellations, and charge or payment disputes depend on the order facts, provider status, listing terms, and applicable law. Contact Support before opening a payment dispute where possible. Nothing here removes mandatory consumer rights.",
+        "Refunds, cancellations, and charge or payment disputes depend on the order facts, provider status, listing terms, and applicable U.S. law. Contact Support before opening a payment dispute where possible. Nothing here removes mandatory consumer rights or protections against unfair or deceptive marketplace practices.",
       ],
     },
     {
@@ -57,7 +57,7 @@ const sections = {
     {
       title: "8. Changes and contact",
       paragraphs: [
-        "We may update these terms when the service, law, or safety practices change. The updated version will be posted here with a new date. If a change materially affects active orders, we will take reasonable steps to notify affected users.",
+        "We may update these terms when the service, U.S. law, or safety practices change. The updated version will be posted here with a new date. If a change materially affects active orders, we will take reasonable steps to notify affected users.",
         "Questions, ownership concerns, privacy requests, and order disputes can be sent through the Support page. Please include enough detail for us to find the relevant account, listing, or order.",
       ],
     },
@@ -102,21 +102,21 @@ const sections = {
     {
       title: "6. Your choices and rights",
       paragraphs: [
-        "Depending on where you live, you may have rights to access, correct, delete, restrict, object to, or receive a copy of certain personal information, and to withdraw consent where processing relies on consent. You can edit supported profile information from Account and can ask Support about information that cannot be changed there.",
-        "To make a privacy request, contact Support from the account concerned and describe the request. We may verify your identity, protect another person's information, retain records required by law, or decline requests that would compromise security or prevent us from providing the service. You may also have a right to complain to your local data-protection authority.",
+        "Depending on where you live and whether a state privacy law applies to Larpings, you may have rights to access, correct, delete, opt out of certain data uses, limit certain sensitive-data uses, or receive a copy of certain personal information. California residents may have additional rights under the CCPA/CPRA, including rights to know, delete, correct, opt out of sale or sharing, and non-discrimination. Larpings does not sell personal information. You can edit supported profile information from Account and can ask Support about information that cannot be changed there.",
+        "To make a privacy request, contact Support from the account concerned and describe the request. We may verify your identity, protect another person's information, retain records required by law, or decline requests that would compromise security or prevent us from providing the service. U.S. residents may also have the right to appeal a denied request or contact their state attorney general, depending on applicable state law.",
       ],
     },
     {
       title: "7. Children and international use",
       paragraphs: [
-        "Larpings is not directed to children who cannot legally use an online marketplace. If you believe a child provided personal information, contact Support so we can review and remove it where appropriate.",
+        "Larpings is a general-audience marketplace and is not directed to children under 13. We do not knowingly collect personal information from children under 13. If you believe a child provided personal information, contact Support so we can review and remove it where appropriate. If COPPA applies to a particular interaction, we will follow its notice, consent, access, security, and deletion requirements.",
         "Your information may be processed in countries where our providers operate. We use appropriate contractual, technical, or organizational safeguards required by applicable law for international transfers.",
       ],
     },
     {
       title: "8. Updates and contact",
       paragraphs: [
-        "We may update this policy when our data practices, providers, or legal obligations change. The current version and update date will always be posted here. Material changes will be communicated where required.",
+        "We may update this policy when our data practices, providers, or U.S. legal obligations change. The current version and update date will always be posted here. Material changes will be communicated where required.",
         "For privacy questions or requests, use the Support page and select the privacy topic. Include your username and the specific information or action you are asking about, but do not include passwords, private keys, or identity documents unless Support specifically requests a secure method.",
       ],
     },
@@ -143,7 +143,7 @@ export default function LegalPage({ kind }: { kind: LegalKind }) {
       </header>
 
       <div className="mt-8 rounded-[14px] border border-accent/20 bg-accent/5 px-5 py-4 text-sm leading-relaxed text-secondary-foreground">
-        This page is product-specific information, not legal advice. Laws and obligations can vary by location. If you operate the marketplace as a business, have counsel review the operator identity, governing law, consumer disclosures, payment terms, and privacy contacts before launch.
+        This page is product-specific information, not legal advice. It is drafted for a U.S.-based marketplace, while some users or providers may be outside the United States. Have U.S. counsel review the operator identity, state of formation, governing law, marketplace disclosures, payment terms, state privacy thresholds, and privacy contact before launch.
       </div>
 
       <article className="mt-10 space-y-10">
