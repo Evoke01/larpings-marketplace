@@ -220,7 +220,7 @@ export default function ListingPage() {
             
             <div className="aspect-[16/10] relative z-10 flex flex-col p-6">
               <div className="flex justify-between items-center">
-                <img src="https://placehold.co/1837x494" alt="larpings.com" width="110" height="24" className="h-5 w-auto opacity-80 mix-blend-screen" />
+                <span className="font-bold text-xl tracking-tight text-white">larpings<span className="text-[#ff0000] text-[14px] align-middle relative -top-[1px]">@</span>com</span>
                 <span className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
                   <span className="bg-emerald-400 w-1.5 h-1.5 rounded-full" /> 
                   1 of 1 — unique
@@ -288,10 +288,10 @@ export default function ListingPage() {
         {/* Right Column: Sticky Sidebar */}
         <div className="lg:sticky lg:self-start lg:top-24">
           <div className="bg-[#111113] p-6 rounded-[18px] border border-[#222226]">
-            <div className="text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-2">
-              <span className="w-2 h-2 relative flex">
+            <div className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
+              <span className="w-1.5 h-1.5 relative flex">
                 <span className="bg-emerald-400 w-full h-full absolute opacity-[0.4] rounded-full animate-ping" />
-                <span className="bg-emerald-400 w-2 h-2 relative rounded-full" />
+                <span className="bg-emerald-400 w-1.5 h-1.5 relative rounded-full" />
               </span>
               Available — reserves instantly
             </div>
