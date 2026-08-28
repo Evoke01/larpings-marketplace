@@ -74,7 +74,14 @@ export default function SectionTour({ pathname }: { pathname: string }) {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
-    setShow(Boolean(steps.length) && localStorage.getItem(storageKey) !== "1");
+    const alreadySeen = localStorage.getItem(storageKey) === "1";
+    if (!alreadySeen && steps.length) {
+      // Mark the tour as seen when it first appears so a reload cannot replay it.
+      localStorage.setItem(storageKey, "1");
+      setShow(true);
+    } else {
+      setShow(false);
+    }
   }, [steps.length, storageKey]);
 
   if (!show) return null;
