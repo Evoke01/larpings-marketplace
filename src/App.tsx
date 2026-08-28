@@ -7,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import SectionTour from "./components/SectionTour";
 
 // Lazy-load pages for code splitting
+const PancakeLayout = lazy(() => import("./pages/admin/PancakeLayout"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
 const SellerProfilePage = lazy(() => import("./pages/SellerProfilePage"));
@@ -105,6 +106,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Admin panel — secret route, own layout shell */}
+        <Route path="/pancake/*" element={<Suspense fallback={<PageLoader />}><PancakeLayout /></Suspense>} />
+
         {/* Full-screen pages without Layout */}
         <Route path="/signin" element={<SignInPage />} />
         <Route path="/account" element={<ProtectedRoute><><AccountPage /><SectionTour pathname="/account" /></></ProtectedRoute>} />
