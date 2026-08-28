@@ -33,9 +33,10 @@ export default function AccountPage() {
 
   const requestVerification = async () => {
     if (!user || verificationStatus === "pending" || verificationStatus === "verified") return;
-    const { error: requestError } = await supabase.from("seller_verifications").insert({ seller_id: user.id, status: "pending" });
-    if (requestError) setError("Couldn’t submit the verification request. Please try again.");
-    else { setVerificationStatus("pending"); setMessage("Verification request submitted for review."); }
+    setError(null); setMessage(null);
+    const { data, error: requestError } = await supabase.functions.invoke("create-verification-invoice", { body: {} });
+    if (requestError || data?.error || !data?.payment_url) setError(data?.error || "Couldn’t start verification checkout. Please try again.");
+    else window.location.href = data.payment_url;
   };
 
   const update = (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
