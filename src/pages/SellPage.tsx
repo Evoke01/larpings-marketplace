@@ -31,7 +31,7 @@ export default function SellPage() {
     });
   }, [navigate]);
 
-  const fee = price ? (parseFloat(price) * 0.03).toFixed(2) : null;
+  const _fee = price ? (parseFloat(price) * 0.03).toFixed(2) : null;
   const payout = price ? (parseFloat(price) * 0.97).toFixed(2) : null;
 
   async function handleSubmit(e: React.FormEvent) {

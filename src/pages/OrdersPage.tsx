@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const ClipboardIcon = () => (
@@ -27,7 +27,6 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
-  const navigate = useNavigate();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
@@ -45,8 +44,8 @@ export default function OrdersPage() {
   }, []);
 
   async function confirmDelivery(orderId: string) {
-    await supabase.from('orders').update({ status: 'confirmed' }).eq('id', orderId);
-    setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'confirmed' } : o));
+    const { error } = await supabase.rpc('confirm_order_delivery', { p_order_id: orderId });
+    if (!error) setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'confirmed' } : o));
   }
 
   if (loading) {
@@ -113,7 +112,7 @@ export default function OrdersPage() {
                 </div>
                 <div className="flex items-center justify-between mt-4">
                   <span className="font-mono font-semibold">${Number(order.listings?.price).toLocaleString()}</span>
-                  {((order.status === 'pending') || (order.status === 'Paid')) && (
+                  {(order.status === 'Paid' || order.status === 'Delivered' || order.status === 'delivered') && (
                     <button
                       onClick={() => confirmDelivery(order.id)}
                       className="bg-[#ff0000] text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-[#cc0000] transition-colors"
