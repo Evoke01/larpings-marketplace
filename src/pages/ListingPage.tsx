@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ReputationPanel from "../components/ReputationPanel";
+import Web3PayPanel from "../components/Web3PayPanel";
 
 // Icons needed for the listing page
 const IgIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -65,11 +66,7 @@ export default function ListingPage() {
   const [listing, setListing] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [buying, setBuying] = useState(false);
-  const [buyError, setBuyError] = useState("");
-  const [buySuccess, setBuySuccess] = useState(false);
-  const [simulating, setSimulating] = useState(false);
-  const [simulateMessage, setSimulateMessage] = useState("");
+  const [paySuccess, setPaySuccess] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -96,56 +93,6 @@ export default function ListingPage() {
     loadData();
   }, [handle]);
 
-  async function handleBuy(payCurrency: string) {
-    setBuying(true);
-    setBuyError("");
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        navigate(`/signin?returnTo=/listing/${handle}`);
-        return;
-      }
-      if (user.id === listing.seller_id) {
-        throw new Error("You cannot buy your own listing.");
-      }
-
-      // Call the Edge Function to create an invoice
-      const { data, error } = await supabase.functions.invoke('create-invoice', {
-        body: { listing_id: listing.id, pay_currency: payCurrency }
-      });
-
-      if (error) {
-        console.error("Function error:", error);
-        let providerMessage = "Failed to initialize payment";
-        const response = (error as any).context;
-        if (response && typeof response.clone === "function") {
-          try {
-            const body = await response.clone().json();
-            if (body?.error) providerMessage = body.error;
-          } catch {
-            // Keep the friendly fallback when the function returns no JSON body.
-          }
-        }
-        throw new Error(providerMessage);
-      }
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      setBuySuccess(true);
-      // Redirect to Rune Pay checkout
-      if (data?.payment_url) {
-        window.location.href = data.payment_url;
-      } else {
-        throw new Error("No payment URL received");
-      }
-    } catch (err: any) {
-      console.error(err);
-      setBuyError(err.message || "Checkout failed");
-    } finally {
-      setBuying(false);
-    }
-  }
 
   if (loading) {
     return <div className="pt-24 px-4 pb-24 text-center">Loading...</div>;
@@ -155,28 +102,6 @@ export default function ListingPage() {
     return <div className="pt-24 px-4 pb-24 text-center">Listing not found.</div>;
   }
 
-  async function handleSandboxSimulation() {
-    setSimulating(true);
-    setSimulateMessage("");
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        navigate(`/signin?returnTo=/listing/${handle}`);
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke("simulate-sandbox-payment", {
-        body: { listing_id: listing.id },
-      });
-      if (error) throw new Error("Sandbox simulator is unavailable");
-      if (data?.error) throw new Error(data.error);
-      setSimulateMessage("Sandbox payment marked Paid. Open Orders to verify the flow.");
-    } catch (error: any) {
-      setSimulateMessage(error.message || "Sandbox simulation failed");
-    } finally {
-      setSimulating(false);
-    }
-  }
 
   const isFansign = listing.category === "fansign";
   const isService = listing.category === "service";
@@ -322,41 +247,17 @@ export default function ListingPage() {
               </div>
             </div>
             
-            <div className="mt-6">
-              <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mb-2.5">Pay with</div>
-              
-              <div className="grid grid-cols-5 gap-2">
-                {['BTC', 'ETH', 'USDT', 'USDC', 'SOL', 'TON', 'TRX', 'BNB', 'DAI'].map(coin => (
-                  <button key={coin} onClick={() => handleBuy(coin)} disabled={buying || listing.status === 'sold'} type="button" title={coin} className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
-                    <div className="w-7 h-7 bg-zinc-800 rounded-full flex items-center justify-center text-[#b7b7c2]">
-                      <CryptoMark coin={coin} />
-                    </div>
-                    <span className="text-[#93939f] font-mono text-[10px] text-center block">{coin}</span>
-                  </button>
-                ))}
-                
-                <button type="button" onClick={() => handleBuy('POL')} disabled={buying || listing.status === 'sold'} title="Polygon" className="bg-[rgba(9,9,11,0.5)] flex flex-col items-center gap-1.5 px-0 py-2.5 rounded-[10px] border border-[#222226] hover:border-[#ff0000] hover:bg-[#ff0000]/5 transition-colors disabled:opacity-50">
-                  <span className="bg-zinc-800 text-[#b7b7c2] w-7 h-7 flex justify-center items-center rounded-full"><CryptoMark coin="POL" /></span>
-                  <span className="text-[#93939f] font-mono text-[10px] text-center block">POL</span>
-                </button>
-              </div>
-              {buyError && <p className="text-[#ff0000] text-sm mt-3 text-center">{buyError}</p>}
-              {buySuccess && <p className="text-emerald-400 text-sm mt-3 text-center">Order created! Redirecting...</p>}
-              {listing.handle === "sandbox-payment-test" && (
-                <div className="mt-4 rounded-[10px] border border-amber-400/30 bg-amber-400/5 p-3">
-                  <p className="text-amber-300 text-xs text-center">TEST ONLY — no real crypto required</p>
-                  <button
-                    type="button"
-                    onClick={handleSandboxSimulation}
-                    disabled={simulating}
-                    className="w-full mt-2 rounded-[8px] border border-amber-400/40 px-3 py-2 text-xs font-medium text-amber-200 hover:bg-amber-400/10 disabled:opacity-50"
-                  >
-                    {simulating ? "Simulating…" : "Simulate sandbox payment"}
-                  </button>
-                  {simulateMessage && <p className="text-amber-200 text-xs text-center mt-2">{simulateMessage}</p>}
-                </div>
-              )}
-            </div>
+            
+            <Web3PayPanel
+              orderId={listing.id}
+              sellerWalletAddress={seller?.wallet_address ?? null}
+              priceUsd={Number(listing.price)}
+              listingStatus={listing.status}
+              onSuccess={() => setPaySuccess(true)}
+            />
+            {paySuccess && (
+              <p className="text-emerald-400 text-sm mt-3 text-center font-medium">✓ Payment submitted! Check your Orders page.</p>
+            )}
             
             <div className="mt-5">
               <button disabled className="bg-zinc-900 text-[#93939f] font-medium text-[15px] w-full px-5 py-3.5 rounded-[10px] border border-[#222226] cursor-not-allowed">
