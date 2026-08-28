@@ -178,9 +178,14 @@ export default function ListingPage() {
     }
   }
 
+  const isFansign = listing.category === "fansign";
+  const isService = listing.category === "service";
+  const isUsernameLike = listing.category === "username" || listing.category === "account";
+  const details = listing.details ?? {};
   const handleLength = listing.handle.replace(/^@+/, '').length;
   const handleLengthLabel = handleLength === 1 ? '1-character' : `${handleLength}-character`;
   const platformLabel = listing.platform || 'Marketplace';
+  const offerTitle = isFansign ? details.recipient || listing.handle : isService ? details.service_name || listing.handle : listing.handle;
 
   return (
     <div className="pt-24 px-4 pb-24 md:pb-12 max-w-[1152px] mx-auto min-h-screen">
@@ -189,7 +194,7 @@ export default function ListingPage() {
         <span>/</span>
         <Link to={`/marketplace?platform=${listing.platform}`} className="hover:text-white transition-colors capitalize">{listing.platform}</Link>
         <span>/</span>
-        <span className="text-white">@{listing.handle}</span>
+        <span className="text-white">{isUsernameLike ? "@" : ""}{listing.handle}</span>
       </nav>
 
       <div className="grid gap-8 grid-cols-1 lg:grid-cols-[1.2fr_1fr]">
@@ -211,7 +216,7 @@ export default function ListingPage() {
             />
             
             <span className="text-[rgba(249,249,251,0.04)] leading-none font-semibold text-[300px] md:text-[540px] absolute right-[-4%] top-1/2 -translate-y-1/2 pointer-events-none select-none">
-              @
+              {isUsernameLike ? "@" : "✦"}
             </span>
             
             <div className="aspect-[16/10] relative z-10 flex flex-col p-6">
@@ -226,16 +231,16 @@ export default function ListingPage() {
               <div className="flex flex-col grow justify-center items-center">
                 <div className="leading-none text-[60px] md:text-[80px] text-center whitespace-nowrap overflow-hidden px-2">
                   <span className="text-[#93939f]">@</span>
-                  <span className="font-medium text-white">{listing.handle}</span>
+                  <span className="font-medium text-white">{offerTitle}</span>
                 </div>
                 
                 <div className="flex flex-wrap justify-center items-center gap-2 mt-6">
                   <span className="bg-[rgba(9,9,11,0.6)] font-medium text-[12px] flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-[#222226]">
-                    <span className="text-[#93939f]">@</span>
+                    <span className="text-[#93939f]">{isUsernameLike ? "@" : "✦"}</span>
                     <span className="capitalize">{platformLabel}</span>
                   </span>
                   <span className="bg-[rgba(9,9,11,0.6)] text-[#b7b7c2] font-medium text-[12px] px-3 py-1.5 rounded-[8px] border border-[#222226]">
-                    {handleLengthLabel}
+                    {isUsernameLike ? handleLengthLabel : isFansign ? "Custom order" : "Service offer"}
                   </span>
                   <span className="bg-[rgba(9,9,11,0.6)] text-[#b7b7c2] font-medium text-[12px] capitalize px-3 py-1.5 rounded-[8px] border border-[#222226]">
                     {listing.category}
@@ -253,17 +258,34 @@ export default function ListingPage() {
             </div>
             <div>
               <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Length</div>
-              <div className="font-mono text-[14px] mt-1.5">{handleLength} characters</div>
+              <div className="font-mono text-[14px] mt-1.5">{isUsernameLike ? `${handleLength} characters` : isFansign ? (details.delivery_format || "Custom delivery") : (details.service_option || "Defined scope")}</div>
             </div>
             <div>
               <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Category</div>
               <div className="font-mono text-[14px] capitalize mt-1.5">{listing.category}</div>
             </div>
           </div>
+
+          {(isFansign || isService) && (
+            <div className="bg-[#111113] mt-6 p-6 rounded-[14px] border border-[#222226]">
+              <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">{isFansign ? "Fansign brief" : "Service scope"}</span>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {isFansign ? <>
+                  <div><span className="text-xs text-[#93939f]">Recipient</span><p className="mt-1 text-sm">{details.recipient || "Specified after purchase"}</p></div>
+                  <div><span className="text-xs text-[#93939f]">Delivery</span><p className="mt-1 text-sm">{details.delivery_format || "Custom"}</p></div>
+                  <div className="sm:col-span-2"><span className="text-xs text-[#93939f]">Message</span><p className="mt-1 whitespace-pre-wrap text-sm text-[#b7b7c2]">{details.message || listing.description || "Seller will confirm the brief after purchase."}</p></div>
+                </> : <>
+                  <div><span className="text-xs text-[#93939f]">Type</span><p className="mt-1 text-sm">{details.service_type || "Service"}</p></div>
+                  <div><span className="text-xs text-[#93939f]">Subcategory</span><p className="mt-1 text-sm">{details.service_group || "Custom"}</p></div>
+                  <div className="sm:col-span-2"><span className="text-xs text-[#93939f]">Offer</span><p className="mt-1 text-sm text-[#b7b7c2]">{details.service_option || listing.description || "Seller will confirm the scope after purchase."}</p></div>
+                </>}
+              </div>
+            </div>
+          )}
           
           {/* Transfer Info */}
           <div className="bg-[#111113] mt-6 p-6 rounded-[14px] border border-[#222226]">
-            <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">How the protected transfer works</span>
+            <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">How the protected order works</span>
             <ol className="list-none mb-0 pl-0 mt-4 space-y-3.5">
               <li className="text-[#b7b7c2] text-[14px] flex items-start gap-3">
                 <span className="text-[#ff0000] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-0.5">01</span>
@@ -271,11 +293,11 @@ export default function ListingPage() {
               </li>
               <li className="text-[#b7b7c2] text-[14px] flex items-start gap-3">
                 <span className="text-[#ff0000] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-0.5">02</span>
-                The listing is locked to you while the seller hands the goods over.
+                The order is locked while the seller prepares and delivers {isFansign ? "your fansign" : isService ? "the service" : "the goods"}.
               </li>
               <li className="text-[#b7b7c2] text-[14px] flex items-start gap-3">
                 <span className="text-[#ff0000] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-0.5">03</span>
-                You confirm it's yours — only then the seller gets paid.
+                You confirm delivery — only then the seller gets paid.
               </li>
             </ol>
           </div>

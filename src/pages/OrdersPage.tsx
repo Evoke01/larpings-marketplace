@@ -35,7 +35,7 @@ export default function OrdersPage() {
       if (s) {
         const { data } = await supabase
           .from('orders')
-          .select('*, listings(handle, price, platform, category)')
+          .select('*, listings(handle, price, platform, category, details)')
           .eq('buyer_id', s.user.id)
           .order('created_at', { ascending: false });
         setOrders(data ?? []);
@@ -102,8 +102,10 @@ export default function OrdersPage() {
               <div key={order.id} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226]">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="font-semibold text-lg">@{order.listings?.handle}</p>
+                    <p className="font-semibold text-lg">{order.listings?.category === "username" || order.listings?.category === "account" ? "@" : ""}{order.listings?.category === "fansign" ? order.listings?.details?.recipient || order.listings?.handle : order.listings?.category === "service" ? order.listings?.details?.service_name || order.listings?.handle : order.listings?.handle}</p>
                     <p className="text-[#93939f] text-sm capitalize">{order.listings?.platform} · {order.listings?.category}</p>
+                    {order.listings?.category === "fansign" && <p className="mt-1 text-xs text-[#b7b7c2]">Fansign · {order.listings?.details?.delivery_format || "custom delivery"}</p>}
+                    {order.listings?.category === "service" && <p className="mt-1 text-xs text-[#b7b7c2]">{order.listings?.details?.service_group || "Service"} · {order.listings?.details?.service_option || "custom scope"}</p>}
                   </div>
                   <span className={`font-mono font-medium text-[11px] tracking-widest uppercase px-2.5 py-1.5 rounded-[8px] border ${STATUS_COLORS[order.status] ?? 'text-[#93939f] bg-[#111113] border-[#222226]'}`}>
                     {order.status}

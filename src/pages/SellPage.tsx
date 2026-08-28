@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { OFFER_CATEGORIES, SERVICE_TYPES, serviceGroups, serviceOptions } from "../lib/offerCatalog";
 
 const PLATFORMS = ["Instagram", "TikTok", "Twitter / X", "Snapchat", "Telegram", "YouTube"];
-const CATEGORIES = ["Username", "Account", "Fansign", "Service"];
 
 export default function SellPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState("Username");
   const [platform, setPlatform] = useState("Instagram");
+  const [recipient, setRecipient] = useState("");
+  const [fansignMessage, setFansignMessage] = useState("");
+  const [deliveryFormat, setDeliveryFormat] = useState("Digital image");
+  const [serviceType, setServiceType] = useState<string>(SERVICE_TYPES[0]);
+  const [serviceGroup, setServiceGroup] = useState<string>(serviceGroups(SERVICE_TYPES[0])[0]);
+  const [serviceOption, setServiceOption] = useState<string>(serviceOptions(SERVICE_TYPES[0], serviceGroups(SERVICE_TYPES[0])[0])[0]);
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -41,6 +47,12 @@ export default function SellPage() {
         return;
       }
 
+      const normalizedCategory = category.toLowerCase();
+      const details = normalizedCategory === "fansign"
+        ? { recipient: recipient.trim(), message: fansignMessage.trim(), delivery_format: deliveryFormat }
+        : normalizedCategory === "service"
+          ? { service_type: serviceType, service_group: serviceGroup, service_option: serviceOption, service_name: serviceOption }
+          : {};
       const { error: insertError } = await supabase.from('listings').insert({
         seller_id: session.user.id,
         handle: title.trim(),
@@ -48,7 +60,8 @@ export default function SellPage() {
         category: category.toLowerCase(),
         platform: platform.toLowerCase().replace(' / x', '').replace('youtube', 'youtube'), // normalize
         price: parseFloat(price),
-        status: 'active'
+        status: 'active',
+        details,
       });
 
       if (insertError) throw insertError;
@@ -98,7 +111,7 @@ export default function SellPage() {
             List your goods. <span className="text-[#ff0000]">Get paid.</span>
           </h1>
           <p className="mt-2 text-sm text-[#93939f]">
-            List your usernames, fansigns & services — buyer-protected checkout, USD earnings.
+            List usernames, accounts, fansigns, or structured services — buyer-protected checkout, USD earnings.
           </p>
         </header>
 
@@ -122,14 +135,14 @@ export default function SellPage() {
             <input
               id="title"
               type="text"
-              placeholder="e.g. coolname"
+              placeholder={category === "Fansign" ? "e.g. Custom birthday fansign" : category === "Service" ? "e.g. Instagram growth package" : "e.g. coolname"}
               maxLength={60}
               value={title}
               onChange={e => setTitle(e.target.value)}
               required
               className="flex h-10 w-full rounded-[8px] border border-[#222226] bg-[#0e0e11] px-3 py-2 text-sm text-[#f9f9fb] placeholder-[#555] focus:outline-none focus:border-[#ff0000] transition-colors"
             />
-            <p className="text-[10px] text-[#93939f]">Don't include @ — it will be added automatically</p>
+            <p className="text-[10px] text-[#93939f]">{category === "Username" || category === "Account" ? "Don't include @ — it will be added automatically" : "Use a clear title buyers can understand"}</p>
           </div>
 
           {/* Description */}
@@ -157,7 +170,7 @@ export default function SellPage() {
                   onChange={e => setCategory(e.target.value)}
                   className="appearance-none h-10 w-full rounded-[8px] border border-[#222226] bg-[#0e0e11] px-3 pr-8 text-sm text-[#f9f9fb] focus:outline-none focus:border-[#ff0000] transition-colors cursor-pointer"
                 >
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {OFFER_CATEGORIES.map(c => <option key={c.id} value={c.label}>{c.label}</option>)}
                 </select>
                 <svg className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-[#93939f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m6 9 6 6 6-6" />
@@ -181,6 +194,26 @@ export default function SellPage() {
               </div>
             </div>
           </div>
+
+          {category === "Fansign" && (
+            <div className="space-y-4 rounded-[12px] border border-[#222226] bg-[#0e0e11] p-4">
+              <p className="mono-label text-[#93939f]">Fansign details</p>
+              <label className="block text-sm">Recipient username *<input value={recipient} onChange={e => setRecipient(e.target.value)} placeholder="@buyer or recipient" required className="mt-2 w-full rounded-[8px] border border-[#222226] bg-[#111113] px-3 py-2.5 text-sm outline-none focus:border-[#ff0000]" /></label>
+              <label className="block text-sm">Message / brief *<textarea value={fansignMessage} onChange={e => setFansignMessage(e.target.value)} placeholder="What should the fansign say or include?" required maxLength={500} rows={3} className="mt-2 w-full resize-none rounded-[8px] border border-[#222226] bg-[#111113] px-3 py-2.5 text-sm outline-none focus:border-[#ff0000]" /></label>
+              <label className="block text-sm">Delivery format<select value={deliveryFormat} onChange={e => setDeliveryFormat(e.target.value)} className="mt-2 h-10 w-full rounded-[8px] border border-[#222226] bg-[#111113] px-3 text-sm outline-none focus:border-[#ff0000]"><option>Digital image</option><option>Video</option><option>Live stream</option><option>Custom format</option></select></label>
+            </div>
+          )}
+
+          {category === "Service" && (
+            <div className="space-y-4 rounded-[12px] border border-[#222226] bg-[#0e0e11] p-4">
+              <p className="mono-label text-[#93939f]">Service details</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="block text-sm">Service type<select value={serviceType} onChange={e => { const next = e.target.value; setServiceType(next); const group = serviceGroups(next as any)[0]; setServiceGroup(group); setServiceOption(serviceOptions(next as any, group)[0]); }} className="mt-2 h-10 w-full rounded-[8px] border border-[#222226] bg-[#111113] px-3 text-sm outline-none focus:border-[#ff0000]">{SERVICE_TYPES.map(t => <option key={t}>{t}</option>)}</select></label>
+                <label className="block text-sm">Subcategory<select value={serviceGroup} onChange={e => { const next = e.target.value; setServiceGroup(next); setServiceOption(serviceOptions(serviceType as any, next)[0]); }} className="mt-2 h-10 w-full rounded-[8px] border border-[#222226] bg-[#111113] px-3 text-sm outline-none focus:border-[#ff0000]">{serviceGroups(serviceType as any).map(g => <option key={g}>{g}</option>)}</select></label>
+              </div>
+              <label className="block text-sm">Offer box<select value={serviceOption} onChange={e => setServiceOption(e.target.value)} className="mt-2 h-10 w-full rounded-[8px] border border-[#222226] bg-[#111113] px-3 text-sm outline-none focus:border-[#ff0000]">{serviceOptions(serviceType as any, serviceGroup).map(option => <option key={option}>{option}</option>)}</select></label>
+            </div>
+          )}
 
           {/* Price */}
           <div className="space-y-1.5">

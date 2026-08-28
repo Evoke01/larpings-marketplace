@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { displayOffer } from "../lib/offerCatalog";
 
 // ── Inline icons ──────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -141,7 +142,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
         {/* Handle */}
         <div>
           <div className="flex items-center gap-1.5">
-            <span className="text-xl font-semibold tracking-tight">{['username', 'account'].includes(item.category) ? '@' : '$'}{item.handle}</span>
+            <span className="text-xl font-semibold tracking-tight">{displayOffer(item)}</span>
             {item.verified && <VerifiedIcon />}
           </div>
           <div className="text-[#93939f] text-xs mt-0.5 flex items-center gap-1">
@@ -151,7 +152,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
         </div>
         {/* Stats row */}
         <div className="flex items-center gap-3 text-[#93939f] text-xs mt-auto">
-          <span className="flex items-center gap-1"><StarIcon /> {item.rating} ({item.reviews})</span>
+          <span>{item.details?.delivery_format ?? "Custom fansign"}</span>
           <span className="flex items-center gap-1 ml-auto"><ClockIcon /> {item.timeAgo}</span>
         </div>
         {/* Price + CTA */}
@@ -170,7 +171,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
     <Link to={`/listing/${item.handle}`} className="bg-[#111113] border border-[#222226] rounded-[12px] px-5 py-4 flex items-center gap-4 hover:border-[#333338] transition-colors group">
       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="font-semibold tracking-tight">{['username', 'account'].includes(item.category) ? '@' : '$'}{item.handle}</span>
+          <span className="font-semibold tracking-tight">{displayOffer(item)}</span>
           {item.verified && <VerifiedIcon />}
           <span className="ml-1.5 flex items-center gap-1 text-[10px] font-mono uppercase tracking-[1.4px] text-[#93939f]">
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: dot }} />
@@ -178,7 +179,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
           </span>
         </div>
         <div className="text-xs text-[#93939f] flex items-center gap-3">
-          <span className="flex items-center gap-1"><StarIcon /> {item.rating} ({item.reviews})</span>
+          <span>{item.details?.delivery_format ?? "Custom fansign"}</span>
           {item.followers !== "—" && <span>{item.followers} followers</span>}
           <span className="flex items-center gap-1 ml-auto text-[#666]"><ClockIcon /> {item.timeAgo}</span>
         </div>
