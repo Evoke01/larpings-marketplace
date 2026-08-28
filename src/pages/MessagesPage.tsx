@@ -1,268 +1,53 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-);
-const SendIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
-);
-const MessageCircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-);
+const LOUNGE_ID = "__larpings_lounge__";
+const Icon = ({ children, ...props }: React.SVGProps<SVGSVGElement> & { children: React.ReactNode }) => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>{children}</svg>;
+const ChatIcon = (p: React.SVGProps<SVGSVGElement>) => <Icon {...p}><path d="M20 11.5a8.4 8.4 0 0 1-9 8.5 9 9 0 0 1-4-.9L3 21l1.9-4A8.5 8.5 0 1 1 20 11.5Z" /></Icon>;
+const SendIcon = (p: React.SVGProps<SVGSVGElement>) => <Icon {...p}><path d="m22 2-7 20-4-9-9-4Z" /><path d="M22 2 11 13" /></Icon>;
+const ArrowIcon = (p: React.SVGProps<SVGSVGElement>) => <Icon {...p}><path d="m12 19-7-7 7-7M19 12H5" /></Icon>;
+type Conversation = { partnerId: string; partnerName: string; lastMessage: string; lastTime: string | null; unread: number; isLounge?: boolean };
 
 export default function MessagesPage() {
-  const [session, setSession] = useState<any>(null);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [selectedConv, setSelectedConv] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const [session, setSession] = useState<any>(null), [conversations, setConversations] = useState<Conversation[]>([]), [selected, setSelected] = useState<Conversation | null>(null);
+  const [messages, setMessages] = useState<any[]>([]), [loungeMessages, setLoungeMessages] = useState<any[]>([]), [authors, setAuthors] = useState<Record<string, string>>({}), [online, setOnline] = useState<{ id: string; username: string }[]>([]);
+  const [draft, setDraft] = useState(""), [loading, setLoading] = useState(true), [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null), [params] = useSearchParams();
 
-  useEffect(() => {
-    let active = true;
-    supabase.auth.getUser().then(async ({ data: { user }, error }) => {
-      if (!active) return;
-      const s = user ? { user } : null;
-      setSession(s);
-      if (error || !s) { setLoading(false); return; }
+  useEffect(() => { let alive = true; (async () => {
+    const { data: { user }, error } = await supabase.auth.getUser(); if (!alive) return;
+    if (error || !user) { setLoading(false); return; } setSession({ user });
+    const [{ data: dms }, { data: lounge, error: loungeError }] = await Promise.all([
+      supabase.from("messages").select("*").or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order("created_at", { ascending: false }),
+      supabase.from("larping_lounge_messages").select("*").order("created_at", { ascending: true }).limit(200),
+    ]); if (loungeError) console.error("Lounge load error:", loungeError);
+    const ids = [...new Set([...(dms ?? []).map((m: any) => m.sender_id === user.id ? m.receiver_id : m.sender_id), ...(lounge ?? []).map((m: any) => m.sender_id)])];
+    const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,username,display_name").in("id", ids) : { data: [] }; const names: Record<string, string> = {};
+    (profiles ?? []).forEach((p: any) => { names[p.id] = p.username || p.display_name || p.id; }); setAuthors(names); setLoungeMessages(lounge ?? []);
+    const map: Record<string, Conversation> = {}; (dms ?? []).forEach((m: any) => { const id = m.sender_id === user.id ? m.receiver_id : m.sender_id; if (!map[id]) map[id] = { partnerId: id, partnerName: names[id] || id, lastMessage: m.content, lastTime: m.created_at, unread: 0 }; if (m.receiver_id === user.id && !m.read) map[id].unread++; });
+    const latest = lounge?.length ? lounge[lounge.length - 1] : null; const loungeConv: Conversation = { partnerId: LOUNGE_ID, partnerName: "Larping Lounge", lastMessage: latest?.content || "Everyone is welcome here", lastTime: latest?.created_at || null, unread: 0, isLounge: true };
+    setConversations([loungeConv, ...Object.values(map)]);
+    let requested = params.get("user"); if (!requested && params.get("username")) requested = Object.entries(names).find(([, n]) => n === params.get("username"))?.[0] || null;
+    if (requested && requested !== user.id) { const conv = map[requested] || { partnerId: requested, partnerName: names[requested] || requested, lastMessage: "", lastTime: null, unread: 0 }; setSelected(conv); const { data: thread } = await supabase.from("messages").select("*").or(`and(sender_id.eq.${user.id},receiver_id.eq.${requested}),and(sender_id.eq.${requested},receiver_id.eq.${user.id})`).order("created_at", { ascending: true }); setMessages(thread ?? []); } else setSelected(loungeConv);
+    setLoading(false);
+  })(); return () => { alive = false; }; }, [params]);
 
-      // Fetch all messages for this user (sent and received)
-      const { data, error: messageError } = await supabase
-        .from('messages')
-        .select('*')
-        .or(`sender_id.eq.${s.user.id},receiver_id.eq.${s.user.id}`)
-        .order('created_at', { ascending: false });
+  useEffect(() => { if (!session?.user?.id) return; const channel = supabase.channel("larping-lounge", { config: { presence: { key: session.user.id } } })
+    .on("presence", { event: "sync" }, () => { const seen = new Set<string>(), people: { id: string; username: string }[] = []; Object.entries(channel.presenceState()).forEach(([id, states]: [string, any]) => { const state = states?.[0] || {}; if (!seen.has(id)) { seen.add(id); people.push({ id, username: state.username || authors[id] || id.slice(0, 8) }); } }); setOnline(people); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "larping_lounge_messages" }, async ({ new: row }: any) => { setLoungeMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev, row]); if (!authors[row.sender_id]) { const { data } = await supabase.from("profiles").select("id,username,display_name").eq("id", row.sender_id).maybeSingle(); if (data) setAuthors(prev => ({ ...prev, [data.id]: data.username || data.display_name || data.id })); } setConversations(prev => prev.map(c => c.isLounge ? { ...c, lastMessage: row.content, lastTime: row.created_at } : c)); })
+    .subscribe(async status => { if (status === "SUBSCRIBED") await channel.track({ username: authors[session.user.id] || session.user.email?.split("@")[0] || "member" }); }); return () => { void supabase.removeChannel(channel); }; }, [session?.user?.id]);
+  useEffect(() => { if (!session?.user?.id) return; const channel = supabase.channel(`messages-${session.user.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `receiver_id=eq.${session.user.id}` }, ({ new: row }: any) => { setMessages(prev => selected?.partnerId === row.sender_id ? [...prev, row] : prev); setConversations(prev => prev.map(c => c.partnerId === row.sender_id ? { ...c, lastMessage: row.content, lastTime: row.created_at, unread: c.partnerId === selected?.partnerId ? 0 : c.unread + 1 } : c)); }).subscribe(); return () => { void supabase.removeChannel(channel); }; }, [session?.user?.id, selected?.partnerId]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loungeMessages, selected]);
 
-      if (messageError) console.error('Message load error:', messageError);
-      const partnerIds = [...new Set((data ?? []).map(msg => msg.sender_id === s.user.id ? msg.receiver_id : msg.sender_id))];
-      const { data: profiles } = partnerIds.length
-        ? await supabase.from('profiles').select('id, username, display_name').in('id', partnerIds)
-        : { data: [] };
-      const profileMap = new Map((profiles ?? []).map(profile => [profile.id, profile]));
+  async function openConversation(conv: Conversation) { setSelected(conv); if (conv.isLounge) { setMessages([]); return; } const { data } = await supabase.from("messages").select("*").or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${conv.partnerId}),and(sender_id.eq.${conv.partnerId},receiver_id.eq.${session.user.id})`).order("created_at", { ascending: true }); setMessages(data ?? []); await supabase.from("messages").update({ read: true }).eq("receiver_id", session.user.id).eq("sender_id", conv.partnerId); setConversations(prev => prev.map(c => c.partnerId === conv.partnerId ? { ...c, unread: 0 } : c)); }
+  async function sendMessage(e: React.FormEvent) { e.preventDefault(); const content = draft.trim(); if (!content || !selected || sending) return; setSending(true); const payload: Record<string, any> = selected.isLounge ? { sender_id: session.user.id, content } : { sender_id: session.user.id, receiver_id: selected.partnerId, content }; const table = selected.isLounge ? "larping_lounge_messages" : "messages"; const { data, error } = await supabase.from(table).insert(payload).select("*").single(); if (error) console.error("Message send error:", error); if (data) { if (selected.isLounge) setLoungeMessages(prev => prev.some(m => m.id === data.id) ? prev : [...prev, data]); else setMessages(prev => [...prev, data]); } setDraft(""); setSending(false); }
 
-      // Group into conversations by partner
-      const convMap: Record<string, any> = {};
-      (data ?? []).forEach(msg => {
-        const partnerId = msg.sender_id === s.user.id ? msg.receiver_id : msg.sender_id;
-        const partner = profileMap.get(partnerId);
-        const partnerName = partner?.username || partner?.display_name;
-        if (!convMap[partnerId]) {
-          convMap[partnerId] = { partnerId, partnerName: partnerName || partnerId, lastMessage: msg.content, lastTime: msg.created_at, unread: 0 };
-        }
-        if (msg.receiver_id === s.user.id && !msg.read) convMap[partnerId].unread++;
-      });
-      setConversations(Object.values(convMap));
-      let requestedPartnerId = searchParams.get('user');
-      const requestedUsername = searchParams.get('username');
-      if (requestedPartnerId && !profileMap.has(requestedPartnerId)) {
-        const { data: requestedProfile } = await supabase
-          .from('profiles')
-          .select('id, username, display_name')
-          .eq('id', requestedPartnerId)
-          .maybeSingle();
-        if (requestedProfile) profileMap.set(requestedProfile.id, requestedProfile);
-      }
-      if (!requestedPartnerId && requestedUsername) {
-        const { data: requestedProfile } = await supabase
-          .from('profiles')
-          .select('id, username, display_name')
-          .eq('username', requestedUsername)
-          .maybeSingle();
-        if (requestedProfile) {
-          requestedPartnerId = requestedProfile.id;
-          profileMap.set(requestedProfile.id, requestedProfile);
-        }
-      }
-      if (requestedPartnerId && requestedPartnerId !== s.user.id) {
-        const partner = profileMap.get(requestedPartnerId);
-        const conversation = convMap[requestedPartnerId] ?? {
-          partnerId: requestedPartnerId,
-          partnerName: partner?.username || partner?.display_name || requestedPartnerId,
-          lastMessage: '',
-          lastTime: null,
-          unread: 0,
-        };
-        setSelectedConv(conversation);
-        const { data: thread } = await supabase
-          .from('messages')
-          .select('*')
-          .or(`and(sender_id.eq.${s.user.id},receiver_id.eq.${requestedPartnerId}),and(sender_id.eq.${requestedPartnerId},receiver_id.eq.${s.user.id})`)
-          .order('created_at', { ascending: true });
-        setMessages(thread ?? []);
-      }
-      setLoading(false);
-    });
-
-    return () => { active = false; };
-  }, [searchParams]);
-
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    const channel = supabase
-      .channel(`messages-${session.user.id}`)
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `receiver_id=eq.${session.user.id}` }, (payload) => {
-        const incoming = payload.new as any;
-        setMessages(prev => selectedConv?.partnerId === incoming.sender_id ? [...prev, incoming] : prev);
-        setConversations(prev => prev.map(conv => conv.partnerId === incoming.sender_id
-          ? { ...conv, lastMessage: incoming.content, lastTime: incoming.created_at, unread: conv.partnerId === selectedConv?.partnerId ? 0 : conv.unread + 1 }
-          : conv));
-      })
-      .subscribe();
-    return () => { void supabase.removeChannel(channel); };
-  }, [session?.user?.id, selectedConv?.partnerId]);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  async function openConversation(conv: any) {
-    setSelectedConv(conv);
-    const { data } = await supabase
-      .from('messages')
-      .select('*')
-      .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${conv.partnerId}),and(sender_id.eq.${conv.partnerId},receiver_id.eq.${session.user.id})`)
-      .order('created_at', { ascending: true });
-    setMessages(data ?? []);
-    // Mark as read
-    await supabase.from('messages').update({ read: true }).eq('receiver_id', session.user.id).eq('sender_id', conv.partnerId);
-  }
-
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newMessage.trim() || !selectedConv || sending) return;
-    setSending(true);
-    const { data: sent, error } = await supabase.from('messages').insert({
-      sender_id: session.user.id,
-      receiver_id: selectedConv.partnerId,
-      content: newMessage.trim(),
-    }).select('*').single();
-    if (error) console.error('Message send error:', error);
-    if (sent) setMessages(prev => [...prev, sent]);
-    setNewMessage("");
-    setSending(false);
-  }
-
-  if (loading) return (
-    <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
-    </div>
-  );
-
-  if (!session) return (
-    <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif] flex items-center justify-center px-4">
-      <div className="text-center max-w-sm">
-        <div className="w-16 h-16 bg-[rgba(255,0,0,0.1)] rounded-2xl flex items-center justify-center mx-auto mb-4 text-[#ff0000]">
-          <MessageCircleIcon className="w-8 h-8" />
-        </div>
-        <h2 className="text-xl font-medium mb-2">Sign in to message</h2>
-        <p className="text-[#93939f] text-sm mb-6">Chat with sellers and track your conversations.</p>
-        <Link to="/signin?returnTo=/messages" className="bg-[#ff0000] text-white font-medium px-6 py-3 rounded-[10px] hover:bg-[#cc0000] transition-colors inline-block">
-          Sign In
-        </Link>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="mx-auto flex h-[calc(100vh-84px)] max-w-6xl flex-col px-3 pb-3 sm:px-4 pt-24 font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
-      <div className="grid h-full min-h-0 overflow-hidden rounded-[14px] border border-[#222226] bg-[#09090b]/40 lg:grid-cols-[300px_1fr]">
-
-        {/* Sidebar */}
-        <div className={`min-h-0 border-r border-[#222226] ${selectedConv ? 'hidden lg:flex' : 'flex'} flex-col`}>
-          <div className="border-b border-[#222226] px-4 py-4">
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] text-[#93939f]">Inbox</span>
-            <h1 className="mt-1 text-xl font-medium text-white">Messages</h1>
-          </div>
-
-          <div className="flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
-              <div className="p-6 text-center text-[#93939f] text-sm">
-                <MessageCircleIcon className="w-8 h-8 mx-auto mb-3 opacity-40" />
-                No conversations yet.<br />Buy something to start a chat.
-              </div>
-            ) : conversations.map(conv => (
-              <button
-                key={conv.partnerId}
-                onClick={() => openConversation(conv)}
-                className={`w-full text-left px-4 py-3 border-b border-[#1a1a1d] hover:bg-[#111113] transition-colors ${selectedConv?.partnerId === conv.partnerId ? 'bg-[#111113]' : ''}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 bg-zinc-800 rounded-full flex items-center justify-center font-bold text-white uppercase shrink-0">
-                    {(conv.partnerName || '?').slice(0, 2)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-sm">@{conv.partnerName}</p>
-                      {conv.unread > 0 && (
-                        <span className="bg-[#ff0000] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{conv.unread}</span>
-                      )}
-                    </div>
-                    <p className="text-[#93939f] text-xs truncate mt-0.5">{conv.lastMessage}</p>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Chat Panel */}
-        {selectedConv ? (
-          <div className="flex flex-col min-h-0">
-            <div className="flex items-center gap-3 border-b border-[#222226] px-4 py-3">
-              <button onClick={() => setSelectedConv(null)} className="lg:hidden text-[#93939f] hover:text-white">
-                <ArrowLeftIcon className="w-5 h-5" />
-              </button>
-              <div className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center font-bold text-white uppercase text-sm">
-                {(selectedConv.partnerName || '?').slice(0, 2)}
-              </div>
-              <p className="font-medium">@{selectedConv.partnerName}</p>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              {messages.map(msg => {
-                const isMine = msg.sender_id === session.user.id;
-                return (
-                  <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] px-4 py-2.5 rounded-[14px] text-sm ${isMine ? 'bg-[#ff0000] text-white rounded-br-sm' : 'bg-[#111113] border border-[#222226] rounded-bl-sm'}`}>
-                      {!isMine && <p className="font-semibold text-[11px] mb-1 text-[#93939f]">@{selectedConv.partnerName}</p>}
-                      <p>{msg.content}</p>
-                      <p className={`text-[10px] mt-1 ${isMine ? 'text-white/60' : 'text-[#555]'}`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-              <div ref={bottomRef} />
-            </div>
-
-            <form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-[#222226] px-4 py-3">
-              <input
-                value={newMessage}
-                onChange={e => setNewMessage(e.target.value)}
-                placeholder="Type a message…"
-                className="flex-1 bg-[#111113] border border-[#222226] rounded-[10px] px-4 py-2.5 text-sm text-[#f9f9fb] placeholder-[#555] focus:outline-none focus:border-[#ff0000] transition-colors"
-              />
-              <button type="submit" disabled={!newMessage.trim() || sending} className="bg-[#ff0000] text-white w-10 h-10 rounded-[10px] flex items-center justify-center hover:bg-[#cc0000] disabled:opacity-50 transition-colors">
-                <SendIcon className="w-4 h-4" />
-              </button>
-            </form>
-          </div>
-        ) : (
-          <div className="hidden lg:flex items-center justify-center text-[#93939f]">
-            <div className="text-center">
-              <MessageCircleIcon className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>Select a conversation</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  if (loading) return <div className="min-h-screen bg-zinc-950 flex items-center justify-center"><div className="h-6 w-6 animate-spin rounded-full border-2 border-[#ff0000] border-t-transparent" /></div>;
+  if (!session) return <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4"><div className="text-center"><ChatIcon className="mx-auto mb-4 h-12 w-12 text-[#ff0000]" /><h2 className="text-xl">Sign in to message</h2><p className="my-3 text-sm text-[#93939f]">Join the Larping Lounge and chat with sellers.</p><Link to="/signin?returnTo=/messages" className="inline-block rounded-[10px] bg-[#ff0000] px-6 py-3 font-medium">Sign In</Link></div></div>;
+  const visible = selected?.isLounge ? loungeMessages : messages;
+  return <div className="mx-auto flex h-[calc(100vh-84px)] max-w-6xl flex-col px-3 pb-3 pt-24 font-[Poppins,ui-sans-serif,system-ui,sans-serif] sm:px-4"><div className="grid h-full min-h-0 overflow-hidden rounded-[14px] border border-[#222226] bg-[#09090b]/40 lg:grid-cols-[300px_1fr]">
+    <aside className={`min-h-0 border-r border-[#222226] ${selected ? "hidden lg:flex" : "flex"} flex-col`}><div className="border-b border-[#222226] px-4 py-4"><span className="font-mono text-[11px] uppercase tracking-[.16em] text-[#93939f]">Inbox</span><h1 className="mt-1 text-xl font-medium text-white">Messages</h1></div><div className="flex-1 overflow-y-auto">{conversations.map(c => <button key={c.partnerId} onClick={() => openConversation(c)} className={`w-full border-b border-[#1a1a1d] px-4 py-3 text-left transition-colors hover:bg-[#111113] ${selected?.partnerId === c.partnerId ? "bg-[#111113]" : ""}`}><div className="flex items-center gap-3"><div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold uppercase ${c.isLounge ? "bg-[#ff0000]/15 text-[#ff0000]" : "bg-zinc-800 text-white"}`}>{c.isLounge ? <ChatIcon className="h-4 w-4" /> : c.partnerName.slice(0, 2)}</div><div className="min-w-0 flex-1"><div className="flex items-center justify-between"><p className="text-sm font-medium">{c.isLounge ? c.partnerName : `@${c.partnerName}`}</p>{c.isLounge ? <span className="font-mono text-[9px] text-[#ff0000]">PINNED</span> : c.unread > 0 ? <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff0000] text-[10px] font-bold">{c.unread}</span> : null}</div><p className="mt-0.5 truncate text-xs text-[#93939f]">{c.isLounge ? "Everyone is automatically included" : c.lastMessage}</p></div></div></button>)}</div></aside>
+    {selected ? <main className="flex min-h-0 flex-col text-white"><header className="flex items-center gap-3 border-b border-[#222226] px-4 py-3"><button onClick={() => setSelected(null)} className="text-[#93939f] lg:hidden"><ArrowIcon className="h-5 w-5" /></button><div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#ff0000]/15 text-[#ff0000]"><ChatIcon className="h-4 w-4" /></div><div><p className="font-medium">{selected.isLounge ? "Larping Lounge" : `@${selected.partnerName}`}</p><p className="font-mono text-[10px] uppercase tracking-wider text-[#93939f]">{selected.isLounge ? `${online.length} online · community chat` : "Private conversation"}</p></div></header>{selected.isLounge && <><div className="border-b border-[#222226] bg-[#ff0000]/5 px-4 py-2 text-xs text-[#c9c9cf]">Be respectful. Never share passwords, recovery codes, or wallet keys.</div><div className="flex gap-2 overflow-x-auto border-b border-[#222226] px-4 py-2">{online.map(p => <span key={p.id} className="whitespace-nowrap rounded-full border border-[#222226] px-2 py-1 text-[10px] text-[#93939f]"><i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />@{p.username}</span>)}</div></>}<div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">{visible.length ? visible.map((m: any) => { const mine = m.sender_id === session.user.id, author = selected.isLounge ? (mine ? "you" : authors[m.sender_id] || m.sender_id.slice(0, 8)) : selected.partnerName; return <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}><div className={`max-w-[80%] rounded-[14px] px-4 py-2.5 text-sm ${mine ? "rounded-br-sm bg-[#ff0000] text-white" : "rounded-bl-sm border border-[#222226] bg-[#111113]"}`}>{selected.isLounge && <p className={`mb-1 text-[11px] font-semibold ${mine ? "text-white/70" : "text-[#ff0000]"}`}>@{author}</p>}<p className="break-words">{m.content}</p><p className={`mt-1 text-[10px] ${mine ? "text-white/60" : "text-[#555]"}`}>{new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p></div></div>; }) : <div className="flex h-full items-center justify-center text-sm text-[#93939f]">{selected.isLounge ? "Start the conversation — everyone can see it." : "No messages yet."}</div>}<div ref={bottomRef} /></div><form onSubmit={sendMessage} className="flex items-center gap-2 border-t border-[#222226] px-4 py-3"><input value={draft} onChange={e => setDraft(e.target.value)} maxLength={2000} placeholder={selected.isLounge ? "Say something to the lounge…" : "Type a message…"} className="flex-1 rounded-[10px] border border-[#222226] bg-[#111113] px-4 py-2.5 text-sm text-[#f9f9fb] placeholder-[#555] focus:border-[#ff0000] focus:outline-none" /><button type="submit" disabled={!draft.trim() || sending} className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#ff0000] text-white transition-colors hover:bg-[#cc0000] disabled:opacity-50"><SendIcon className="h-4 w-4" /></button></form></main> : <div className="hidden items-center justify-center text-[#93939f] lg:flex"><div className="text-center"><ChatIcon className="mx-auto mb-3 h-12 w-12 opacity-30" /><p>Select a conversation</p></div></div>}
+  </div></div>;
 }
