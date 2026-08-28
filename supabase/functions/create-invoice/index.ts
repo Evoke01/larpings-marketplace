@@ -7,6 +7,9 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  if (req.method !== "POST" && req.method !== "OPTIONS") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  }
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -37,12 +40,18 @@ serve(async (req) => {
     // Get the listing price
     const { data: listing, error: listingError } = await supabaseAdmin
       .from("listings")
-      .select("price")
+      .select("id, seller_id, price, status")
       .eq("id", listing_id)
       .single();
 
     if (listingError || !listing) {
       return new Response(JSON.stringify({ error: "Listing not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (listing.seller_id === user.id) {
+      return new Response(JSON.stringify({ error: "You cannot buy your own listing" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if (listing.status !== "active") {
+      return new Response(JSON.stringify({ error: "This listing is no longer available" }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // Call RunePay API to create a sandbox invoice. The key must be stored as a
@@ -75,7 +84,7 @@ serve(async (req) => {
         order_id: orderRef,
         description: `Payment for listing ${listing_id}`,
         sandbox: true,
-        return_url: `${req.headers.get("origin") ?? "http://localhost:5173"}/orders`,
+        return_url: `${Deno.env.get("APP_ORIGIN") ?? "https://larpings-marketplace.onrender.com"}/orders`,
         callback_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/runepay-webhook`,
       }),
     });

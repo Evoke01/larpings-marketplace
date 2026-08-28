@@ -7,6 +7,7 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  if (req.method !== "POST" && req.method !== "OPTIONS") return new Response(JSON.stringify({ error: "Method not allowed" }), { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
@@ -34,7 +35,7 @@ serve(async (req) => {
     if (!runepayKey) return new Response(JSON.stringify({ error: "Payment provider is not configured" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const orderRef = `VERIFY_${crypto.randomUUID()}`;
-    const origin = req.headers.get("origin") ?? "http://localhost:5173";
+    const origin = Deno.env.get("APP_ORIGIN") ?? "https://larpings-marketplace.onrender.com";
     const response = await fetch("https://rpay.gg/api/v1/payment/invoice", {
       method: "POST",
       headers: { merchant_api_key: runepayKey, "Content-Type": "application/json" },
