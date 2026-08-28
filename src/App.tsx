@@ -26,6 +26,7 @@ const SoldPage = lazy(() => import("./pages/SoldPage"));
 const LegitPage = lazy(() => import("./pages/LegitPage"));
 const FansignsPage = lazy(() => import("./pages/FansignsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
+const LegalPage = lazy(() => import("./pages/LegalPage"));
 function NotFound() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
@@ -131,6 +132,8 @@ export default function App() {
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<NotFound />} />
               <Route path="/about" element={<AboutPage />} />
+              <Route path="/terms" element={<LegalPage kind="terms" />} />
+              <Route path="/privacy" element={<LegalPage kind="privacy" />} />
               <Route path="/legit" element={<NotFound />} />
               <Route path="/contact" element={<NotFound />} />
               <Route path="*" element={<NotFound />} />

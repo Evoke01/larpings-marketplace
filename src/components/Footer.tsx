@@ -97,6 +97,8 @@ export default function Footer() {
           <p>© 2025 larpings.com — All rights reserved.</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <Link to="/support" className="hover:text-foreground transition-colors">Support — chat with @Guardian</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
           </div>
         </div>
 
