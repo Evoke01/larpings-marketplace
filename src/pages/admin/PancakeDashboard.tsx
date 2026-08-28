@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 
@@ -32,7 +32,7 @@ export default function PancakeDashboard() {
       ]);
 
       const revenue = (orderData ?? []).reduce((sum: number, o: any) => sum + (o.listings?.price ?? 0), 0);
-      const platformFees = revenue * 0.09;
+      const platformFees = revenue * 0.01;
 
       setStats({
         users: users ?? 0,
@@ -51,7 +51,7 @@ export default function PancakeDashboard() {
     { label: "Total Users", value: stats.users.toLocaleString(), sub: "registered accounts", to: "/pancake/users" },
     { label: "Active Listings", value: stats.listings.toLocaleString(), sub: "live on marketplace", to: "/pancake/listings" },
     { label: "Total Orders", value: stats.orders.toLocaleString(), sub: "all time", to: "/pancake/orders" },
-    { label: "Platform Fees", value: `$${stats.platformFees.toFixed(2)}`, sub: "9% of confirmed sales", to: "/pancake/orders" },
+    { label: "Platform Fees", value: `$${stats.platformFees.toFixed(2)}`, sub: "1% of GMV", to: "/pancake/orders" },
     { label: "Pending Verifs", value: stats.pendingVerifs.toLocaleString(), sub: "$49 requests awaiting", to: "/pancake/verifications", urgent: stats.pendingVerifs > 0 },
     { label: "Gross Revenue", value: `$${stats.revenue.toLocaleString()}`, sub: "total confirmed GMV", to: "/pancake/orders" },
   ];
