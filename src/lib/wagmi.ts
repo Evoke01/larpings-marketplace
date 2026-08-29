@@ -29,9 +29,9 @@ export const wagmiConfig = createConfig({
 
 // Platform custody wallets for non-EVM chains (transparent custodial)
 export const CUSTODY_WALLETS = {
-  SOL: "REPLACE_WITH_YOUR_SOLANA_WALLET_ADDRESS",
-  BTC: "REPLACE_WITH_YOUR_BITCOIN_WALLET_ADDRESS",
-  LTC: "REPLACE_WITH_YOUR_LITECOIN_WALLET_ADDRESS",
+  SOL: "FmaK7RQJ81F4xhEjqXTYh9syNWmm3FRMMtB3uxEQb1uW",
+  BTC: "bc1q6au8qmpxhjjq8rzwu9xyql0fn0gzez98d2mh44",
+  LTC: "LUJ7UCY4LSmY2QPn8q89wqHuyNobu43FMf",
 } as const;
 
 export type EvmChain = "ETH" | "BNB";
