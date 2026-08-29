@@ -38,6 +38,20 @@ const ArrowIcon = (p: React.SVGProps<SVGSVGElement>) => (
 const DealIcon = (p: React.SVGProps<SVGSVGElement>) => (
   <Icon {...p}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></Icon>
 );
+const TrashIcon = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></Icon>
+);
+const ShieldIcon = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></Icon>
+);
+const BadgeCheck = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></Icon>
+);
+const ImagePlus = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/></Icon>
+);
+
+
 type Conversation = {
   partnerId: string;
   partnerName: string;
@@ -65,7 +79,7 @@ export default function MessagesPage() {
     [loading, setLoading] = useState(true),
     [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null),
-    [params] = useSearchParams();
+    [params, setParams] = useSearchParams();
 
   useEffect(() => {
     let alive = true;
@@ -162,7 +176,8 @@ export default function MessagesPage() {
         isBuyer: o.buyer_id === user.id
       }));
 
-      setConversations([loungeConv, ...dealConvs, ...Object.values(map)]);
+      const allConvs = [loungeConv, ...dealConvs, ...Object.values(map)];
+      setConversations(allConvs);
       let requested = params.get("user");
       if (!requested && params.get("username"))
         requested =
@@ -170,7 +185,7 @@ export default function MessagesPage() {
             ([, n]) => n === params.get("username"),
           )?.[0] || null;
       if (requested && requested !== user.id) {
-        const conv = map[requested] || {
+        const conv = allConvs.find(c => c.partnerId === requested) || {
           partnerId: requested,
           partnerName: names[requested] || requested,
           lastMessage: "",
@@ -178,14 +193,24 @@ export default function MessagesPage() {
           unread: 0,
         };
         setSelected(conv);
-        const { data: thread } = await supabase
-          .from("messages")
-          .select("*")
-          .or(
-            `and(sender_id.eq.${user.id},receiver_id.eq.${requested}),and(sender_id.eq.${requested},receiver_id.eq.${user.id})`,
-          )
-          .order("created_at", { ascending: true });
-        setMessages(thread ?? []);
+        
+        if (conv.isDeal) {
+          const { data: thread } = await supabase
+            .from("order_messages")
+            .select("*")
+            .eq("order_id", requested)
+            .order("created_at", { ascending: true });
+          setMessages(thread ?? []);
+        } else {
+          const { data: thread } = await supabase
+            .from("messages")
+            .select("*")
+            .or(
+              `and(sender_id.eq.${user.id},receiver_id.eq.${requested}),and(sender_id.eq.${requested},receiver_id.eq.${user.id})`,
+            )
+            .order("created_at", { ascending: true });
+          setMessages(thread ?? []);
+        }
       } else setSelected(loungeConv);
       setLoading(false);
     })();
@@ -248,341 +273,374 @@ export default function MessagesPage() {
       .subscribe(async (status) => {
         if (status === "SUBSCRIBED")
           await channel.track({
-            username:
-              authors[session.user.id] ||
-              session.user.email?.split("@")[0] ||
-              "member",
+            username: authors[session.user.id] || session.user.id.slice(0, 8),
           });
       });
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [session?.user?.id]);
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    const channel = supabase
-      .channel(`messages-${session.user.id}`)
+    const dms = supabase
+      .channel("dms")
       .on(
         "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-          filter: `receiver_id=eq.${session.user.id}`,
+        { event: "INSERT", schema: "public", table: "messages" },
+        ({ new: row }: any) => {
+          if (
+            row.sender_id === session.user.id ||
+            row.receiver_id === session.user.id
+          ) {
+            setMessages((prev) =>
+              prev.some((m) => m.id === row.id) ? prev : [...prev, row],
+            );
+            const other =
+              row.sender_id === session.user.id
+                ? row.receiver_id
+                : row.sender_id;
+            setConversations((prev) => {
+              const cp = [...prev];
+              const idx = cp.findIndex((c) => c.partnerId === other && !c.isDeal && !c.isLounge);
+              if (idx > -1) {
+                cp[idx] = {
+                  ...cp[idx],
+                  lastMessage: row.content,
+                  lastTime: row.created_at,
+                  unread:
+                    row.receiver_id === session.user.id
+                      ? cp[idx].unread + 1
+                      : cp[idx].unread,
+                };
+              } else {
+                cp.push({
+                  partnerId: other,
+                  partnerName: authors[other] || other,
+                  lastMessage: row.content,
+                  lastTime: row.created_at,
+                  unread: row.receiver_id === session.user.id ? 1 : 0,
+                });
+              }
+              return cp;
+            });
+          }
         },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_messages" },
         ({ new: row }: any) => {
           setMessages((prev) =>
-            selected?.partnerId === row.sender_id ? [...prev, row] : prev,
+             prev.some((m) => m.id === row.id) ? prev : [...prev, row],
           );
-          setConversations((prev) =>
-            prev.map((c) =>
-              c.partnerId === row.sender_id
-                ? {
-                    ...c,
-                    lastMessage: row.content,
-                    lastTime: row.created_at,
-                    unread:
-                      c.partnerId === selected?.partnerId ? 0 : c.unread + 1,
-                  }
-                : c,
-            ),
-          );
+          setConversations((prev) => {
+            const cp = [...prev];
+            const idx = cp.findIndex((c) => c.partnerId === row.order_id);
+            if (idx > -1) {
+               cp[idx] = {
+                  ...cp[idx],
+                  lastMessage: row.content,
+                  lastTime: row.created_at,
+               };
+            }
+            return cp;
+          });
         },
       )
       .subscribe();
     return () => {
-      void supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
+      supabase.removeChannel(dms);
     };
-  }, [session?.user?.id, selected?.partnerId]);
+  }, [session?.user?.id, authors]);
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loungeMessages, selected]);
 
-  async function openConversation(conv: Conversation) {
-    setSelected(conv);
-    if (conv.isLounge) {
-      setMessages([]);
-      return;
-    }
-    if (conv.isDeal) {
-      const { data } = await supabase.from("order_messages").select("*").eq("order_id", conv.orderId).order("created_at", { ascending: true });
-      setMessages(data ?? []);
-      return;
-    }
-    const { data } = await supabase
-      .from("messages")
-      .select("*")
-      .or(
-        `and(sender_id.eq.${session.user.id},receiver_id.eq.${conv.partnerId}),and(sender_id.eq.${conv.partnerId},receiver_id.eq.${session.user.id})`,
-      )
-      .order("created_at", { ascending: true });
-    setMessages(data ?? []);
-    await supabase
-      .from("messages")
-      .update({ read: true })
-      .eq("receiver_id", session.user.id)
-      .eq("sender_id", conv.partnerId);
-    setConversations((prev) =>
-      prev.map((c) =>
-        c.partnerId === conv.partnerId ? { ...c, unread: 0 } : c,
-      ),
-    );
-  }
-  async function sendMessage(e: React.FormEvent) {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    const content = draft.trim();
-    if (!content || !selected || sending) return;
+    if (!draft.trim() || sending || !session?.user || !selected) return;
     setSending(true);
-    const payload: Record<string, any> = selected.isLounge
-      ? { sender_id: session.user.id, content }
-      : selected.isDeal
-        ? { sender_id: session.user.id, order_id: selected.orderId, content }
-        : {
+    try {
+      if (selected.isLounge) {
+        await supabase
+          .from("larping_lounge_messages")
+          .insert({ sender_id: session.user.id, content: draft.trim() });
+      } else if (selected.isDeal) {
+        await supabase
+          .from("order_messages")
+          .insert({
+            order_id: selected.orderId,
+            sender_id: session.user.id,
+            content: draft.trim()
+          });
+      } else {
+        await supabase
+          .from("messages")
+          .insert({
             sender_id: session.user.id,
             receiver_id: selected.partnerId,
-            content,
-          };
-    const table = selected.isLounge ? "larping_lounge_messages" : selected.isDeal ? "order_messages" : "messages";
-    const { data, error } = await supabase
-      .from(table)
-      .insert(payload)
-      .select("*")
-      .single();
-    if (error) console.error("Message send error:", error);
-    if (data) {
-      if (selected.isLounge)
-        setLoungeMessages((prev) =>
-          prev.some((m) => m.id === data.id) ? prev : [...prev, data],
-        );
-      else setMessages((prev) => [...prev, data]);
+            content: draft.trim(),
+          });
+      }
+      setDraft("");
+    } catch (e) {
+      console.error(e);
     }
-    setDraft("");
     setSending(false);
-  }
+  };
+
+  const openConversation = async (c: Conversation) => {
+    setSelected(c);
+    if (!c.isLounge && !c.isDeal) {
+      setParams({ user: c.partnerId });
+      const { data: thread } = await supabase
+        .from("messages")
+        .select("*")
+        .or(
+          `and(sender_id.eq.${session.user.id},receiver_id.eq.${c.partnerId}),and(sender_id.eq.${c.partnerId},receiver_id.eq.${session.user.id})`,
+        )
+        .order("created_at", { ascending: true });
+      setMessages(thread ?? []);
+      if (c.unread > 0) {
+        await supabase
+          .from("messages")
+          .update({ read: true })
+          .eq("sender_id", c.partnerId)
+          .eq("receiver_id", session.user.id)
+          .eq("read", false);
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.partnerId === c.partnerId ? { ...conv, unread: 0 } : conv,
+          ),
+        );
+      }
+    } else if (c.isDeal) {
+      setParams({ user: c.partnerId });
+      const { data: thread } = await supabase
+        .from("order_messages")
+        .select("*")
+        .eq("order_id", c.orderId)
+        .order("created_at", { ascending: true });
+      setMessages(thread ?? []);
+    } else {
+      setParams({});
+    }
+  };
 
   if (loading)
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#ff0000] border-t-transparent" />
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#333] border-t-white" />
       </div>
     );
   if (!session)
     return (
-      <div className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4">
-        <div className="text-center">
-          <ChatIcon className="mx-auto mb-4 h-12 w-12 text-[#ff0000]" />
-          <h2 className="text-xl">Sign in to message</h2>
-          <p className="my-3 text-sm text-[#93939f]">
-            Join the Larping Lounge and chat with sellers.
+      <div className="flex min-h-[60vh] flex-col items-center justify-center px-4">
+        <div className="w-full max-w-md text-center">
+          <ChatIcon className="mx-auto mb-6 h-16 w-16 opacity-50" />
+          <h2 className="mb-2 text-2xl font-semibold">Sign in to message</h2>
+          <p className="mb-8 text-[#93939f]">
+            You need an account to send messages.
           </p>
           <Link
-            to="/signin?returnTo=/messages"
-            className="inline-block rounded-[10px] bg-[#ff0000] px-6 py-3 font-medium"
+            to="/login?redirect=/messages"
+            className="inline-block rounded-[10px] bg-accent px-6 py-3 font-medium text-white"
           >
             Sign In
           </Link>
         </div>
       </div>
     );
+    
   const visible = selected?.isLounge ? loungeMessages : messages;
+  
   return (
-    <div className="mx-auto flex h-[calc(100vh-84px)] max-w-6xl flex-col px-3 pb-3 pt-24 font-[Poppins,ui-sans-serif,system-ui,sans-serif] sm:px-4">
-      <div className="grid h-full min-h-0 overflow-hidden rounded-[14px] border border-[#222226] bg-[#09090b]/40 lg:grid-cols-[300px_1fr]">
-        <aside
-          className={`min-h-0 border-r border-[#222226] ${selected ? "hidden lg:flex" : "flex"} flex-col`}
-        >
-          <div className="border-b border-[#222226] px-4 py-4">
-            <span className="font-mono text-[11px] uppercase tracking-[.16em] text-[#93939f]">
-              Inbox
-            </span>
-            <h1 className="mt-1 text-xl font-medium text-white">Messages</h1>
-          </div>
-          <div className="flex-1 overflow-y-auto">
-            {conversations.map((c) => (
-              <button
-                key={c.partnerId}
-                onClick={() => openConversation(c)}
-                className={`w-full border-b border-[#1a1a1d] px-4 py-3 text-left transition-colors hover:bg-[#111113] ${selected?.partnerId === c.partnerId ? "bg-[#111113]" : ""}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-bold uppercase ${c.isLounge ? "bg-[#ff0000]/15 text-[#ff0000]" : c.isDeal ? "bg-amber-500/15 text-amber-500" : "bg-zinc-800 text-white"}`}
-                  >
-                    {c.isLounge ? (
-                      <ChatIcon className="h-4 w-4" />
-                    ) : c.isDeal ? (
-                      <DealIcon className="h-4 w-4" />
-                    ) : (
-                      c.partnerName.slice(0, 2)
+    <div className="mx-auto h-[calc(100dvh-84px)] max-w-6xl px-3 pb-3 sm:px-4 pt-24 font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
+      <div className="mkt-enter grid h-full min-h-0 grid-cols-1 overflow-hidden rounded-[14px] border border-border bg-card/40 lg:grid-cols-[340px_1fr]">
+        <div className={`min-h-0 border-border lg:border-r ${selected ? 'hidden lg:block' : 'block'}`}>
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="border-b border-border px-4 py-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <div>
+                    <span className="mono-label text-muted-foreground">Inbox</span>
+                    <h1 className="mt-1 text-xl text-foreground">Messages</h1>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <ul>
+                {conversations.map((c, i) => (
+                  <li key={c.partnerId} className="group/row relative">
+                    <button
+                      onClick={() => openConversation(c)}
+                      className={`flex w-full items-center gap-3 border-b border-border/50 text-left transition-colors hover:bg-secondary/50 px-4 py-3.5 ${selected?.partnerId === c.partnerId ? 'bg-secondary/70' : ''}`}
+                    >
+                      <div className="relative h-11 w-11 shrink-0">
+                        <div className={`flex h-full w-full items-center justify-center rounded-full font-bold uppercase ${c.isLounge ? "bg-red-500/15 text-red-500" : c.isDeal ? "bg-amber-500/15 text-amber-500" : "bg-zinc-800 text-white"}`}>
+                          {c.isLounge ? (
+                            <ChatIcon className="h-5 w-5" />
+                          ) : c.isDeal ? (
+                            <ShieldIcon className="h-5 w-5" />
+                          ) : (
+                            c.partnerName.slice(0, 2)
+                          )}
+                        </div>
+                      </div>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-1.5">
+                          <span className="truncate text-sm font-medium text-foreground">
+                            {c.isLounge || c.isDeal ? c.partnerName : `@${c.partnerName}`}
+                          </span>
+                          {c.isLounge ? (
+                            <span className="mono-label ml-auto shrink-0 text-red-500">PINNED</span>
+                          ) : c.unread > 0 ? (
+                            <span className="ml-auto shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-bold text-white">
+                              {c.unread}
+                            </span>
+                          ) : null}
+                        </span>
+                        <span className="mt-0.5 flex items-center gap-2">
+                          <span className="truncate text-xs text-muted-foreground">
+                            {c.isLounge ? "Everyone is automatically included" : c.lastMessage}
+                          </span>
+                        </span>
+                      </span>
+                    </button>
+                    {!c.isLounge && !c.isDeal && (
+                      <button aria-label="Remove from your list" title="Remove from your list" className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-[8px] border border-border bg-card/90 text-muted-foreground opacity-70 backdrop-blur-sm transition-all hover:border-red-400/50 hover:text-red-400 sm:opacity-0 sm:group-hover/row:opacity-100">
+                        <TrashIcon className="h-3.5 w-3.5" />
+                      </button>
                     )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        {selected ? (
+          <div className="min-h-0">
+            <div className="flex h-full min-h-0 flex-col">
+              <div className="flex items-center justify-between gap-3 border-b border-border py-3 px-4">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <button onClick={() => setSelected(null)} className="rounded-[8px] p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground lg:hidden">
+                    <ArrowIcon className="h-4 w-4" />
+                  </button>
+                  <div className="relative">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-bold uppercase ${selected.isLounge ? "bg-red-500/15 text-red-500" : selected.isDeal ? "bg-amber-500/15 text-amber-500" : "bg-zinc-800 text-white"}`}>
+                      {selected.isLounge ? <ChatIcon className="h-5 w-5" /> : selected.isDeal ? <ShieldIcon className="h-5 w-5" /> : selected.partnerName.slice(0,2)}
+                    </div>
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium">
-                        {c.isLounge || c.isDeal ? c.partnerName : `@${c.partnerName}`}
-                      </p>
-                      {c.isLounge ? (
-                        <span className="font-mono text-[9px] text-[#ff0000]">
-                          PINNED
-                        </span>
-                      ) : c.unread > 0 ? (
-                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#ff0000] text-[10px] font-bold">
-                          {c.unread}
-                        </span>
-                      ) : null}
-                    </div>
-                    <p className="mt-0.5 truncate text-xs text-[#93939f]">
-                      {c.isLounge
-                        ? "Everyone is automatically included"
-                        : c.lastMessage}
+                    <p className="flex items-center gap-1.5 truncate text-sm font-medium text-foreground">
+                      {selected.isLounge ? "Larping Lounge" : selected.isDeal ? selected.partnerName : `@${selected.partnerName}`}
+                      {!selected.isLounge && !selected.isDeal && <BadgeCheck className="h-4 w-4 shrink-0 text-accent" />}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {selected.isLounge ? `${online.length} online · community chat` : selected.isDeal ? (selected.orderStatus === 'closed' ? 'Deal Closed' : 'ESCROW ACTIVE') : "Private conversation"}
                     </p>
                   </div>
                 </div>
-              </button>
-            ))}
-          </div>
-        </aside>
-        {selected ? (
-          <main className="flex min-h-0 flex-col text-white">
-            <header className="flex items-center justify-between border-b border-[#222226] px-4 py-3">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setSelected(null)}
-                  className="text-[#93939f] lg:hidden"
-                >
-                  <ArrowIcon className="h-5 w-5" />
-                </button>
-                <div className={`flex h-8 w-8 items-center justify-center rounded-full ${selected.isLounge ? "bg-[#ff0000]/15 text-[#ff0000]" : selected.isDeal ? "bg-amber-500/15 text-amber-500" : "bg-[#ff0000]/15 text-[#ff0000]"}`}>
-                  {selected.isDeal ? <DealIcon className="h-4 w-4" /> : <ChatIcon className="h-4 w-4" />}
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {selected.isLounge
-                      ? "Larping Lounge"
-                      : selected.isDeal
-                        ? selected.partnerName
-                        : `@${selected.partnerName}`}
-                  </p>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-[#93939f]">
-                    {selected.isLounge
-                      ? `${online.length} online · community chat`
-                      : selected.isDeal
-                        ? selected.orderStatus === 'closed' ? 'Deal Closed' : 'Escrow Active'
-                        : "Private conversation"}
-                  </p>
+                
+                {selected.isDeal && selected.orderStatus !== 'closed' && (
+                  <button 
+                    onClick={async () => {
+                      const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
+                      await supabase.from('orders').update(updateField).eq('id', selected.orderId);
+                      const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
+                      if (data?.buyer_closed && data?.seller_closed) {
+                        await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
+                        setSelected({ ...selected, orderStatus: 'closed' });
+                      }
+                      setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
+                    }}
+                    disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
+                    className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                  >
+                    {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
+                  </button>
+                )}
+                {!selected.isDeal && !selected.isLounge && (
+                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/seller/${selected.partnerId}`}>View profile</Link>
+                )}
+              </div>
+              
+              <div className="min-h-0 flex-1 overflow-y-auto py-4 px-4">
+                <div className="space-y-1.5">
+                  {visible.length ? (
+                    visible.map((m: any, idx: number) => {
+                      const mine = m.sender_id === session.user.id;
+                      const author = selected.isLounge ? (mine ? "you" : authors[m.sender_id] || m.sender_id.slice(0, 8)) : selected.partnerName;
+                      const showDivider = idx === 0 || new Date(m.created_at).toDateString() !== new Date(visible[idx - 1].created_at).toDateString();
+                      
+                      return (
+                        <div key={m.id}>
+                          {showDivider && (
+                            <div className="my-4 flex items-center gap-3">
+                              <span className="h-px flex-1 bg-border"></span>
+                              <span className="mono-label text-muted-foreground">
+                                {new Date(m.created_at).toLocaleDateString()}
+                              </span>
+                              <span className="h-px flex-1 bg-border"></span>
+                            </div>
+                          )}
+                          <div className={`group relative flex items-end gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                            {!mine && (
+                               <span className="w-7 shrink-0" aria-hidden="true"></span>
+                            )}
+                            <div className={`flex min-w-0 max-w-[82%] flex-col sm:max-w-[68%] ${mine ? 'items-end' : 'items-start'}`}>
+                              <div className={`w-fit max-w-full px-3.5 py-2.5 rounded-[14px] ${mine ? 'rounded-br-[4px] bg-accent text-white' : 'rounded-bl-[4px] border border-border bg-card text-foreground'}`}>
+                                {selected.isLounge && !mine && (
+                                  <p className="mb-1 text-[11px] font-semibold text-red-500">@{author}</p>
+                                )}
+                                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.content}</p>
+                                <span className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground/70'}`}>
+                                  {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      No messages yet.
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
                 </div>
               </div>
               
-              {selected.isDeal && selected.orderStatus !== 'closed' && (
-                <button 
-                  onClick={async () => {
-                    const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
-                    await supabase.from('orders').update(updateField).eq('id', selected.orderId);
-                    const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
-                    if (data?.buyer_closed && data?.seller_closed) {
-                      await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
-                      setSelected({ ...selected, orderStatus: 'closed' });
-                    }
-                    setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
-                  }}
-                  disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
-                  className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
-                >
-                  {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ You Confirmed' : 'Close Deal'}
-                </button>
-              )}
-            </header>
-            {selected.isLounge && (
-              <>
-                <div className="border-b border-[#222226] bg-[#ff0000]/5 px-4 py-2 text-xs text-[#c9c9cf]">
-                  Be respectful. Never share passwords, recovery codes, or
-                  wallet keys.
-                </div>
-                <div className="flex gap-2 overflow-x-auto border-b border-[#222226] px-4 py-2">
-                  {online.map((p) => (
-                    <span
-                      key={p.id}
-                      className="whitespace-nowrap rounded-full border border-[#222226] px-2 py-1 text-[10px] text-[#93939f]"
-                    >
-                      <i className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                      @{p.username}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-              {visible.length ? (
-                visible.map((m: any) => {
-                  const mine = m.sender_id === session.user.id,
-                    author = selected.isLounge
-                      ? mine
-                        ? "you"
-                        : authors[m.sender_id] || m.sender_id.slice(0, 8)
-                      : selected.partnerName;
-                  return (
-                    <div
-                      key={m.id}
-                      className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-[14px] px-4 py-2.5 text-sm ${mine ? "rounded-br-sm bg-[#ff0000] text-white" : "rounded-bl-sm border border-[#222226] bg-[#111113]"}`}
-                      >
-                        {selected.isLounge && (
-                          <p
-                            className={`mb-1 text-[11px] font-semibold ${mine ? "text-white/70" : "text-[#ff0000]"}`}
-                          >
-                            @{author}
-                          </p>
-                        )}
-                        <p className="break-words">{m.content}</p>
-                        <p
-                          className={`mt-1 text-[10px] ${mine ? "text-white/60" : "text-[#555]"}`}
-                        >
-                          {new Date(m.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-[#93939f]">
-                  {selected.isLounge
-                    ? "Start the conversation — everyone can see it."
-                    : "No messages yet."}
-                </div>
-              )}
-              <div ref={bottomRef} />
+              <div className="border-t border-border py-3 px-3">
+                <form onSubmit={sendMessage} className="flex items-end gap-2">
+                  <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50" aria-label="Attach an image">
+                    <ImagePlus className="h-4 w-4" />
+                  </button>
+                  <textarea
+                    rows={1}
+                    value={draft}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage(e);
+                      }
+                    }}
+                    placeholder={selected.isLounge ? "Say something to the lounge..." : "Write a message..."}
+                    className="max-h-[132px] min-h-[40px] flex-1 resize-none rounded-[10px] border border-border bg-secondary/50 px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!draft.trim() || sending}
+                    className="btn-accent !h-10 !w-10 shrink-0 !rounded-[10px] !p-0 disabled:opacity-50"
+                  >
+                    <SendIcon className="h-4 w-4" />
+                  </button>
+                </form>
+              </div>
             </div>
-            <form
-              onSubmit={sendMessage}
-              className="flex items-center gap-2 border-t border-[#222226] px-4 py-3"
-            >
-              <input
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                maxLength={2000}
-                placeholder={
-                  selected.isLounge
-                    ? "Say something to the lounge…"
-                    : "Type a message…"
-                }
-                className="flex-1 rounded-[10px] border border-[#222226] bg-[#111113] px-4 py-2.5 text-sm text-[#f9f9fb] placeholder-[#555] focus:border-[#ff0000] focus:outline-none"
-              />
-              <button
-                type="submit"
-                disabled={!draft.trim() || sending}
-                className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-[#ff0000] text-white transition-colors hover:bg-[#cc0000] disabled:opacity-50"
-              >
-                <SendIcon className="h-4 w-4" />
-              </button>
-            </form>
-          </main>
+          </div>
         ) : (
-          <div className="hidden items-center justify-center text-[#93939f] lg:flex">
+          <div className="hidden items-center justify-center text-muted-foreground lg:flex">
             <div className="text-center">
               <ChatIcon className="mx-auto mb-3 h-12 w-12 opacity-30" />
               <p>Select a conversation</p>
