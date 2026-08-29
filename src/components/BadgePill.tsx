@@ -53,6 +53,17 @@ const BadgeIcon = ({ type }: { type: string }) => {
   return null;
 };
 
+const iconMarkClass = (type: string) => {
+  if (type === "verified_seller") return "border-[#3978ff]/35 bg-[#1f62ff]/20";
+  if (type === "og" || type === "early_adopter") return "border-emerald-400/30 bg-emerald-400/10";
+  if (type === "top_seller") return "border-amber-400/35 bg-amber-400/10";
+  if (type === "sales_30") return "border-orange-400/35 bg-orange-400/10";
+  if (type === "sales_50") return "border-cyan-400/35 bg-cyan-400/10";
+  if (type === "sales_100" || type === "sales_500") return "border-violet-400/35 bg-violet-400/10";
+  if (/sales/.test(type)) return "border-yellow-400/35 bg-yellow-400/10";
+  return "border-white/[0.09] bg-white/[0.035]";
+};
+
 export default function BadgePill({ badgeType, compact = false }: BadgePillProps) {
   const type = badgeType.toLowerCase();
   const label = labels[type] ?? type.replaceAll("_", " ");
@@ -62,24 +73,20 @@ export default function BadgePill({ badgeType, compact = false }: BadgePillProps
   return (
     <span
       title={label}
-        className={`inline-flex items-center gap-1.5 rounded-full border font-[Poppins,ui-sans-serif,system-ui,sans-serif] font-medium leading-none transition-colors ${
+      className={`inline-flex items-center gap-1.5 rounded-full border border-[#2b2b33] bg-[#141416] font-[Poppins,ui-sans-serif,system-ui,sans-serif] font-medium leading-none text-[#d1d1d9] transition-[border-color,background-color] hover:border-[#474752] hover:bg-[#19191c] ${
         compact ? "min-h-7 px-2.5 py-1 text-[11px]" : "min-h-8 px-3 py-1.5 text-[12px]"
-      } ${
-        isDexter
-          ? "border-[#ff1616] bg-[#ff0000]/[0.08] text-[#ff5757] shadow-[0_0_14px_rgba(255,0,0,0.16)]"
-          : isVerified
-            ? "border-[#286cff]/70 bg-[#1f62ff]/[0.08] text-[#b8ccff] hover:border-[#4f87ff]"
-            : type === "og" || type === "early_adopter"
-              ? "border-emerald-400/40 bg-emerald-400/[0.06] text-emerald-200 hover:border-emerald-300/70"
-              : type === "top_seller"
-                ? "border-amber-400/50 bg-amber-400/[0.07] text-amber-200 hover:border-amber-300/80"
-                : "border-[#333338] bg-[#151519] text-[#b7b7c2] hover:border-[#555560]"
       }`}
     >
-      {isDexter && <img src="/dexter-badge.svg" alt="" className={`dexter-logo rounded-full object-cover ${compact ? "h-4 w-4" : "h-5 w-5"}`} />}
-      {isVerified && <VerifiedIcon />}
-      {!isDexter && !isVerified && <BadgeIcon type={type} />}
-      <span>{label}</span>
+      {isDexter ? (
+        <span className={`dexter-mark flex shrink-0 items-center justify-center rounded-full border border-[#ff2a2a]/60 bg-[#160b0d] ${compact ? "h-4 w-4" : "h-5 w-5"}`}>
+          <img src="/dexter-badge.svg" alt="" className="dexter-logo h-full w-full rounded-full object-cover" />
+        </span>
+      ) : (
+        <span className={`flex shrink-0 items-center justify-center rounded-md border ${iconMarkClass(type)} ${compact ? "h-4 w-4" : "h-[18px] w-[18px]"}`}>
+          {isVerified ? <VerifiedIcon /> : <BadgeIcon type={type} />}
+        </span>
+      )}
+      <span className={isDexter ? "text-[#ff5b5b]" : ""}>{label}</span>
     </span>
   );
 }
