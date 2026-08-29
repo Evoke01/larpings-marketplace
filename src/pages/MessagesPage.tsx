@@ -2,6 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
+import { ESCROW_ABI, ESCROW_ADDRESSES, uuidToBytes32 } from "../lib/wagmi";
+
+
+
+const EVM_COINS = ["ETH", "BNB", "USDC", "USDT", "DAI"];
+
 const LOUNGE_ID = "__larpings_lounge__";
 const Icon = ({
   children,
@@ -64,8 +71,63 @@ type Conversation = {
   orderStatus?: string;
   buyerClosed?: boolean;
   sellerClosed?: boolean;
+    payChain?: string;
   isBuyer?: boolean;
 };
+
+
+
+function OrderTimer({ createdAt }: { createdAt: string }) {
+  const [timeLeft, setTimeLeft] = React.useState('');
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const msLeft = (6 * 3600 * 1000) - (Date.now() - new Date(createdAt).getTime());
+      if (msLeft <= 0) {
+        setTimeLeft('Expired');
+        clearInterval(interval);
+      } else {
+        const h = Math.floor(msLeft / 3600000);
+        const m = Math.floor((msLeft % 3600000) / 60000);
+        setTimeLeft(`${h}h ${m}m remaining`);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [createdAt]);
+
+  return <span className="text-amber-400 font-mono text-xs">{timeLeft}</span>;
+}
+
+function EvmConfirmButton({ orderId, payChain, onConfirmed }: { orderId: string, payChain: string, onConfirmed: () => void }) {
+  const { writeContract, data: hash, isPending } = useWriteContract();
+  const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({ hash });
+  
+  React.useEffect(() => {
+    if (isSuccess) {
+      onConfirmed();
+    }
+  }, [isSuccess]);
+
+  const handleConfirm = () => {
+    const requiredChainId = payChain === "BNB" ? 56 : 1;
+    writeContract({
+      address: ESCROW_ADDRESSES[requiredChainId],
+      abi: ESCROW_ABI,
+      functionName: "confirmDelivery",
+      args: [uuidToBytes32(orderId)]
+    });
+  };
+
+  return (
+    <button 
+      onClick={handleConfirm}
+      disabled={isPending || isWaiting}
+      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+    >
+      {isPending || isWaiting ? "Confirming tx..." : "Confirm Delivery (Web3)"}
+    </button>
+  );
+}
 
 export default function MessagesPage() {
   const [session, setSession] = useState<any>(null),
@@ -170,10 +232,17 @@ export default function MessagesPage() {
         unread: 0,
         isDeal: true,
         orderId: o.id,
+
+
         orderStatus: o.status,
         buyerClosed: o.buyer_closed,
         sellerClosed: o.seller_closed,
-        isBuyer: o.buyer_id === user.id
+        sellerAccepted: o.seller_accepted,
+        orderCreatedAt: o.created_at,
+        isBuyer: o.buyer_id === user.id,
+
+        payChain: o.pay_chain
+
       }));
 
       const allConvs = [loungeConv, ...dealConvs, ...Object.values(map)];
@@ -541,22 +610,38 @@ export default function MessagesPage() {
                 </div>
                 
                 {selected.isDeal && selected.orderStatus !== 'closed' && (
-                  <button 
-                    onClick={async () => {
-                      const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
-                      await supabase.from('orders').update(updateField).eq('id', selected.orderId);
-                      const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
-                      if (data?.buyer_closed && data?.seller_closed) {
-                        await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
-                        setSelected({ ...selected, orderStatus: 'closed' });
-                      }
-                      setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
-                    }}
-                    disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
-                    className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
-                  >
-                    {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
-                  </button>
+                  <>
+                    {EVM_COINS.includes(selected.payChain || '') && selected.isBuyer ? (
+                      <EvmConfirmButton 
+                        orderId={selected.orderId!} 
+                        payChain={selected.payChain!} 
+                        onConfirmed={async () => {
+                          await supabase.from('orders').update({ status: 'closed', buyer_closed: true, seller_closed: true }).eq('id', selected.orderId);
+                          setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                        }} 
+                      />
+                    ) : EVM_COINS.includes(selected.payChain || '') && !selected.isBuyer ? (
+                      <div className="text-xs text-[#93939f]">Waiting for buyer Web3 confirmation</div>
+                    ) : (
+                      <button 
+                        onClick={async () => {
+                          const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
+                          await supabase.from('orders').update(updateField).eq('id', selected.orderId);
+                          const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
+                          if (data?.buyer_closed && data?.seller_closed) {
+                            await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
+                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                          } else {
+                            setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
+                          }
+                        }}
+                        disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
+                        className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                      >
+                        {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
+                      </button>
+                    )}
+                  </>
                 )}
                 {!selected.isDeal && !selected.isLounge && (
                    <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
@@ -591,7 +676,15 @@ export default function MessagesPage() {
                                 {selected.isLounge && !mine && (
                                   <p className="mb-1 text-[11px] font-semibold text-red-500">@{author}</p>
                                 )}
-                                <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.content}</p>
+                                
+                                {m.content.startsWith('![attachment](') && m.content.endsWith(')') ? (
+                                  <a href={m.content.slice(14, -1)} target="_blank" rel="noreferrer">
+                                    <img src={m.content.slice(14, -1)} alt="Attachment" className="max-w-[200px] max-h-[200px] object-contain rounded-lg" />
+                                  </a>
+                                ) : (
+                                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.content}</p>
+                                )}
+
                                 <span className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground/70'}`}>
                                   {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
@@ -612,9 +705,12 @@ export default function MessagesPage() {
               
               <div className="border-t border-border py-3 px-3">
                 <form onSubmit={sendMessage} className="flex items-end gap-2">
-                  <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50" aria-label="Attach an image">
-                    <ImagePlus className="h-4 w-4" />
+                  
+                  <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} />
+                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border text-muted-foreground transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-50" aria-label="Attach an image">
+                    {uploadingImage ? <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" /> : <ImagePlus className="h-4 w-4" />}
                   </button>
+
                   <textarea
                     rows={1}
                     value={draft}

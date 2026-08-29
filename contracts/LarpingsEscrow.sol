@@ -92,6 +92,24 @@ contract LarpingsEscrow {
         emit Released(orderId, sellerAmount, fee);
     }
 
+    // ── Seller Actions ────────────────────────────────────────────────────────
+
+    /**
+     * @notice Seller can voluntarily refund the buyer.
+     *         Used when the seller rejects the order or cannot deliver.
+     * @param orderId  keccak256 of the Supabase order UUID
+     */
+    function refundBuyer(bytes32 orderId) external {
+        EscrowRecord storage e = escrows[orderId];
+        require(e.status == Status.Deposited, "LarpingsEscrow: not deposited");
+        require(msg.sender == e.seller,       "LarpingsEscrow: not seller");
+
+        e.status = Status.Refunded;
+        e.buyer.transfer(e.amount);
+
+        emit Refunded(orderId, e.amount);
+    }
+
     // ── Admin Actions ─────────────────────────────────────────────────────────
 
     /**

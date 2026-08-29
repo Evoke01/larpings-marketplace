@@ -4,6 +4,9 @@ import QRCode from "react-qr-code";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { LockIcon } from "lucide-react";
+import Web3PayPanel from "../components/Web3PayPanel";
+
+const EVM_COINS = ["ETH", "BNB", "USDC", "USDT", "DAI"];
 
 const COINS: Record<string, { id: string, name: string, icon: string, color: string, address: string, ticker: string }> = {
   "BTC": { id: "BTC", name: "Bitcoin", icon: "₿", color: "text-[#f7931a]", address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh", ticker: "BTCUSDT" },
@@ -33,6 +36,7 @@ export default function CheckoutPage() {
   const [timeLeft, setTimeLeft] = useState(45 * 60); // 45 minutes
 
   const coin = coinId ? COINS[coinId.toUpperCase()] : null;
+  const isEVM = coinId ? EVM_COINS.includes(coinId.toUpperCase()) : false;
 
   // Countdown timer
   useEffect(() => {
@@ -92,23 +96,26 @@ export default function CheckoutPage() {
     return () => clearInterval(interval);
   }, [coin]);
 
-  // Calculate unique exact amount once price is loaded
+  // Calculate unique exact amount once price is loaded (only needed for non-EVM, but safe to do always)
   useEffect(() => {
     if (listing && cryptoPrice && !exactCryptoAmount) {
       const baseUsd = listing.finalUsdPrice;
       const baseCrypto = baseUsd / cryptoPrice;
       
-      // Generate a unique amount by adding a deterministic or random small fraction
-      // For this implementation, we add a random value between 0.00001 and 0.00099
-      const randomOffset = (Math.floor(Math.random() * 99) + 1) / 100000;
-      let amount = baseCrypto + randomOffset;
-      
-      // Format decimal places based on coin
-      if (coinId?.toUpperCase() === 'BTC') setExactCryptoAmount(amount.toFixed(8));
-      else if (['USDC', 'USDT', 'DAI'].includes(coinId?.toUpperCase() || '')) setExactCryptoAmount((baseUsd + Math.floor(Math.random() * 99)/100).toFixed(2));
-      else setExactCryptoAmount(amount.toFixed(5));
+      if (isEVM) {
+        setExactCryptoAmount(baseCrypto.toString()); // Web3 component uses raw value
+      } else {
+        // Generate a unique amount by adding a deterministic or random small fraction
+        const randomOffset = (Math.floor(Math.random() * 99) + 1) / 100000;
+        let amount = baseCrypto + randomOffset;
+        
+        // Format decimal places based on coin
+        if (coinId?.toUpperCase() === 'BTC') setExactCryptoAmount(amount.toFixed(8));
+        else if (['USDC', 'USDT', 'DAI'].includes(coinId?.toUpperCase() || '')) setExactCryptoAmount((baseUsd + Math.floor(Math.random() * 99)/100).toFixed(2));
+        else setExactCryptoAmount(amount.toFixed(5));
+      }
     }
-  }, [listing, cryptoPrice, coinId, exactCryptoAmount]);
+  }, [listing, cryptoPrice, coinId, exactCryptoAmount, isEVM]);
 
   if (!coin) return <div className="p-8 text-center">Invalid coin selected</div>;
   if (!listing) return <div className="p-8 text-center text-[#93939f]">Loading order details...</div>;
@@ -131,7 +138,7 @@ export default function CheckoutPage() {
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const handleConfirmPayment = async () => {
+  const handleConfirmManualPayment = async () => {
     if (!user) return;
     setError("");
     setIsSimulating(true);
@@ -149,18 +156,26 @@ export default function CheckoutPage() {
 
       if (orderError) throw orderError;
 
-      await supabase.from('order_messages').insert({
-        order_id: newOrder.id,
-        sender_id: user.id,
-        content: "✅ Payment confirmed! Escrow funded.\n\nThe buyer has successfully deposited the funds. You can now coordinate delivery here.\n\n⚠️ Note: If the seller doesn't respond within 6 hours, the payment will be automatically refunded."
-      });
+      await Promise.all([
+        supabase.from('listings').update({ status: 'sold' }).eq('id', listing.id),
+        supabase.from('order_messages').insert({
+          order_id: newOrder.id,
+          sender_id: user.id,
+          content: "✅ Payment confirmed! Escrow funded.\n\nThe buyer has successfully deposited the funds. You can now coordinate delivery here.\n\n⚠️ Note: If the seller doesn't respond within 6 hours, the payment will be automatically refunded."
+        })
+      ]);
 
-      navigate(`/messages`);
+      navigate(`/messages?order=${newOrder.id}`);
     } catch (err: any) {
       setError(err.message || "Failed to confirm payment");
     } finally {
       setIsSimulating(false);
     }
+  };
+
+  const handleWeb3Success = async (txHash: string) => {
+    // Navigate to messages on success
+    navigate(`/messages`);
   };
 
   const qrValue = `${coin.id.toLowerCase()}:${coin.address}?amount=${exactCryptoAmount}`;
@@ -182,68 +197,77 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="text-center py-2">
-          <p className="text-sm text-[#93939f] mb-1">Send EXACTLY this amount:</p>
-          <div className="flex justify-center items-baseline gap-2">
-            <p className="text-4xl font-mono text-white cursor-pointer hover:text-emerald-400 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
-              {exactCryptoAmount || "..."} 
-            </p>
-            <span className="text-lg text-[#93939f]">{coin.id}</span>
-          </div>
-          <p className="text-[11px] text-[#93939f] mt-2">
-            This unique amount helps us automatically verify your payment.
-          </p>
-        </div>
-
-        <div className="flex items-center justify-center py-4">
-          <div className="bg-white p-4 rounded-2xl shadow-inner">
-            {exactCryptoAmount ? (
-              <QRCode 
-                value={qrValue}
-                size={200}
-                level="M"
-              />
-            ) : (
-              <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-xl">
-                <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+        {isEVM ? (
+          <Web3PayPanel 
+            listingId={listing.id}
+            finalUsdPrice={listing.finalUsdPrice}
+            cryptoPrice={cryptoPrice || 0}
+            coinId={coin.id}
+            onSuccess={handleWeb3Success}
+            sellerId={listing.seller_id}
+          />
+        ) : (
+          <>
+            <div className="text-center py-2">
+              <p className="text-sm text-[#93939f] mb-1">Send EXACTLY this amount:</p>
+              <div className="flex justify-center items-baseline gap-2">
+                <p className="text-4xl font-mono text-white cursor-pointer hover:text-emerald-400 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
+                  {exactCryptoAmount || "..."} 
+                </p>
+                <span className="text-lg text-[#93939f]">{coin.id}</span>
               </div>
-            )}
-          </div>
-        </div>
+              <p className="text-[11px] text-[#93939f] mt-2">
+                This unique amount helps us automatically verify your payment.
+              </p>
+            </div>
 
-        <div>
-          <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Address:</p>
-          <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-3">
-            <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{coin.address}</code>
-            <button 
-              onClick={handleCopy} 
-              className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors bg-[#111113]"
+            <div className="flex items-center justify-center py-4">
+              <div className="bg-white p-4 rounded-2xl shadow-inner">
+                {exactCryptoAmount ? (
+                  <QRCode 
+                    value={qrValue}
+                    size={200}
+                    level="M"
+                  />
+                ) : (
+                  <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-xl">
+                    <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Escrow Address:</p>
+              <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-3">
+                <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{coin.address}</code>
+                <button 
+                  onClick={handleCopy} 
+                  className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors bg-[#111113]"
+                >
+                  {isCopied ? "COPIED" : "COPY"}
+                </button>
+              </div>
+            </div>
+
+            <button
+              onClick={handleConfirmManualPayment}
+              disabled={isSimulating || !exactCryptoAmount}
+              className="w-full mt-4 bg-[#ff0000] text-white font-medium text-[15px] px-5 py-4 rounded-[12px] hover:bg-[#cc0000] disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
             >
-              {isCopied ? "COPIED" : "COPY"}
+              {isSimulating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying Payment...
+                </>
+              ) : (
+                "I have paid"
+              )}
             </button>
-          </div>
-        </div>
+          </>
+        )}
 
-        <button
-          onClick={handleConfirmPayment}
-          disabled={isSimulating || !exactCryptoAmount}
-          className="w-full mt-4 bg-[#ff0000] text-white font-medium text-[15px] px-5 py-4 rounded-[12px] hover:bg-[#cc0000] disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
-        >
-          {isSimulating ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Verifying Payment...
-            </>
-          ) : (
-            "I have paid"
-          )}
-        </button>
-
-        <p className="text-[#93939f] text-[11px] flex justify-center items-center gap-1.5 mt-2">
-          <LockIcon className="w-3 h-3" /> Reserving locks this name to you for 45 minutes
-        </p>
-
-        {error && (
+        {error && !isEVM && (
           <p className="text-red-400 text-xs text-center mt-2">{error}</p>
         )}
       </div>

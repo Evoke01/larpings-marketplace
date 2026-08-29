@@ -8,7 +8,10 @@ export const ADMIN_ADDRESS = "0xE5aC3077E03e84eAf5079599b9637C8bDBb3F317" as con
 
 // Deployed contract addresses (fill in after deploying LarpingsEscrow.sol)
 export const ESCROW_ADDRESSES: Record<number, `0x${string}`> = {
-  1:  "0x0000000000000000000000000000000000000000", // Ethereum mainnet — fill after deploy
+  // BSC Testnet
+  97: "0x7e4c89c26caa8483c0726d5fea8e7166ea65b0eb",
+  
+  // BSC Mainnet 
   56: "0x0000000000000000000000000000000000000000", // BSC mainnet     — fill after deploy
 };
 
@@ -60,6 +63,13 @@ export const ESCROW_ABI = [
   },
   {
     name: "confirmDelivery",
+    type: "function",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "orderId", type: "bytes32" }],
+    outputs: [],
+  },
+  {
+    name: "refundBuyer",
     type: "function",
     stateMutability: "nonpayable",
     inputs: [{ name: "orderId", type: "bytes32" }],

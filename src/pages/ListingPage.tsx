@@ -305,13 +305,19 @@ export default function ListingPage() {
         {/* Right Column: Sticky Sidebar */}
         <div className="lg:sticky lg:self-start lg:top-24">
           <div className="bg-[#111113] p-6 rounded-[18px] border border-[#222226]">
-            <div className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
-              <span className="w-1.5 h-1.5 relative flex">
-                <span className="bg-emerald-400 w-full h-full absolute opacity-[0.4] rounded-full animate-ping" />
-                <span className="bg-emerald-400 w-1.5 h-1.5 relative rounded-full" />
-              </span>
-              Available — reserves instantly
-            </div>
+            {user?.id === listing.seller_id ? (
+              <div className="bg-amber-500/10 text-amber-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-amber-500/30">
+                You are the seller
+              </div>
+            ) : (
+              <div className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
+                <span className="w-1.5 h-1.5 relative flex">
+                  <span className="bg-emerald-400 w-full h-full absolute opacity-[0.4] rounded-full animate-ping" />
+                  <span className="bg-emerald-400 w-1.5 h-1.5 relative rounded-full" />
+                </span>
+                Available — reserves instantly
+              </div>
+            )}
             
             <div className="flex justify-between items-end gap-4 mt-5">
               <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase pb-2">Price</span>
@@ -333,14 +339,14 @@ export default function ListingPage() {
               </div>
             ) : null}
 
-            {(!userOffer || userOffer?.status === 'rejected') && !isSold && (
+            {user?.id !== listing.seller_id && (!userOffer || userOffer?.status === 'rejected') && !isSold && (
               <button onClick={() => setShowOfferModal(true)} className="w-full mt-4 bg-zinc-900 text-white font-medium text-[13px] px-5 py-3 rounded-[10px] border border-[#222226] hover:border-[#ff0000]/50 transition-colors">
                 Make an Offer
               </button>
             )}
             
             <div className="mt-6 space-y-4">
-              {!isSold && (
+              {user?.id !== listing.seller_id && !isSold && (
                 <div>
                   <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2">

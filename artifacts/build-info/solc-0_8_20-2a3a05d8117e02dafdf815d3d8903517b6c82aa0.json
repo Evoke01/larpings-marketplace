@@ -1,0 +1,42 @@
+{
+  "_format": "hh3-sol-build-info-1",
+  "id": "solc-0_8_20-2a3a05d8117e02dafdf815d3d8903517b6c82aa0",
+  "solcVersion": "0.8.20",
+  "solcLongVersion": "0.8.20+commit.a1b79de6",
+  "compilerType": "solc",
+  "userSourceNameMap": {
+    "contracts/LarpingsEscrow.sol": "project/contracts/LarpingsEscrow.sol"
+  },
+  "input": {
+    "language": "Solidity",
+    "settings": {
+      "evmVersion": "shanghai",
+      "outputSelection": {
+        "*": {
+          "": [
+            "ast"
+          ],
+          "*": [
+            "abi",
+            "evm.bytecode.linkReferences",
+            "evm.bytecode.object",
+            "evm.bytecode.opcodes",
+            "evm.bytecode.sourceMap",
+            "evm.deployedBytecode.immutableReferences",
+            "evm.deployedBytecode.linkReferences",
+            "evm.deployedBytecode.object",
+            "evm.deployedBytecode.opcodes",
+            "evm.deployedBytecode.sourceMap",
+            "evm.methodIdentifiers"
+          ]
+        }
+      },
+      "remappings": []
+    },
+    "sources": {
+      "project/contracts/LarpingsEscrow.sol": {
+        "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.20;\r\n\r\n/**\r\n * @title LarpingsEscrow\r\n * @notice Trustless escrow for larpings.com marketplace orders.\r\n *         Buyer deposits native coin (ETH on Ethereum, BNB on BSC).\r\n *         Funds are locked until the buyer confirms delivery.\r\n *         On confirmation, 99% goes to the seller and 1% to the admin fee wallet.\r\n *         Admin can emergency-refund at any time before delivery confirmation.\r\n *\r\n * Deploy once per chain:\r\n *   - Ethereum mainnet  (chainId 1)\r\n *   - BSC mainnet       (chainId 56)\r\n */\r\ncontract LarpingsEscrow {\r\n    // ── State ────────────────────────────────────────────────────────────────\r\n    address public admin;\r\n    uint256 public constant FEE_BPS = 100; // 1% = 100 basis points out of 10 000\r\n\r\n    enum Status { None, Deposited, Released, Refunded }\r\n\r\n    struct EscrowRecord {\r\n        address payable buyer;\r\n        address payable seller;\r\n        uint256 amount;\r\n        Status  status;\r\n    }\r\n\r\n    /// @dev orderId is keccak256 of the Supabase UUID string\r\n    mapping(bytes32 => EscrowRecord) public escrows;\r\n\r\n    // ── Events ────────────────────────────────────────────────────────────────\r\n    event Deposited(bytes32 indexed orderId, address indexed buyer, address indexed seller, uint256 amount);\r\n    event Released (bytes32 indexed orderId, uint256 sellerAmount, uint256 feeAmount);\r\n    event Refunded (bytes32 indexed orderId, uint256 amount);\r\n    event AdminChanged(address newAdmin);\r\n\r\n    // ── Modifiers ─────────────────────────────────────────────────────────────\r\n    modifier onlyAdmin() {\r\n        require(msg.sender == admin, \"LarpingsEscrow: not admin\");\r\n        _;\r\n    }\r\n\r\n    // ── Constructor ───────────────────────────────────────────────────────────\r\n    constructor(address _admin) {\r\n        require(_admin != address(0), \"LarpingsEscrow: zero admin\");\r\n        admin = _admin;\r\n    }\r\n\r\n    // ── Buyer Actions ─────────────────────────────────────────────────────────\r\n\r\n    /**\r\n     * @notice Buyer calls this to lock funds for an order.\r\n     * @param orderId  keccak256 of the Supabase order UUID\r\n     * @param seller   Seller's wallet address (provided by the frontend from the DB)\r\n     */\r\n    function deposit(bytes32 orderId, address payable seller) external payable {\r\n        require(msg.value > 0,                           \"LarpingsEscrow: zero value\");\r\n        require(seller != address(0),                    \"LarpingsEscrow: zero seller\");\r\n        require(seller != msg.sender,                    \"LarpingsEscrow: self-trade\");\r\n        require(escrows[orderId].status == Status.None,  \"LarpingsEscrow: order exists\");\r\n\r\n        escrows[orderId] = EscrowRecord({\r\n            buyer:  payable(msg.sender),\r\n            seller: seller,\r\n            amount: msg.value,\r\n            status: Status.Deposited\r\n        });\r\n\r\n        emit Deposited(orderId, msg.sender, seller, msg.value);\r\n    }\r\n\r\n    /**\r\n     * @notice Buyer confirms they received the item. Releases funds.\r\n     *         99% → seller, 1% → admin fee wallet.\r\n     * @param orderId  keccak256 of the Supabase order UUID\r\n     */\r\n    function confirmDelivery(bytes32 orderId) external {\r\n        EscrowRecord storage e = escrows[orderId];\r\n        require(e.status == Status.Deposited, \"LarpingsEscrow: not deposited\");\r\n        require(msg.sender == e.buyer,        \"LarpingsEscrow: not buyer\");\r\n\r\n        e.status = Status.Released;\r\n\r\n        uint256 fee          = (e.amount * FEE_BPS) / 10_000;\r\n        uint256 sellerAmount = e.amount - fee;\r\n\r\n        e.seller.transfer(sellerAmount);\r\n        payable(admin).transfer(fee);\r\n\r\n        emit Released(orderId, sellerAmount, fee);\r\n    }\r\n\r\n    // ── Seller Actions ────────────────────────────────────────────────────────\r\n\r\n    /**\r\n     * @notice Seller can voluntarily refund the buyer.\r\n     *         Used when the seller rejects the order or cannot deliver.\r\n     * @param orderId  keccak256 of the Supabase order UUID\r\n     */\r\n    function refundBuyer(bytes32 orderId) external {\r\n        EscrowRecord storage e = escrows[orderId];\r\n        require(e.status == Status.Deposited, \"LarpingsEscrow: not deposited\");\r\n        require(msg.sender == e.seller,       \"LarpingsEscrow: not seller\");\r\n\r\n        e.status = Status.Refunded;\r\n        e.buyer.transfer(e.amount);\r\n\r\n        emit Refunded(orderId, e.amount);\r\n    }\r\n\r\n    // ── Admin Actions ─────────────────────────────────────────────────────────\r\n\r\n    /**\r\n     * @notice Emergency full refund to buyer (admin only).\r\n     *         Used when a seller fails to deliver or in dispute resolution.\r\n     */\r\n    function adminRefund(bytes32 orderId) external onlyAdmin {\r\n        EscrowRecord storage e = escrows[orderId];\r\n        require(e.status == Status.Deposited, \"LarpingsEscrow: not deposited\");\r\n\r\n        e.status = Status.Refunded;\r\n        e.buyer.transfer(e.amount);\r\n\r\n        emit Refunded(orderId, e.amount);\r\n    }\r\n\r\n    /**\r\n     * @notice Admin forces release of funds to seller (admin only).\r\n     *         Used when a buyer receives the item but refuses to confirm.\r\n     */\r\n    function adminRelease(bytes32 orderId) external onlyAdmin {\r\n        EscrowRecord storage e = escrows[orderId];\r\n        require(e.status == Status.Deposited, \"LarpingsEscrow: not deposited\");\r\n\r\n        e.status = Status.Released;\r\n\r\n        uint256 fee          = (e.amount * FEE_BPS) / 10_000;\r\n        uint256 sellerAmount = e.amount - fee;\r\n\r\n        e.seller.transfer(sellerAmount);\r\n        payable(admin).transfer(fee);\r\n\r\n        emit Released(orderId, sellerAmount, fee);\r\n    }\r\n\r\n    /**\r\n     * @notice Transfer admin role to a new address.\r\n     */\r\n    function setAdmin(address newAdmin) external onlyAdmin {\r\n        require(newAdmin != address(0), \"LarpingsEscrow: zero address\");\r\n        admin = newAdmin;\r\n        emit AdminChanged(newAdmin);\r\n    }\r\n\r\n    // ── View Helpers ──────────────────────────────────────────────────────────\r\n\r\n    function getEscrow(bytes32 orderId) external view\r\n        returns (address buyer, address seller, uint256 amount, Status status)\r\n    {\r\n        EscrowRecord storage e = escrows[orderId];\r\n        return (e.buyer, e.seller, e.amount, e.status);\r\n    }\r\n}\r\n"
+      }
+    }
+  }
+}
