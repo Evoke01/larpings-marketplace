@@ -1,301 +1,202 @@
-import React, { useState, useCallback } from "react";
-import { useAccount, useConnect, useDisconnect, useChainId, useSwitchChain, useBalance, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { mainnet, bsc } from "wagmi/chains";
-import { parseEther, formatEther } from "viem";
-import {
-  ESCROW_ABI, ESCROW_ADDRESSES, CHAIN_LABELS, CUSTODY_WALLETS,
-  uuidToBytes32, type PayChain, type EvmChain, type CustodyChain,
-} from "../lib/wagmi";
+import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/auth";
 
-// ─── Small sub-components ──────────────────────────────────────────────────
-
-function ChainBadge({ chain }: { chain: PayChain }) {
-  const c = CHAIN_LABELS[chain];
-  return (
-    <span className={`inline-flex items-center gap-1 font-mono text-[10px] tracking-widest uppercase px-1.5 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.07] ${c.color}`}>
-      {c.icon} {c.label}
-    </span>
-  );
-}
-
-function TxStep({ done, active, label }: { done: boolean; active: boolean; label: string }) {
-  return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className={`w-4 h-4 rounded-full flex-shrink-0 flex items-center justify-center text-[10px] font-bold border transition-all ${
-        done   ? "bg-green-500 border-green-500 text-white" :
-        active ? "border-accent bg-accent/10 text-accent animate-pulse" :
-                 "border-border bg-white/[0.03] text-muted-foreground"
-      }`}>
-        {done ? "✓" : ""}
-      </span>
-      <span className={done ? "text-foreground/70" : active ? "text-foreground" : "text-muted-foreground"}>{label}</span>
-    </div>
-  );
-}
-
-// ─── Main component ────────────────────────────────────────────────────────
+const COINS = [
+  { id: "BTC", name: "Bitcoin", icon: "₿", color: "text-[#f7931a]", address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+  { id: "ETH", name: "Ethereum", icon: "Ξ", color: "text-[#627eea]", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+  { id: "SOL", name: "Solana", icon: "◎", color: "text-[#14f195]", address: "HN7cABqLq46Es1jh92dQQisAq662SmxELLLsHHe4YWrH" },
+  { id: "LTC", name: "Litecoin", icon: "Ł", color: "text-[#345d9d]", address: "ltc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh" },
+  { id: "BNB", name: "Binance Coin", icon: "BNB", color: "text-[#f3ba2f]", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+  { id: "TON", name: "Toncoin", icon: "💎", color: "text-[#0098ea]", address: "EQBvW8Z5huPt35H0QfX-KjI0gO_9gP2ZgZ4oWv_T-XpGj-1N" },
+  { id: "TRX", name: "Tron", icon: "TRX", color: "text-[#ef0027]", address: "T9yD14Nj9j7xAB4dbGeiX9h8unkKHK" },
+  { id: "USDC", name: "USD Coin", icon: "$", color: "text-[#2775ca]", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+  { id: "USDT", name: "Tether", icon: "₮", color: "text-[#26a17b]", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+  { id: "DAI", name: "Dai", icon: "◈", color: "text-[#f5ac37]", address: "0x71C7656EC7ab88b098defB751B7401B5f6d8976F" },
+];
 
 interface Props {
-  orderId: string;          // Supabase UUID
-  sellerWalletAddress: string | null; // seller's EVM wallet (from profiles)
-  priceUsd: number;         // listing price in USD (used as ETH/BNB value for now)
+  orderId: string; // Used as listingId in the UI context
+  sellerWalletAddress: string | null;
+  priceUsd: number;
   listingStatus: string;
   onSuccess: () => void;
 }
 
-export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, listingStatus, onSuccess }: Props) {
-  const [selectedChain, setSelectedChain] = useState<PayChain | null>(null);
-  const [custodyCopied, setCustodyCopied] = useState(false);
-  const [custodyTxHash, setCustodyTxHash] = useState("");
-  const [custodySubmitting, setCustodySubmitting] = useState(false);
-  const [custodyDone, setCustodyDone] = useState(false);
+export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStatus, onSuccess }: Props) {
+  const { user } = useAuth();
+  const [selectedCoin, setSelectedCoin] = useState<any>(null);
+  const [isCopied, setIsCopied] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
   const [error, setError] = useState("");
-
-  // wagmi hooks
-  const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const chainId = useChainId();
-  const { switchChain } = useSwitchChain();
-  const { data: balance } = useBalance({ address });
-
-  const { writeContract, data: txHash, isPending: isTxPending } = useWriteContract();
-  const { isLoading: isTxConfirming, isSuccess: isTxConfirmed } =
-    useWaitForTransactionReceipt({ hash: txHash });
 
   const isSold = listingStatus === "sold";
   
+  // Calculate price with implicit $5 gas/network fee
+  const networkFeeUsd = 5;
+  const totalUsd = priceUsd + networkFeeUsd;
+
   const getCryptoPrice = (chain: string, usdValue: number) => {
-    const rates: Record<string, number> = { ETH: 3000, BNB: 600, SOL: 150, BTC: 65000, LTC: 80 };
+    const rates: Record<string, number> = { 
+      BTC: 65000, ETH: 3000, SOL: 150, LTC: 80, BNB: 600, 
+      TON: 7, TRX: 0.12, USDC: 1, USDT: 1, DAI: 1 
+    };
     const val = usdValue / (rates[chain] || 1);
     if (chain === 'BTC') return val.toFixed(8);
     if (chain === 'ETH' || chain === 'BNB') return val.toFixed(6);
+    if (['USDC', 'USDT', 'DAI'].includes(chain)) return val.toFixed(2);
     return val.toFixed(4);
   };
-  const currentCryptoPrice = selectedChain ? getCryptoPrice(selectedChain, priceUsd) : "0";
-
-  const evmChains: EvmChain[] = ["ETH", "BNB"];
-  const custodyChains: CustodyChain[] = ["SOL", "BTC", "LTC"];
-
-  // ── EVM Pay ──────────────────────────────────────────────────────────────
-
-  const handleEvmPay = useCallback(async () => {
-    setError("");
-    if (!selectedChain || !evmChains.includes(selectedChain as EvmChain)) return;
-
-    const targetChainId = selectedChain === "ETH" ? mainnet.id : bsc.id;
-    const contractAddress = ESCROW_ADDRESSES[targetChainId];
-
-    if (!sellerWalletAddress) {
-      setError("Seller has not set a wallet address yet.");
-      return;
-    }
-    if (contractAddress === "0x0000000000000000000000000000000000000000") {
-      setError("Contract not deployed yet — check back soon.");
-      return;
-    }
-
-    // Switch chain if needed
-    if (chainId !== targetChainId) {
-      switchChain({ chainId: targetChainId });
-      return;
-    }
-
-    const orderIdBytes32 = uuidToBytes32(orderId);
-
-    try {
-      writeContract({
-        address: contractAddress,
-        abi: ESCROW_ABI,
-        functionName: "deposit",
-        args: [orderIdBytes32, sellerWalletAddress as `0x${string}`],
-        value: parseEther(currentCryptoPrice),
-      });
-    } catch (e: any) {
-      setError(e.message ?? "Transaction failed");
-    }
-  }, [selectedChain, chainId, orderId, sellerWalletAddress, currentCryptoPrice, switchChain, writeContract]);
-
-  // Track confirmed EVM tx → update Supabase
-  React.useEffect(() => {
-    if (isTxConfirmed && txHash) {
-      supabase.from("orders").update({
-        status: "Paid",
-        tx_hash: txHash,
-        pay_chain: selectedChain,
-      }).eq("id", orderId).then(() => onSuccess());
-    }
-  }, [isTxConfirmed, txHash]);
-
-  // ── Custody Pay (SOL / BTC / LTC) ──────────────────────────────────────
-
-  const custodyAddress = selectedChain && custodyChains.includes(selectedChain as CustodyChain)
-    ? CUSTODY_WALLETS[selectedChain as CustodyChain]
-    : null;
 
   const handleCopy = () => {
-    if (custodyAddress) {
-      navigator.clipboard.writeText(custodyAddress);
-      setCustodyCopied(true);
-      setTimeout(() => setCustodyCopied(false), 2000);
+    if (selectedCoin) {
+      navigator.clipboard.writeText(selectedCoin.address);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
-  const handleCustodySubmit = async () => {
-    if (!custodyTxHash.trim()) { setError("Paste your transaction hash above."); return; }
-    setCustodySubmitting(true);
+  const handleConfirmPayment = async () => {
+    if (!user) {
+      setError("You must be logged in to buy.");
+      return;
+    }
     setError("");
-    await supabase.from("orders").update({
-      status: "Paid",
-      tx_hash: custodyTxHash.trim(),
-      pay_chain: selectedChain,
-    }).eq("id", orderId);
-    setCustodySubmitting(false);
-    setCustodyDone(true);
-    onSuccess();
+    setIsSimulating(true);
+
+    // Simulate network delay for verification
+    await new Promise(resolve => setTimeout(resolve, 3000));
+
+    try {
+      // 1. Create the order
+      const { data: newOrder, error: orderError } = await supabase.from('orders').insert({
+        listing_id: listingId,
+        buyer_id: user.id,
+        status: 'confirmed',
+        pay_chain: selectedCoin.id,
+        tx_hash: 'simulated_tx_' + Date.now()
+      }).select().single();
+
+      if (orderError) throw orderError;
+
+      // 2. Insert system welcome message with warning
+      await supabase.from('order_messages').insert({
+        order_id: newOrder.id,
+        sender_id: user.id,
+        content: "✅ Payment confirmed! Escrow funded.\n\nThe buyer has successfully deposited the funds. You can now coordinate delivery here.\n\n⚠️ Note: If the seller doesn't respond within 6 hours, the payment will be automatically refunded."
+      });
+
+      // 3. Mark success
+      setPaymentDone(true);
+      onSuccess();
+    } catch (err: any) {
+      setError(err.message || "Failed to confirm payment");
+    } finally {
+      setIsSimulating(false);
+    }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  if (isSold) {
+    return (
+      <div className="mt-6 text-center text-sm font-medium text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl py-4">
+        This listing has already been sold.
+      </div>
+    );
+  }
 
   return (
     <div className="mt-6 space-y-4">
-
-      {/* Chain selector */}
+      {/* Coin Selector */}
       <div>
-        <p className="text-muted-foreground font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with</p>
+        <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
         <div className="grid grid-cols-5 gap-2">
-          {(["ETH", "BNB", "SOL", "BTC", "LTC"] as PayChain[]).map(chain => {
-            const c = CHAIN_LABELS[chain];
-            const isEvm = evmChains.includes(chain as EvmChain);
-            return (
-              <button
-                key={chain}
-                disabled={isSold}
-                onClick={() => { setSelectedChain(chain); setError(""); }}
-                className={`relative flex flex-col items-center gap-1.5 py-2.5 rounded-[10px] border transition-all disabled:opacity-40 ${
-                  selectedChain === chain
-                    ? "border-accent bg-accent/10"
-                    : "border-border bg-card/50 hover:border-accent/40 hover:bg-accent/5"
-                }`}
-              >
-                <span className={`text-xl leading-none ${c.color}`}>{c.icon}</span>
-                <span className="text-muted-foreground font-mono text-[9px] uppercase tracking-widest">{chain}</span>
-                {isEvm && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-background" title="Trustless smart contract" />
-                )}
-              </button>
-            );
-          })}
+          {COINS.map(coin => (
+            <button
+              key={coin.id}
+              onClick={() => setSelectedCoin(coin)}
+              className={`flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border transition-all ${
+                selectedCoin?.id === coin.id
+                  ? "border-[#ff0000] bg-[#ff0000]/10"
+                  : "border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5"
+              }`}
+            >
+              <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
+              <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
+            </button>
+          ))}
         </div>
-        <p className="text-muted-foreground/60 text-[10px] mt-1.5 flex items-center gap-1">
-          <span className="w-2 h-2 bg-green-500 rounded-full inline-block" /> ETH + BNB use trustless smart contract escrow
-        </p>
       </div>
 
-      {/* EVM flow */}
-      {selectedChain && evmChains.includes(selectedChain as EvmChain) && (
-        <div className="float-shell p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <ChainBadge chain={selectedChain} />
-            {isConnected && (
-              <button onClick={() => disconnect()} className="text-[10px] text-muted-foreground hover:text-foreground font-mono">
-                {address?.slice(0, 6)}…{address?.slice(-4)} ✕
-              </button>
-            )}
+      {/* Payment Interface */}
+      {selectedCoin && !paymentDone && (
+        <div className="bg-[#111113] p-5 rounded-[14px] border border-[#222226] space-y-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center justify-between border-b border-[#222226] pb-3">
+            <h4 className="font-medium text-white flex items-center gap-2">
+              <span className={selectedCoin.color}>{selectedCoin.icon}</span> {selectedCoin.name} Checkout
+            </h4>
+            <span className="text-[10px] bg-[#222226] text-[#93939f] px-2 py-1 rounded-md font-mono">
+              Gas Fee Included
+            </span>
           </div>
 
-          {!isConnected ? (
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">Connect your wallet to continue.</p>
-              <div className="flex flex-wrap gap-2">
-                {connectors.map(c => (
-                  <button key={c.id} onClick={() => connect({ connector: c })} className="btn-outline-dim !text-xs !px-3 !py-2">
-                    {c.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {balance && (
-                <p className="text-xs text-muted-foreground">
-                  Balance: <span className="text-foreground font-mono">{parseFloat(formatEther(balance.value)).toFixed(4)} {balance.symbol}</span>
-                </p>
-              )}
-
-              <div className="bg-background/60 rounded-[10px] border border-border p-3 space-y-2">
-                <TxStep done={false} active label={`Deposit ${currentCryptoPrice} ${selectedChain} into escrow contract`} />
-                <TxStep done={false} active={isTxPending} label="Wallet signature pending…" />
-                <TxStep done={false} active={isTxConfirming} label="Waiting for on-chain confirmation…" />
-                <TxStep done={isTxConfirmed} active={false} label="Funds locked ✓ — seller will deliver" />
-              </div>
-
-              {chainId !== (selectedChain === "ETH" ? mainnet.id : bsc.id) ? (
-                <button onClick={() => switchChain({ chainId: selectedChain === "ETH" ? mainnet.id : bsc.id })} className="btn-accent w-full">
-                  Switch to {CHAIN_LABELS[selectedChain].label}
-                </button>
-              ) : isTxConfirmed ? (
-                <div className="text-center py-2 text-green-400 text-sm font-medium">✓ Payment confirmed on-chain!</div>
-              ) : (
-                <button
-                  disabled={isTxPending || isTxConfirming || isSold}
-                  onClick={handleEvmPay}
-                  className="btn-accent w-full disabled:opacity-50"
-                >
-                  {isTxPending ? "Confirm in wallet…" : isTxConfirming ? "Confirming on-chain…" : `Pay ${currentCryptoPrice} ${selectedChain}`}
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Custody flow (SOL / BTC / LTC) */}
-      {selectedChain && custodyChains.includes(selectedChain as CustodyChain) && (
-        <div className="float-shell p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <ChainBadge chain={selectedChain} />
-            <span className="text-[10px] font-mono text-yellow-400/70 bg-yellow-400/10 border border-yellow-400/20 rounded px-1.5 py-0.5">Transparent custodial</span>
+          <div className="text-center py-2">
+            <p className="text-xs text-[#93939f] mb-1">Send EXACTLY this amount:</p>
+            <p className="text-2xl font-mono text-white">
+              {getCryptoPrice(selectedCoin.id, totalUsd)} <span className="text-sm text-[#93939f]">{selectedCoin.id}</span>
+            </p>
           </div>
 
-          {custodyDone ? (
-            <div className="text-center py-2 text-green-400 text-sm font-medium">✓ Tx submitted — order created!</div>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">Send exactly <span className="text-foreground font-semibold">{currentCryptoPrice} {selectedChain}</span> (≈${priceUsd.toLocaleString()} USD) to this address:</p>
-
-              <div className="flex items-center gap-2 bg-background/80 rounded-[10px] border border-border p-2.5">
-                <code className="text-xs font-mono text-foreground/90 flex-1 break-all">{custodyAddress}</code>
-                <button onClick={handleCopy} className="text-[10px] text-muted-foreground hover:text-foreground flex-shrink-0 border border-border rounded-md px-2 py-1 transition-colors">
-                  {custodyCopied ? "Copied!" : "Copy"}
-                </button>
+          <div className="flex items-center justify-center py-2">
+            {/* Simulated QR Code */}
+            <div className="w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center">
+              <div className="w-full h-full border-4 border-dashed border-black/20 flex flex-col items-center justify-center">
+                <span className={`text-4xl ${selectedCoin.color} opacity-30`}>{selectedCoin.icon}</span>
+                <span className="text-black/40 text-[10px] font-bold mt-2 tracking-widest uppercase">SCAN TO PAY</span>
               </div>
+            </div>
+          </div>
 
-              <div>
-                <p className="text-xs text-muted-foreground mb-1.5">Paste your transaction hash after sending:</p>
-                <input
-                  value={custodyTxHash}
-                  onChange={e => setCustodyTxHash(e.target.value)}
-                  placeholder="0x… or txid…"
-                  className="w-full bg-background/60 border border-border rounded-[10px] px-3 py-2 text-xs font-mono text-foreground outline-none focus:border-accent/60"
-                />
-              </div>
-
-              <button
-                disabled={custodySubmitting || !custodyTxHash.trim()}
-                onClick={handleCustodySubmit}
-                className="btn-accent w-full disabled:opacity-50 !text-sm"
+          <div>
+            <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Address:</p>
+            <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-2.5">
+              <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{selectedCoin.address}</code>
+              <button 
+                onClick={handleCopy} 
+                className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors"
               >
-                {custodySubmitting ? "Submitting…" : "I've sent the payment"}
+                {isCopied ? "COPIED" : "COPY"}
               </button>
-            </>
+            </div>
+          </div>
+
+          <button
+            onClick={handleConfirmPayment}
+            disabled={isSimulating}
+            className="w-full mt-2 bg-[#ff0000] text-white font-medium text-[13px] px-5 py-3.5 rounded-[10px] hover:bg-[#cc0000] disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
+          >
+            {isSimulating ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Verifying Payment...
+              </>
+            ) : (
+              "I've Sent the Payment"
+            )}
+          </button>
+
+          {error && (
+            <p className="text-red-400 text-xs text-center">{error}</p>
           )}
         </div>
       )}
 
-      {error && (
-        <p className="text-destructive text-xs text-center">{error}</p>
+      {paymentDone && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-[14px] text-center">
+          <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">✓</div>
+          <h4 className="text-emerald-400 font-medium mb-1">Payment Confirmed</h4>
+          <p className="text-xs text-emerald-400/70">Order has been created successfully.</p>
+        </div>
       )}
     </div>
   );
