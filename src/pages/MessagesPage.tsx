@@ -577,8 +577,8 @@ export default function MessagesPage() {
   const visible = selected?.isLounge ? loungeMessages : messages;
   
   return (
-    <div className="mx-auto h-[calc(100dvh-84px)] max-w-6xl px-3 pb-3 sm:px-4 pt-24 font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
-      <div className="mkt-enter grid h-full min-h-0 grid-cols-1 overflow-hidden rounded-[14px] border border-border bg-card/40 lg:grid-cols-[340px_1fr]">
+    <div className="fixed inset-0 top-[84px] mx-auto w-full max-w-6xl px-3 pb-3 sm:px-4 pt-4 font-[Poppins,ui-sans-serif,system-ui,sans-serif] bg-background z-40 flex flex-col">
+      <div className="mkt-enter grid flex-1 min-h-0 grid-cols-1 overflow-hidden rounded-[14px] border border-border bg-card/40 lg:grid-cols-[340px_1fr]">
         <div className={`min-h-0 border-border lg:border-r ${selected ? 'hidden lg:block' : 'block'}`}>
           <div className="flex h-full min-h-0 flex-col">
             <div className="border-b border-border px-4 py-4">
