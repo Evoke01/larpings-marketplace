@@ -143,6 +143,63 @@ export default function MessagesPage() {
   const bottomRef = useRef<HTMLDivElement>(null),
     [params, setParams] = useSearchParams();
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !session?.user || !selected) return;
+
+    try {
+      setUploadingImage(true);
+      const ext = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${ext}`;
+      const filePath = `${session.user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-media')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from('chat-media')
+        .getPublicUrl(filePath);
+
+      const markdownImage = `![attachment](${data.publicUrl})`;
+
+      if (selected.isLounge) {
+        await supabase
+          .from("larping_lounge_messages")
+          .insert({ sender_id: session.user.id, content: markdownImage });
+      } else if (selected.isDeal) {
+        await supabase
+          .from("order_messages")
+          .insert({
+            order_id: selected.orderId,
+            sender_id: session.user.id,
+            content: markdownImage
+          });
+      } else {
+        await supabase
+          .from("messages")
+          .insert({
+            sender_id: session.user.id,
+            receiver_id: selected.partnerId,
+            content: markdownImage,
+          });
+      }
+    } catch (err) {
+      console.error('Error uploading image:', err);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   useEffect(() => {
     let alive = true;
     (async () => {

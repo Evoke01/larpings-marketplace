@@ -12,9 +12,10 @@ interface Web3PayPanelProps {
   cryptoPrice: number;
   coinId: string;
   sellerId: string;
+  onSuccess?: (txHash: string) => void;
 }
 
-export default function Web3PayPanel({ listingId, finalUsdPrice, cryptoPrice, coinId, sellerId }: Web3PayPanelProps) {
+export default function Web3PayPanel({ listingId, finalUsdPrice, cryptoPrice, coinId, sellerId, onSuccess }: Web3PayPanelProps) {
   const { address, isConnected, chainId } = useAccount();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
