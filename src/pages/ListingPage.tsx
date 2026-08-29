@@ -3,7 +3,19 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import ReputationPanel from "../components/ReputationPanel";
-import Web3PayPanel from "../components/Web3PayPanel";
+
+const COINS = [
+  { id: "BTC", name: "Bitcoin", icon: "₿", color: "text-[#f7931a]" },
+  { id: "ETH", name: "Ethereum", icon: "Ξ", color: "text-[#627eea]" },
+  { id: "SOL", name: "Solana", icon: "◎", color: "text-[#14f195]" },
+  { id: "LTC", name: "Litecoin", icon: "Ł", color: "text-[#345d9d]" },
+  { id: "BNB", name: "Binance Coin", icon: "BNB", color: "text-[#f3ba2f]" },
+  { id: "TON", name: "Toncoin", icon: "💎", color: "text-[#0098ea]" },
+  { id: "TRX", name: "Tron", icon: "TRX", color: "text-[#ef0027]" },
+  { id: "USDC", name: "USD Coin", icon: "$", color: "text-[#2775ca]" },
+  { id: "USDT", name: "Tether", icon: "₮", color: "text-[#26a17b]" },
+  { id: "DAI", name: "Dai", icon: "◈", color: "text-[#f5ac37]" },
+];
 
 // Icons needed for the listing page
 const IgIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -327,14 +339,24 @@ export default function ListingPage() {
               </button>
             )}
             
-            <div className="mt-4">
-              <Web3PayPanel
-                orderId={listing.id}
-                sellerWalletAddress={seller?.wallet_address ?? null}
-                priceUsd={effectivePrice}
-              listingStatus={listing.status}
-              onSuccess={() => setPaySuccess(true)}
-            />
+            <div className="mt-6 space-y-4">
+              {!isSold && (
+                <div>
+                  <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
+                  <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
+                    {COINS.map(coin => (
+                      <button
+                        key={coin.id}
+                        onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition-all"
+                      >
+                        <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
+                        <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="bg-[rgba(9,9,11,0.4)] mt-3 p-3.5 rounded-[12px] border border-[#222226]">
                 {paySuccess ? (
                   <div className="text-center py-4">

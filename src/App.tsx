@@ -12,6 +12,7 @@ const HomePage = lazy(() => import("./pages/HomePage"));
 const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
 const SellerProfilePage = lazy(() => import("./pages/SellerProfilePage"));
 const ListingPage = lazy(() => import("./pages/ListingPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
 const SellPage = lazy(() => import("./pages/SellPage"));
@@ -122,6 +123,7 @@ export default function App() {
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/fansigns" element={<FansignsPage />} />
               <Route path="/listing/:handle" element={<ListingPage />} />
+              <Route path="/checkout/:listingId/:coinId" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/seller/:handle" element={<SellerProfilePage />} />
               <Route path="/sell" element={<ProtectedRoute><SellPage /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
