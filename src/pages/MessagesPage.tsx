@@ -716,45 +716,78 @@ export default function MessagesPage() {
                         : selected.isDeal
                           ? selected.orderStatus === 'closed'
                             ? 'Deal Closed'
-                            : (<span className="flex items-center gap-1.5">ESCROW ACTIVE {selected.orderCreatedAt && <OrderTimer createdAt={selected.orderCreatedAt} />}</span>)
+                            : selected.orderStatus === 'disputed'
+                              ? <span className="text-red-400">Dispute Under Review</span>
+                              : (<span className="flex items-center gap-1.5">ESCROW ACTIVE {selected.orderCreatedAt && <OrderTimer createdAt={selected.orderCreatedAt} />}</span>)
                           : "Private conversation"}
                     </p>
                   </div>
                 </div>
                 
                 {selected.isDeal && selected.orderStatus !== 'closed' && (
-                  <>
-                    {EVM_COINS.includes(selected.payChain || '') && selected.isBuyer ? (
-                      <EvmConfirmButton 
-                        orderId={selected.orderId!} 
-                        payChain={selected.payChain!} 
-                        onConfirmed={async () => {
-                          await supabase.from('orders').update({ status: 'closed', buyer_closed: true, seller_closed: true }).eq('id', selected.orderId);
-                          setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                        }} 
-                      />
-                    ) : EVM_COINS.includes(selected.payChain || '') && !selected.isBuyer ? (
-                      <div className="text-xs text-[#93939f]">Waiting for buyer Web3 confirmation</div>
+                  <div className="flex items-center gap-2">
+                    {selected.orderStatus === 'disputed' ? (
+                       <div className="text-xs text-red-500 font-medium px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30">Disputed</div>
                     ) : (
-                      <button 
-                        onClick={async () => {
-                          const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
-                          await supabase.from('orders').update(updateField).eq('id', selected.orderId);
-                          const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
-                          if (data?.buyer_closed && data?.seller_closed) {
-                            await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
-                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                          } else {
-                            setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
-                          }
-                        }}
-                        disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
-                        className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
-                      >
-                        {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
-                      </button>
+                      <>
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm("Are you sure? This will lock the deal and call an admin to review the chat logs.")) return;
+                            await supabase.from('orders').update({ status: 'disputed' }).eq('id', selected.orderId);
+                            await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "🚨 A dispute has been opened. An admin will review this chat shortly." });
+                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'disputed' }) : prev);
+                          }}
+                          className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
+                        >
+                          Dispute
+                        </button>
+
+                        {EVM_COINS.includes(selected.payChain || '') && selected.isBuyer ? (
+                          <EvmConfirmButton 
+                            orderId={selected.orderId!} 
+                            payChain={selected.payChain!} 
+                            onConfirmed={async () => {
+                              await supabase.from('orders').update({ status: 'closed', buyer_closed: true, seller_closed: true }).eq('id', selected.orderId);
+                              await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "✅ Web3 Escrow Released! The deal is now closed." });
+                              setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                            }} 
+                          />
+                        ) : EVM_COINS.includes(selected.payChain || '') && !selected.isBuyer ? (
+                          <button 
+                            onClick={async () => {
+                              await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "📦 The seller has marked the item as delivered. Buyer, please verify and confirm the Web3 transaction to release the funds." });
+                              await supabase.from('orders').update({ seller_closed: true }).eq('id', selected.orderId);
+                              setSelected(prev => prev ? ({ ...prev, sellerClosed: true }) : prev);
+                            }}
+                            disabled={selected.sellerClosed}
+                            className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                          >
+                             {selected.sellerClosed ? "✓ Delivered" : "Mark Delivered"}
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={async () => {
+                              const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
+                              await supabase.from('orders').update(updateField).eq('id', selected.orderId);
+                              const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
+                              if (data?.buyer_closed && data?.seller_closed) {
+                                await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
+                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: `✅ Both parties have confirmed. The deal is now closed.` });
+                                setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                              } else {
+                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: `✅ The ${selected.isBuyer ? 'Buyer' : 'Seller'} has confirmed the deal. Waiting for the ${selected.isBuyer ? 'Seller' : 'Buyer'} to confirm.` });
+                                setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
+                              }
+                            }}
+                            disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
+                            className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                          >
+                            {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
+                          </button>
+                        )}
+                      </>
                     )}
-                  </>
+                  </div>
                 )}
                 {!selected.isDeal && !selected.isLounge && (
                    <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
