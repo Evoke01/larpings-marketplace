@@ -11,6 +11,7 @@ const PancakeLayout = lazy(() => import("./pages/admin/PancakeLayout"));
 const HomePage = lazy(() => import("./pages/HomePage"));
 const MarketplacePage = lazy(() => import("./pages/MarketplacePage"));
 const SellerProfilePage = lazy(() => import("./pages/SellerProfilePage"));
+const UserProfilePage = lazy(() => import("./pages/UserProfilePage"));
 const ListingPage = lazy(() => import("./pages/ListingPage"));
 const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
 const AboutPage = lazy(() => import("./pages/AboutPage"));
@@ -125,6 +126,7 @@ export default function App() {
               <Route path="/listing/:handle" element={<ListingPage />} />
               <Route path="/checkout/:listingId/:coinId" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
               <Route path="/seller/:handle" element={<SellerProfilePage />} />
+              <Route path="/profile/:id" element={<UserProfilePage />} />
               <Route path="/sell" element={<ProtectedRoute><SellPage /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />

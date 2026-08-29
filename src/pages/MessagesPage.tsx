@@ -559,7 +559,7 @@ export default function MessagesPage() {
                   </button>
                 )}
                 {!selected.isDeal && !selected.isLounge && (
-                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/seller/${selected.partnerId}`}>View profile</Link>
+                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
                 )}
               </div>
               
