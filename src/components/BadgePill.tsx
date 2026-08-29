@@ -19,6 +19,15 @@ const VerifiedIcon = () => (
   </svg>
 );
 
+const BadgeIcon = ({ type }: { type: string }) => {
+  const common = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, className: "h-3.5 w-3.5 shrink-0", "aria-hidden": true };
+  if (type === "top_seller") return <svg {...common}><path d="m11.56 3.27-3.1 5.6a1 1 0 0 1-1.52.3L2.82 5.5a.5.5 0 0 0-.8.52l2.84 10.25a1 1 0 0 0 .96.73h12.36a1 1 0 0 0 .96-.73L21.98 6.02a.5.5 0 0 0-.8-.52l-4.28 3.66a1 1 0 0 1-1.52-.3l-2.95-5.6a.5.5 0 0 0-.88 0Z" /><path d="M5 21h14" /></svg>;
+  if (type === "trusted_seller") return <svg {...common}><path d="M12 3 4.5 6v5c0 4.7 3.1 8.6 7.5 10 4.4-1.4 7.5-5.3 7.5-10V6z" /><path d="m8.5 12 2.2 2.2 4.8-4.8" /></svg>;
+  if (type === "og" || type === "early_adopter") return <svg {...common}><path d="M4 8h16l-1.5 11h-13z" /><path d="m4 8 2-4h12l2 4M9 12h6" /></svg>;
+  if (/sales/.test(type)) return <svg {...common}><path d="M13 2 4 13h6l-1 9 9-11h-6z" /></svg>;
+  return null;
+};
+
 export default function BadgePill({ badgeType, compact = false }: BadgePillProps) {
   const type = badgeType.toLowerCase();
   const label = labels[type] ?? type.replaceAll("_", " ");
@@ -40,6 +49,7 @@ export default function BadgePill({ badgeType, compact = false }: BadgePillProps
     >
       {isDexter && <img src="/dexter-badge.png" alt="" className={compact ? "h-4 w-4 rounded-full object-cover" : "h-5 w-5 rounded-full object-cover"} />}
       {isVerified && <VerifiedIcon />}
+      {!isDexter && !isVerified && <BadgeIcon type={type} />}
       <span>{label}</span>
     </span>
   );
