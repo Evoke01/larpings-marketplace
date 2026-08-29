@@ -82,7 +82,8 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true);
   const [paySuccess, setPaySuccess] = useState(false);
   const [userOffer, setUserOffer] = useState<any>(null);
-  const [sellerWallets, setSellerWallets] = useState<any>(null);
+  const [sellerWallets, setSellerWallets] = useState<any>(undefined); // undefined=loading, null=no record, {...}=loaded
+  const [existingOrder, setExistingOrder] = useState<any>(null);
 
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -107,7 +108,8 @@ export default function ListingPage() {
           supabase.from('seller_wallets').select('*').eq('seller_id', listingData.seller_id).maybeSingle(),
         ]);
         if (profileData) setSeller(profileData);
-        if (walletsData) setSellerWallets(walletsData);
+        // null explicitly means "checked and found nothing"; undefined means "not yet checked"
+        setSellerWallets(walletsData ?? null);
       }
       setLoading(false);
     }
@@ -125,11 +127,20 @@ export default function ListingPage() {
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
-      if (data) {
-        setUserOffer(data);
-      }
+      if (data) setUserOffer(data);
+    }
+    async function checkExistingOrder() {
+      const { data } = await supabase
+        .from('orders')
+        .select('id, status')
+        .eq('listing_id', listing.id)
+        .eq('buyer_id', user!.id)
+        .not('status', 'eq', 'closed')
+        .maybeSingle();
+      if (data) setExistingOrder(data);
     }
     loadOffer();
+    checkExistingOrder();
   }, [user, listing]);
 
   const handleMakeOffer = async () => {
@@ -348,29 +359,41 @@ export default function ListingPage() {
               {user?.id !== listing.seller_id && !isSold && (
                 <div>
                   <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
+                  {existingOrder ? (
+                    <div className="rounded-[10px] border border-amber-500/30 bg-amber-500/10 p-3 text-center">
+                      <p className="text-amber-300 text-xs font-medium mb-2">You already have an active deal on this listing.</p>
+                      <button onClick={() => navigate(`/messages?order=${existingOrder.id}`)} className="text-[11px] text-amber-400 underline">View Deal Chat →</button>
+                    </div>
+                  ) : (
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
-                    {sellerWallets ? COINS.filter(coin => {
-                      if (!sellerWallets) return false;
-                      if (coin.id === 'BTC') return !!sellerWallets.btc_address;
-                      if (coin.id === 'SOL') return !!sellerWallets.sol_address;
-                      if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
-                      if (coin.id === 'TON') return !!sellerWallets.ton_address;
-                      if (coin.id === 'TRX') return !!sellerWallets.trx_address;
-                      // EVM coins (ETH, BNB, USDC, USDT, DAI)
-                      return !!sellerWallets.evm_address;
-                    }).map(coin => (
-                      <button
-                        key={coin.id}
-                        onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition-all"
-                      >
-                        <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
-                        <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
-                      </button>
-                    )) : (
+                    {sellerWallets === undefined ? (
+                      // Still loading wallet info
+                      Array.from({length: 4}).map((_, i) => (
+                        <div key={i} className="h-16 rounded-[10px] border border-[#222226] bg-[#09090b]/40 animate-pulse" />
+                      ))
+                    ) : sellerWallets === null ? (
                       <p className="col-span-4 md:col-span-5 text-[#93939f] text-xs py-2">Seller hasn't configured payment methods yet.</p>
+                    ) : (
+                      COINS.filter(coin => {
+                        if (coin.id === 'BTC') return !!sellerWallets.btc_address;
+                        if (coin.id === 'SOL') return !!sellerWallets.sol_address;
+                        if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
+                        if (coin.id === 'TON') return !!sellerWallets.ton_address;
+                        if (coin.id === 'TRX') return !!sellerWallets.trx_address;
+                        return !!sellerWallets.evm_address;
+                      }).map(coin => (
+                        <button
+                          key={coin.id}
+                          onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
+                          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition-all"
+                        >
+                          <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
+                          <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
+                        </button>
+                      ))
                     )}
                   </div>
+                  )}
                 </div>
               )}
               <div className="bg-[rgba(9,9,11,0.4)] mt-3 p-3.5 rounded-[12px] border border-[#222226]">

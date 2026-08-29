@@ -119,6 +119,28 @@ export default function CheckoutPage() {
 
   if (!coin) return <div className="p-8 text-center">Invalid coin selected</div>;
   if (!listing) return <div className="p-8 text-center text-[#93939f]">Loading order details...</div>;
+  if (sellerWallets === null && !isEVM) return (
+    <div className="pt-24 pb-12 px-4 max-w-xl mx-auto text-center">
+      <p className="text-[#93939f] text-sm mb-4">This seller hasn't set up a {coin.name} wallet address yet.</p>
+      <button onClick={() => navigate(-1)} className="text-[#ff0000] underline text-sm">← Go back</button>
+    </div>
+  );
+
+  // Validate that seller actually has an address for this coin (prevents URL manipulation)
+  const sellerHasWallet = (() => {
+    if (!sellerWallets) return true; // still loading, don't block yet
+    if (isEVM) return !!sellerWallets.evm_address;
+    if (coin.id === 'BTC') return !!sellerWallets.btc_address;
+    if (coin.id === 'SOL') return !!sellerWallets.sol_address;
+    if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
+    if (coin.id === 'TON') return !!sellerWallets.ton_address;
+    if (coin.id === 'TRX') return !!sellerWallets.trx_address;
+    return false;
+  })();
+  if (sellerWallets !== null && !sellerHasWallet) {
+    navigate(`/listing/${listing.handle}`);
+    return null;
+  }
 
   // Get the actual seller wallet address for this coin
   const sellerAddress = (() => {

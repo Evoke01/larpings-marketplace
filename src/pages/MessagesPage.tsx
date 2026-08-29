@@ -496,9 +496,12 @@ export default function MessagesPage() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "order_messages" },
         ({ new: row }: any) => {
-          setMessages((prev) =>
-             prev.some((m) => m.id === row.id) ? prev : [...prev, row],
-          );
+          // Only append if it belongs to the currently selected deal chat
+          setMessages((prev) => {
+            const currentDealId = prev.length > 0 && prev[0].order_id ? prev[0].order_id : null;
+            if (currentDealId && currentDealId !== row.order_id) return prev;
+            return prev.some((m) => m.id === row.id) ? prev : [...prev, row];
+          });
           setConversations((prev) => {
             const cp = [...prev];
             const idx = cp.findIndex((c) => c.partnerId === row.order_id);
@@ -583,7 +586,7 @@ export default function MessagesPage() {
         );
       }
     } else if (c.isDeal) {
-      setParams({ user: c.partnerId });
+      setParams({ order: c.orderId! });
       const { data: thread } = await supabase
         .from("order_messages")
         .select("*")
@@ -593,6 +596,7 @@ export default function MessagesPage() {
     } else {
       setParams({});
     }
+    setDraft(""); // Clear draft when switching conversations
   };
 
   if (loading)

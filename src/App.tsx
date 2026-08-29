@@ -83,7 +83,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen flex flex-col font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       <Navbar />
-      <main className="page-motion flex-1 pb-24 md:pb-0">
+      <main className={`page-motion flex-1 ${location.pathname.startsWith('/messages') ? '' : 'pb-24 md:pb-0'}`}>
         <Suspense fallback={<PageLoader />}>
           {children}
         </Suspense>
