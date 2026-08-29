@@ -66,7 +66,6 @@ export default function ListingPage() {
   const navigate = useNavigate();
   const [listing, setListing] = useState<any>(null);
   const { user } = useAuth();
-  const [listing, setListing] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [paySuccess, setPaySuccess] = useState(false);
@@ -111,7 +110,7 @@ export default function ListingPage() {
         .from('listing_offers')
         .select('*')
         .eq('listing_id', listing.id)
-        .eq('buyer_id', user.id)
+        .eq('buyer_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -506,6 +505,7 @@ export default function ListingPage() {
         </div>
       )}
 
+      </div>
     </div>
   );
 }

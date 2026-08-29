@@ -154,9 +154,6 @@ export default function DashboardPage() {
               <p className="mt-0.5 truncate text-[10px] text-muted-foreground">live on the market</p>
             </div>
           </div>
-
-          </div>
-
           {/* Pending Offers */}
           {offers.length > 0 && (
             <div className="mkt-enter mb-6" style={{ animationDelay: "150ms" }}>
