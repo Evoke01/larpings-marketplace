@@ -5,6 +5,7 @@ import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SectionTour from "./components/SectionTour";
+import { useUnreadMessages } from "./hooks/useUnreadMessages";
 
 // Lazy-load pages for code splitting
 const PancakeLayout = lazy(() => import("./pages/admin/PancakeLayout"));
@@ -54,6 +55,7 @@ function PageLoader() {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const unreadMessages = useUnreadMessages();
   const location = useLocation();
 
   useEffect(() => {
@@ -99,7 +101,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
         </svg>
-        <span className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 border-zinc-950 bg-white" />
+        {unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="absolute right-0.5 top-0.5 h-3 w-3 rounded-full border-2 border-zinc-950 bg-[#ff0000]" />}
       </button>
     </div>
   );

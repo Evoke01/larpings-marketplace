@@ -1,11 +1,13 @@
 import React, { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import ShopMenu from "./ShopMenu";
+import { useUnreadMessages } from "../hooks/useUnreadMessages";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const navigate = useNavigate();
+  const unreadMessages = useUnreadMessages();
 
   const platforms = [
     { label: "Instagram usernames", path: "/marketplace?platform=instagram" },
@@ -60,7 +62,7 @@ export default function Navbar() {
                   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                 </svg>
                 {/* Notification dot */}
-                <span className="absolute top-1 right-1 w-2 h-2 bg-[#ff0000] rounded-full border-[1.5px] border-[#111113]" />
+                {unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="absolute top-1 right-1 w-2 h-2 bg-[#ff0000] rounded-full border-[1.5px] border-[#111113]" />}
               </Link>
               <Link to="/account" aria-label="Profile" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

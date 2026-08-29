@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useUnreadMessages } from "../hooks/useUnreadMessages";
 
 // Inline SVG icons — no separate files needed
 const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -48,6 +49,7 @@ const tabs = [
 
 export default function MobileNav() {
   const location = useLocation();
+  const unreadMessages = useUnreadMessages();
 
   // Find the active tab index (exact match first, then prefix)
   const activeIndex = (() => {
@@ -88,14 +90,14 @@ export default function MobileNav() {
                 isActive ? "text-white" : "text-[#93939f]"
               }`}
             >
-              <Icon
+              <span className="relative"><Icon
                 width="24"
                 height="24"
                 className={`w-6 h-6 block transition-colors ${
                   isActive ? "stroke-white" : "stroke-[#93939f]"
                 } ${i === 2 ? "w-7 h-7" : ""}`}
                 stroke={isActive ? "#ffffff" : "#93939f"}
-              />
+              />{i === 2 && unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-[#171719] bg-[#ff0000]" />}</span>
             </Link>
           );
         })}

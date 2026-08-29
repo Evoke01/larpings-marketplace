@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { supabase } from "../lib/supabase";
@@ -13,10 +13,22 @@ export default function LegalAcceptancePage() {
   const [termsChecked, setTermsChecked] = useState(false);
   const [privacyChecked, setPrivacyChecked] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [checkingAcceptance, setCheckingAcceptance] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const destination = safeReturnTo(params.get("returnTo"));
 
-  if (authLoading) return <div className="min-h-[60vh] flex items-center justify-center"><div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>;
+  useEffect(() => {
+    if (authLoading || !user) { if (!authLoading) setCheckingAcceptance(false); return; }
+    let active = true;
+    supabase.from("legal_acceptances").select("user_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (!active) return;
+      if (data) { window.localStorage.setItem(`larpings:legal-accepted:${user.id}`, "1"); navigate(destination, { replace: true }); }
+      else setCheckingAcceptance(false);
+    });
+    return () => { active = false; };
+  }, [authLoading, destination, navigate, user]);
+
+  if (authLoading || checkingAcceptance) return <div className="min-h-[60vh] flex items-center justify-center"><div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" /></div>;
   if (!user) { navigate(`/signin?returnTo=${encodeURIComponent(`/legal-acceptance?returnTo=${destination}`)}`, { replace: true }); return null; }
 
   const accept = async () => {
