@@ -335,18 +335,6 @@ export default function ListingPage() {
               listingStatus={listing.status}
               onSuccess={() => setPaySuccess(true)}
             />
-            {paySuccess && (
-              <p className="text-emerald-400 text-sm mt-3 text-center font-medium">✓ Payment submitted! Check your Orders page.</p>
-            )}
-            
-            <div className="mt-5">
-              <button disabled className="bg-zinc-900 text-[#93939f] font-medium text-[15px] w-full px-5 py-3.5 rounded-[10px] border border-[#222226] cursor-not-allowed">
-                Choose a coin to continue
-              </button>
-              <p className="text-[#93939f] text-[11px] flex justify-center items-center gap-1.5 mt-3">
-                <LockIcon /> Reserving locks this name to you for 45 minutes while you pay
-              </p>
-              
               <div className="bg-[rgba(9,9,11,0.4)] mt-3 p-3.5 rounded-[12px] border border-[#222226]">
                 {paySuccess ? (
                   <div className="text-center py-4">
@@ -407,7 +395,6 @@ export default function ListingPage() {
                   </>
                 )}
               </div>
-            </div>
             
             <div className="grid gap-2 mt-6">
               <div className="bg-[rgba(9,9,11,0.4)] text-[#b7b7c2] font-medium text-[12px] flex items-center gap-2.5 px-3 py-2.5 rounded-[10px] border border-[#222226]">

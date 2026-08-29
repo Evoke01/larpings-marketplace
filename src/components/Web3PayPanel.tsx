@@ -29,6 +29,7 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
   const [isCopied, setIsCopied] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
+  const [txHash, setTxHash] = useState("");
   const [error, setError] = useState("");
 
   const isSold = listingStatus === "sold";
@@ -62,11 +63,15 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
       setError("You must be logged in to buy.");
       return;
     }
+    if (!txHash.trim()) {
+      setError("Please enter the Transaction ID to confirm payment.");
+      return;
+    }
     setError("");
     setIsSimulating(true);
 
     // Simulate network delay for verification
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     try {
       // 1. Create the order
@@ -75,7 +80,7 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
         buyer_id: user.id,
         status: 'confirmed',
         pay_chain: selectedCoin.id,
-        tx_hash: 'simulated_tx_' + Date.now()
+        tx_hash: txHash.trim()
       }).select().single();
 
       if (orderError) throw orderError;
@@ -98,11 +103,13 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
   };
 
   if (isSold) {
-    return (
-      <div className="mt-6 text-center text-sm font-medium text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-xl py-4">
-        This listing has already been sold.
-      </div>
-    );
+    return null;
+  }
+
+  // If payment is completely done, we don't render anything here anymore 
+  // because the parent ListingPage will render the Escrow Funded box.
+  if (paymentDone) {
+    return null;
   }
 
   return (
@@ -110,7 +117,7 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
       {/* Coin Selector */}
       <div>
         <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
-        <div className="grid grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
           {COINS.map(coin => (
             <button
               key={coin.id}
@@ -128,74 +135,81 @@ export default function Web3PayPanel({ orderId: listingId, priceUsd, listingStat
         </div>
       </div>
 
-      {/* Payment Interface */}
-      {selectedCoin && !paymentDone && (
-        <div className="bg-[#111113] p-5 rounded-[14px] border border-[#222226] space-y-4 animate-in fade-in slide-in-from-top-2">
-          <div className="flex items-center justify-between border-b border-[#222226] pb-3">
-            <h4 className="font-medium text-white flex items-center gap-2">
-              <span className={selectedCoin.color}>{selectedCoin.icon}</span> {selectedCoin.name} Checkout
-            </h4>
-            <span className="text-[10px] bg-[#222226] text-[#93939f] px-2 py-1 rounded-md font-mono">
-              Gas Fee Included
-            </span>
-          </div>
-
-          <div className="text-center py-2">
-            <p className="text-xs text-[#93939f] mb-1">Send EXACTLY this amount:</p>
-            <p className="text-2xl font-mono text-white">
-              {getCryptoPrice(selectedCoin.id, totalUsd)} <span className="text-sm text-[#93939f]">{selectedCoin.id}</span>
-            </p>
-          </div>
-
-          <div className="flex items-center justify-center py-2">
-            {/* Simulated QR Code */}
-            <div className="w-40 h-40 bg-white p-2 rounded-xl flex items-center justify-center">
-              <div className="w-full h-full border-4 border-dashed border-black/20 flex flex-col items-center justify-center">
-                <span className={`text-4xl ${selectedCoin.color} opacity-30`}>{selectedCoin.icon}</span>
-                <span className="text-black/40 text-[10px] font-bold mt-2 tracking-widest uppercase">SCAN TO PAY</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Address:</p>
-            <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-2.5">
-              <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{selectedCoin.address}</code>
+      {/* Payment Interface Modal */}
+      {selectedCoin && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-[#111113] p-6 rounded-[20px] border border-[#222226] w-full max-w-md shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between border-b border-[#222226] pb-4">
+              <h4 className="font-medium text-white flex items-center gap-2 text-lg">
+                <span className={selectedCoin.color}>{selectedCoin.icon}</span> {selectedCoin.name} Checkout
+              </h4>
               <button 
-                onClick={handleCopy} 
-                className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors"
+                onClick={() => setSelectedCoin(null)}
+                className="text-[#93939f] hover:text-white"
               >
-                {isCopied ? "COPIED" : "COPY"}
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
-          </div>
 
-          <button
-            onClick={handleConfirmPayment}
-            disabled={isSimulating}
-            className="w-full mt-2 bg-[#ff0000] text-white font-medium text-[13px] px-5 py-3.5 rounded-[10px] hover:bg-[#cc0000] disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
-          >
-            {isSimulating ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Verifying Payment...
-              </>
-            ) : (
-              "I've Sent the Payment"
+            <div className="text-center py-2">
+              <p className="text-sm text-[#93939f] mb-1">Send EXACTLY this amount:</p>
+              <p className="text-3xl font-mono text-white">
+                {getCryptoPrice(selectedCoin.id, totalUsd)} <span className="text-sm text-[#93939f]">{selectedCoin.id}</span>
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center py-2">
+              {/* Generic Black QR Code */}
+              <div className="w-48 h-48 bg-white p-3 rounded-[14px] flex items-center justify-center shadow-inner">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="black" className="w-full h-full">
+                  <path d="M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13-2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm-4-6h2v2h-2zm2 2h2v2h-2zm-2 2h2v2h-2zm2 2h2v2h-2zm-6 8h2v2H7zm4 0h2v2h-2z"/>
+                </svg>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Address:</p>
+              <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-2.5">
+                <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{selectedCoin.address}</code>
+                <button 
+                  onClick={handleCopy} 
+                  className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors bg-[#111113]"
+                >
+                  {isCopied ? "COPIED" : "COPY"}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs text-[#93939f] mb-1.5 font-medium">Transaction ID / Hash:</p>
+              <input 
+                type="text" 
+                value={txHash}
+                onChange={(e) => setTxHash(e.target.value)}
+                placeholder="Paste Tx ID here after sending..."
+                className="w-full bg-[#09090b] text-white text-sm rounded-[10px] border border-[#222226] p-3 focus:outline-none focus:border-[#ff0000]"
+              />
+            </div>
+
+            <button
+              onClick={handleConfirmPayment}
+              disabled={isSimulating}
+              className="w-full mt-2 bg-[#ff0000] text-white font-medium text-[14px] px-5 py-3.5 rounded-[10px] hover:bg-[#cc0000] disabled:opacity-50 transition-colors flex justify-center items-center gap-2"
+            >
+              {isSimulating ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Verifying Payment...
+                </>
+              ) : (
+                "Confirm Payment"
+              )}
+            </button>
+
+            {error && (
+              <p className="text-red-400 text-xs text-center">{error}</p>
             )}
-          </button>
-
-          {error && (
-            <p className="text-red-400 text-xs text-center">{error}</p>
-          )}
-        </div>
-      )}
-
-      {paymentDone && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-[14px] text-center">
-          <div className="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-2 text-lg">✓</div>
-          <h4 className="text-emerald-400 font-medium mb-1">Payment Confirmed</h4>
-          <p className="text-xs text-emerald-400/70">Order has been created successfully.</p>
+          </div>
         </div>
       )}
     </div>
