@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<{ username: string; rating: number; reviews: number } | null>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [offers, setOffers] = useState<any[]>([]);
   const [salesCount, setSalesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
@@ -61,16 +62,18 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { navigate('/signin'); return; }
 
-      const [{ data: prof }, { data: listingsData }, { data: ordersData }, { data: salesData }] = await Promise.all([
+      const [{ data: prof }, { data: listingsData }, { data: ordersData }, { data: salesData }, { data: offersData }] = await Promise.all([
         supabase.from('profiles').select('username, rating, reviews').eq('id', user.id).single(),
         supabase.from('listings').select('*').eq('seller_id', user.id).eq('status', 'active'),
         supabase.from('orders').select('*, listings(handle, price)').eq('buyer_id', user.id),
         supabase.from('orders').select('id, listings!inner(seller_id)').eq('listings.seller_id', user.id).eq('status', 'confirmed'),
+        supabase.from('listing_offers').select('*, listings!inner(handle, price), profiles!buyer_id(username, display_name)').eq('listings.seller_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }),
       ]);
 
       setProfile(prof);
       setListings(listingsData ?? []);
       setOrders(ordersData ?? []);
+      setOffers(offersData ?? []);
       setSalesCount(salesData?.length ?? 0);
       setLoading(false);
     };
@@ -91,6 +94,11 @@ export default function DashboardPage() {
     ...(confirmedSales >= 1 ? ["1 Sales"] : []), ...(confirmedSales >= 10 ? ["10 Sales"] : []), ...(confirmedSales >= 30 ? ["30 Sales"] : []), ...(confirmedSales >= 50 ? ["50 Sales"] : []), ...(confirmedSales >= 100 ? ["100 Sales"] : []), ...(confirmedSales >= 500 ? ["500 Sales"] : []), ...(confirmedSales >= 1000 ? ["1000 Sales"] : []), ...(confirmedSales >= 2000 ? ["2000 Sales", "God Seller"] : []),
   ]);
   const salesProgress = Math.min((confirmedSales / 10) * 100, 100);
+
+  const handleOffer = async (offerId: string, status: 'accepted' | 'rejected') => {
+    setOffers(prev => prev.filter(o => o.id !== offerId));
+    await supabase.from('listing_offers').update({ status }).eq('id', offerId);
+  };
 
   return (
     <div className="px-4 pb-32 pt-8 mx-auto max-w-6xl">
@@ -146,6 +154,37 @@ export default function DashboardPage() {
               <p className="mt-0.5 truncate text-[10px] text-muted-foreground">live on the market</p>
             </div>
           </div>
+
+          </div>
+
+          {/* Pending Offers */}
+          {offers.length > 0 && (
+            <div className="mkt-enter mb-6" style={{ animationDelay: "150ms" }}>
+              <div className="mono-label mb-3 flex items-center gap-1.5 px-1 text-amber-300">
+                Pending Offers
+              </div>
+              <div className="rounded-[14px] border border-amber-500/30 bg-amber-500/10 divide-y divide-amber-500/20">
+                {offers.map((offer) => (
+                  <div key={offer.id} className="px-5 py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-amber-100">@{offer.listings.handle}</p>
+                        <p className="text-xs text-amber-200/70">Offer from @{offer.profiles?.username || 'user'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-mono font-semibold text-amber-300">${offer.amount.toLocaleString()}</p>
+                        <p className="text-[10px] text-amber-200/50 line-through">List: ${offer.listings.price}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => handleOffer(offer.id, 'accepted')} className="flex-1 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 px-3 py-1.5 rounded text-xs font-medium border border-emerald-500/30 transition-colors">Accept</button>
+                      <button onClick={() => handleOffer(offer.id, 'rejected')} className="flex-1 bg-red-500/20 text-red-300 hover:bg-red-500/30 px-3 py-1.5 rounded text-xs font-medium border border-red-500/30 transition-colors">Reject</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Active Listings */}
           <div className="mkt-enter" style={{ animationDelay: "170ms" }}>

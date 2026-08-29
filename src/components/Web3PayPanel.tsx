@@ -65,7 +65,15 @@ export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, l
     useWaitForTransactionReceipt({ hash: txHash });
 
   const isSold = listingStatus === "sold";
-  const priceEth = (priceUsd / 3000).toFixed(6); // rough ETH/USD rate — in prod use a live oracle
+  
+  const getCryptoPrice = (chain: string, usdValue: number) => {
+    const rates: Record<string, number> = { ETH: 3000, BNB: 600, SOL: 150, BTC: 65000, LTC: 80 };
+    const val = usdValue / (rates[chain] || 1);
+    if (chain === 'BTC') return val.toFixed(8);
+    if (chain === 'ETH' || chain === 'BNB') return val.toFixed(6);
+    return val.toFixed(4);
+  };
+  const currentCryptoPrice = selectedChain ? getCryptoPrice(selectedChain, priceUsd) : "0";
 
   const evmChains: EvmChain[] = ["ETH", "BNB"];
   const custodyChains: CustodyChain[] = ["SOL", "BTC", "LTC"];
@@ -102,12 +110,12 @@ export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, l
         abi: ESCROW_ABI,
         functionName: "deposit",
         args: [orderIdBytes32, sellerWalletAddress as `0x${string}`],
-        value: parseEther(priceEth),
+        value: parseEther(currentCryptoPrice),
       });
     } catch (e: any) {
       setError(e.message ?? "Transaction failed");
     }
-  }, [selectedChain, chainId, orderId, sellerWalletAddress, priceEth, switchChain, writeContract]);
+  }, [selectedChain, chainId, orderId, sellerWalletAddress, currentCryptoPrice, switchChain, writeContract]);
 
   // Track confirmed EVM tx → update Supabase
   React.useEffect(() => {
@@ -217,7 +225,7 @@ export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, l
               )}
 
               <div className="bg-background/60 rounded-[10px] border border-border p-3 space-y-2">
-                <TxStep done={false} active label={`Deposit ${priceEth} ${selectedChain} into escrow contract`} />
+                <TxStep done={false} active label={`Deposit ${currentCryptoPrice} ${selectedChain} into escrow contract`} />
                 <TxStep done={false} active={isTxPending} label="Wallet signature pending…" />
                 <TxStep done={false} active={isTxConfirming} label="Waiting for on-chain confirmation…" />
                 <TxStep done={isTxConfirmed} active={false} label="Funds locked ✓ — seller will deliver" />
@@ -235,7 +243,7 @@ export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, l
                   onClick={handleEvmPay}
                   className="btn-accent w-full disabled:opacity-50"
                 >
-                  {isTxPending ? "Confirm in wallet…" : isTxConfirming ? "Confirming on-chain…" : `Pay ${priceEth} ${selectedChain}`}
+                  {isTxPending ? "Confirm in wallet…" : isTxConfirming ? "Confirming on-chain…" : `Pay ${currentCryptoPrice} ${selectedChain}`}
                 </button>
               )}
             </div>
@@ -255,7 +263,7 @@ export default function Web3PayPanel({ orderId, sellerWalletAddress, priceUsd, l
             <div className="text-center py-2 text-green-400 text-sm font-medium">✓ Tx submitted — order created!</div>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground">Send exactly <span className="text-foreground font-semibold">${priceUsd.toLocaleString()} USD</span> worth of {selectedChain} to this address:</p>
+              <p className="text-sm text-muted-foreground">Send exactly <span className="text-foreground font-semibold">{currentCryptoPrice} {selectedChain}</span> (≈${priceUsd.toLocaleString()} USD) to this address:</p>
 
               <div className="flex items-center gap-2 bg-background/80 rounded-[10px] border border-border p-2.5">
                 <code className="text-xs font-mono text-foreground/90 flex-1 break-all">{custodyAddress}</code>

@@ -109,6 +109,25 @@ contract LarpingsEscrow {
     }
 
     /**
+     * @notice Admin forces release of funds to seller (admin only).
+     *         Used when a buyer receives the item but refuses to confirm.
+     */
+    function adminRelease(bytes32 orderId) external onlyAdmin {
+        EscrowRecord storage e = escrows[orderId];
+        require(e.status == Status.Deposited, "LarpingsEscrow: not deposited");
+
+        e.status = Status.Released;
+
+        uint256 fee          = (e.amount * FEE_BPS) / 10_000;
+        uint256 sellerAmount = e.amount - fee;
+
+        e.seller.transfer(sellerAmount);
+        payable(admin).transfer(fee);
+
+        emit Released(orderId, sellerAmount, fee);
+    }
+
+    /**
      * @notice Transfer admin role to a new address.
      */
     function setAdmin(address newAdmin) external onlyAdmin {

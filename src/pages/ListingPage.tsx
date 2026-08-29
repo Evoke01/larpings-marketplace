@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../lib/auth";
 import ReputationPanel from "../components/ReputationPanel";
 import Web3PayPanel from "../components/Web3PayPanel";
 
@@ -64,9 +65,19 @@ export default function ListingPage() {
   const { handle } = useParams();
   const navigate = useNavigate();
   const [listing, setListing] = useState<any>(null);
+  const { user } = useAuth();
+  const [listing, setListing] = useState<any>(null);
   const [seller, setSeller] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [paySuccess, setPaySuccess] = useState(false);
+  const [userOffer, setUserOffer] = useState<any>(null);
+
+  // Offer modal state
+  const [showOfferModal, setShowOfferModal] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [submittingOffer, setSubmittingOffer] = useState(false);
+  const [offerSuccess, setOfferSuccess] = useState(false);
+  const [offerError, setOfferError] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -93,6 +104,56 @@ export default function ListingPage() {
     loadData();
   }, [handle]);
 
+  useEffect(() => {
+    if (!user || !listing) return;
+    async function loadOffer() {
+      const { data } = await supabase
+        .from('listing_offers')
+        .select('*')
+        .eq('listing_id', listing.id)
+        .eq('buyer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setUserOffer(data);
+      }
+    }
+    loadOffer();
+  }, [user, listing]);
+
+  const handleMakeOffer = async () => {
+    if (!user) {
+      setOfferError("Please sign in to make an offer.");
+      return;
+    }
+    const amount = Number(offerAmount);
+    if (isNaN(amount) || amount <= 0 || amount >= Number(listing.price)) {
+      setOfferError("Please enter a valid amount lower than the asking price.");
+      return;
+    }
+    setSubmittingOffer(true);
+    setOfferError("");
+    
+    const { error } = await supabase.from('listing_offers').insert({
+      listing_id: listing.id,
+      buyer_id: user.id,
+      amount: amount
+    });
+
+    setSubmittingOffer(false);
+    if (error) {
+      setOfferError(error.message);
+    } else {
+      setOfferSuccess(true);
+      setUserOffer({ status: 'pending', amount: amount });
+      setTimeout(() => {
+        setShowOfferModal(false);
+        setOfferSuccess(false);
+        setOfferAmount("");
+      }, 2500);
+    }
+  };
 
   if (loading) {
     return <div className="pt-24 px-4 pb-24 text-center">Loading...</div>;
@@ -111,6 +172,8 @@ export default function ListingPage() {
   const handleLengthLabel = handleLength === 1 ? '1-character' : `${handleLength}-character`;
   const platformLabel = listing.platform || 'Marketplace';
   const offerTitle = isFansign ? details.recipient || listing.handle : isService ? details.service_name || listing.handle : listing.handle;
+  const effectivePrice = userOffer?.status === 'accepted' ? Number(userOffer.amount) : Number(listing.price);
+  const isSold = listing.status !== 'active';
 
   return (
     <div className="pt-24 px-4 pb-24 md:pb-12 max-w-[1152px] mx-auto min-h-screen">
@@ -242,16 +305,34 @@ export default function ListingPage() {
             <div className="flex justify-between items-end gap-4 mt-5">
               <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase pb-2">Price</span>
               <div className="text-right">
-                <div className="leading-none font-mono text-[48px]">${Number(listing.price).toLocaleString()}</div>
-                <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-2">All-in · no fees on top</div>
+                <div className="leading-none font-mono text-[48px]">${effectivePrice.toLocaleString()}</div>
+                <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-2">
+                  {userOffer?.status === 'accepted' ? 'Accepted Offer Price' : 'All-in · no fees on top'}
+                </div>
               </div>
             </div>
+
+            {userOffer?.status === 'pending' ? (
+              <div className="mt-4 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 text-center text-sm text-amber-300 font-medium">
+                Your offer of ${Number(userOffer.amount).toLocaleString()} is pending seller review.
+              </div>
+            ) : userOffer?.status === 'rejected' ? (
+              <div className="mt-4 bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-center text-sm text-red-300 font-medium">
+                Your offer was rejected. You can make another offer below.
+              </div>
+            ) : null}
+
+            {(!userOffer || userOffer?.status === 'rejected') && !isSold && (
+              <button onClick={() => setShowOfferModal(true)} className="w-full mt-4 bg-zinc-900 text-white font-medium text-[13px] px-5 py-3 rounded-[10px] border border-[#222226] hover:border-[#ff0000]/50 transition-colors">
+                Make an Offer
+              </button>
+            )}
             
-            
-            <Web3PayPanel
-              orderId={listing.id}
-              sellerWalletAddress={seller?.wallet_address ?? null}
-              priceUsd={Number(listing.price)}
+            <div className="mt-4">
+              <Web3PayPanel
+                orderId={listing.id}
+                sellerWalletAddress={seller?.wallet_address ?? null}
+                priceUsd={effectivePrice}
               listingStatus={listing.status}
               onSuccess={() => setPaySuccess(true)}
             />
@@ -268,51 +349,64 @@ export default function ListingPage() {
               </p>
               
               <div className="bg-[rgba(9,9,11,0.4)] mt-3 p-3.5 rounded-[12px] border border-[#222226]">
-                <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">How the escrow works</span>
-                <div className="mt-4">
-                  {/* Progress steps */}
-                  <div className="flex items-center">
-                    <div className="flex grow items-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="bg-zinc-950 w-4 h-4 relative z-[1] flex shrink-0 justify-center items-center rounded-full border-2 border-[#ff0000]">
-                          <span className="bg-[#ff0000]/40 absolute w-full h-full scale-[2] rounded-full animate-pulse" />
-                          <span className="bg-[#ff0000] w-1.5 h-1.5 rounded-full" />
-                        </span>
-                        <span className="font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Paid</span>
-                      </div>
-                      <div className="bg-[#222226] h-px grow mb-4 mx-2" />
-                    </div>
-                    
-                    <div className="flex grow items-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
-                          <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
-                        </span>
-                        <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Deliver</span>
-                      </div>
-                      <div className="bg-[#222226] h-px grow mb-4 mx-2" />
-                    </div>
-                    
-                    <div className="flex grow items-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
-                          <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
-                        </span>
-                        <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Confirm</span>
-                      </div>
-                      <div className="bg-[#222226] h-px grow mb-4 mx-2" />
-                    </div>
-                    
-                    <div className="flex items-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
-                          <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
-                        </span>
-                        <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Released</span>
-                      </div>
-                    </div>
+                {paySuccess ? (
+                  <div className="text-center py-4">
+                    <div className="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">✓</div>
+                    <h4 className="text-white font-medium mb-1">Escrow Funded</h4>
+                    <p className="text-xs text-[#93939f] mb-4">Your funds are safe. Head to the Deal Chat to securely coordinate with the seller.</p>
+                    <Link to="/messages" className="bg-[#ff0000] text-white text-[12px] font-medium px-4 py-2 rounded-lg hover:bg-[#cc0000] transition-colors inline-block">
+                      Go to Deal Chat →
+                    </Link>
                   </div>
-                </div>
+                ) : (
+                  <>
+                    <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">How the escrow works</span>
+                    <div className="mt-4">
+                      {/* Progress steps */}
+                      <div className="flex items-center">
+                        <div className="flex grow items-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="bg-zinc-950 w-4 h-4 relative z-[1] flex shrink-0 justify-center items-center rounded-full border-2 border-[#ff0000]">
+                              <span className="bg-[#ff0000]/40 absolute w-full h-full scale-[2] rounded-full animate-pulse" />
+                              <span className="bg-[#ff0000] w-1.5 h-1.5 rounded-full" />
+                            </span>
+                            <span className="font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Paid</span>
+                          </div>
+                          <div className="bg-[#222226] h-px grow mb-4 mx-2" />
+                        </div>
+                        
+                        <div className="flex grow items-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
+                              <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
+                            </span>
+                            <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Deliver</span>
+                          </div>
+                          <div className="bg-[#222226] h-px grow mb-4 mx-2" />
+                        </div>
+                        
+                        <div className="flex grow items-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
+                              <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
+                            </span>
+                            <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Confirm</span>
+                          </div>
+                          <div className="bg-[#222226] h-px grow mb-4 mx-2" />
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="bg-zinc-900 w-4 h-4 z-[1] flex shrink-0 justify-center items-center rounded-full border border-[#222226]">
+                              <span className="bg-[rgba(147,147,159,0.4)] w-1 h-1 rounded-full" />
+                            </span>
+                            <span className="text-[#93939f]/60 font-mono font-medium text-[9px] tracking-[0.72px] uppercase">Released</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
             
@@ -368,6 +462,50 @@ export default function ListingPage() {
           </div>
         </div>
       </div>
+
+      {/* Make Offer Modal */}
+      {showOfferModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+          <div className="bg-[#111113] rounded-[18px] border border-[#222226] p-6 w-full max-w-sm shadow-2xl relative">
+            <h3 className="text-xl font-medium text-white mb-2">Make an Offer</h3>
+            <p className="text-sm text-[#93939f] mb-6">Propose a new price for this listing. The seller will review and can accept or reject it.</p>
+            
+            {offerSuccess ? (
+              <div className="text-center py-6 text-emerald-400 font-medium">
+                ✓ Offer submitted successfully!
+              </div>
+            ) : (
+              <>
+                <div className="relative mb-4">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#93939f]">$</span>
+                  <input 
+                    type="number"
+                    value={offerAmount}
+                    onChange={(e) => setOfferAmount(e.target.value)}
+                    placeholder="Enter amount in USD"
+                    className="w-full bg-[#09090b] border border-[#222226] rounded-xl pl-8 pr-4 py-3 text-white outline-none focus:border-[#ff0000]"
+                  />
+                </div>
+                {offerError && <p className="text-red-400 text-xs mb-4">{offerError}</p>}
+                
+                <div className="flex gap-3 mt-6">
+                  <button onClick={() => setShowOfferModal(false)} className="flex-1 px-4 py-3 rounded-xl font-medium text-[#93939f] hover:text-white transition-colors">
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleMakeOffer}
+                    disabled={submittingOffer || !offerAmount}
+                    className="flex-1 bg-[#ff0000] text-white px-4 py-3 rounded-xl font-medium hover:bg-[#cc0000] disabled:opacity-50 transition-colors"
+                  >
+                    {submittingOffer ? "Submitting..." : "Submit Offer"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
