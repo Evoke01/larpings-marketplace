@@ -48,7 +48,7 @@ export default function BadgePill({ badgeType, compact = false }: BadgePillProps
             : "border-[#333338] bg-[#151519] text-[#b7b7c2] hover:border-[#555560]"
       }`}
     >
-      {isDexter && <img src="/dexter-badge.png" alt="" className={compact ? "h-4 w-4 rounded-full object-cover" : "h-5 w-5 rounded-full object-cover"} />}
+      {isDexter && <img src="/dexter-badge.svg" alt="" className={`dexter-logo rounded-full object-cover ${compact ? "h-4 w-4" : "h-5 w-5"}`} />}
       {isVerified && <VerifiedIcon />}
       {!isDexter && !isVerified && <BadgeIcon type={type} />}
       <span>{label}</span>
