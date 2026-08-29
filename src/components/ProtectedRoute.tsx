@@ -13,9 +13,13 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
     let mounted = true;
     if (!user) { setAcceptanceLoading(false); return () => { mounted = false; }; }
     setAcceptanceLoading(true);
-    supabase.from("legal_acceptances").select("user_id").eq("user_id", user.id).maybeSingle().then(({ data, error }) => {
+    const storageKey = `larpings:legal-accepted:${user.id}`;
+    supabase.from("legal_acceptances").select("user_id").eq("user_id", user.id).maybeSingle().then(({ data }) => {
       if (!mounted) return;
-      setAccepted(!error && Boolean(data));
+      // The database remains the source of truth. The browser marker prevents a
+      // transient auth/RLS read during reload from sending an already-accepted
+      // user through the setup screen again.
+      setAccepted(Boolean(data) || window.localStorage.getItem(storageKey) === "1");
       setAcceptanceLoading(false);
     });
     return () => { mounted = false; };

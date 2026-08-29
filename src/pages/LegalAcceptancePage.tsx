@@ -26,6 +26,7 @@ export default function LegalAcceptancePage() {
     if (insertError && insertError.code !== "23505") {
       setError("We couldn’t save your acceptance. Check your connection and try again."); setSaving(false); return;
     }
+    window.localStorage.setItem(`larpings:legal-accepted:${user.id}`, "1");
     navigate(destination, { replace: true });
   };
 
