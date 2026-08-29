@@ -13,7 +13,8 @@ export default function MessagesPage() {
   const [session, setSession] = useState<any>(null), [conversations, setConversations] = useState<Conversation[]>([]), [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<any[]>([]), [loungeMessages, setLoungeMessages] = useState<any[]>([]), [authors, setAuthors] = useState<Record<string, string>>({}), [online, setOnline] = useState<{ id: string; username: string }[]>([]);
   const [draft, setDraft] = useState(""), [loading, setLoading] = useState(true), [sending, setSending] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null), [params] = useSearchParams();
+  const bottomRef = useRef<HTMLDivElement>(null), authorsRef = useRef<Record<string, string>>({}), [params] = useSearchParams();
+  useEffect(() => { authorsRef.current = authors; }, [authors]);
 
   useEffect(() => { let alive = true; (async () => {
     const { data: { user }, error } = await supabase.auth.getUser(); if (!alive) return;
@@ -22,7 +23,7 @@ export default function MessagesPage() {
       supabase.from("messages").select("*").or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`).order("created_at", { ascending: false }),
       supabase.from("larping_lounge_messages").select("*").order("created_at", { ascending: true }).limit(200),
     ]); if (loungeError) console.error("Lounge load error:", loungeError);
-    const ids = [...new Set([...(dms ?? []).map((m: any) => m.sender_id === user.id ? m.receiver_id : m.sender_id), ...(lounge ?? []).map((m: any) => m.sender_id)])];
+    const ids = [...new Set([user.id, ...(dms ?? []).map((m: any) => m.sender_id === user.id ? m.receiver_id : m.sender_id), ...(lounge ?? []).map((m: any) => m.sender_id)])];
     const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,username,display_name").in("id", ids) : { data: [] }; const names: Record<string, string> = {};
     (profiles ?? []).forEach((p: any) => { names[p.id] = p.username || p.display_name || p.id; }); setAuthors(names); setLoungeMessages(lounge ?? []);
     const map: Record<string, Conversation> = {}; (dms ?? []).forEach((m: any) => { const id = m.sender_id === user.id ? m.receiver_id : m.sender_id; if (!map[id]) map[id] = { partnerId: id, partnerName: names[id] || id, lastMessage: m.content, lastTime: m.created_at, unread: 0 }; if (m.receiver_id === user.id && !m.read) map[id].unread++; });
@@ -34,9 +35,9 @@ export default function MessagesPage() {
   })(); return () => { alive = false; }; }, [params]);
 
   useEffect(() => { if (!session?.user?.id) return; const channel = supabase.channel("larping-lounge", { config: { presence: { key: session.user.id } } })
-    .on("presence", { event: "sync" }, () => { const seen = new Set<string>(), people: { id: string; username: string }[] = []; Object.entries(channel.presenceState()).forEach(([id, states]: [string, any]) => { const state = states?.[0] || {}; if (!seen.has(id)) { seen.add(id); people.push({ id, username: state.username || authors[id] || id.slice(0, 8) }); } }); setOnline(people); })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "larping_lounge_messages" }, async ({ new: row }: any) => { setLoungeMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev, row]); if (!authors[row.sender_id]) { const { data } = await supabase.from("profiles").select("id,username,display_name").eq("id", row.sender_id).maybeSingle(); if (data) setAuthors(prev => ({ ...prev, [data.id]: data.username || data.display_name || data.id })); } setConversations(prev => prev.map(c => c.isLounge ? { ...c, lastMessage: row.content, lastTime: row.created_at } : c)); })
-    .subscribe(async status => { if (status === "SUBSCRIBED") await channel.track({ username: authors[session.user.id] || session.user.email?.split("@")[0] || "member" }); }); return () => { void supabase.removeChannel(channel); }; }, [session?.user?.id]);
+    .on("presence", { event: "sync" }, async () => { const ids = Object.keys(channel.presenceState()); if (!ids.length) return; const { data } = await supabase.from("profiles").select("id,username,display_name").in("id", ids); const resolved: Record<string, string> = {}; (data ?? []).forEach((p: any) => { resolved[p.id] = p.username || p.display_name || p.id; }); if (Object.keys(resolved).length) setAuthors(prev => ({ ...prev, ...resolved })); setOnline(ids.map(id => ({ id, username: resolved[id] || authorsRef.current[id] || id.slice(0, 8) }))); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "larping_lounge_messages" }, async ({ new: row }: any) => { setLoungeMessages(prev => prev.some(m => m.id === row.id) ? prev : [...prev, row]); if (!authorsRef.current[row.sender_id]) { const { data } = await supabase.from("profiles").select("id,username,display_name").eq("id", row.sender_id).maybeSingle(); if (data) setAuthors(prev => ({ ...prev, [data.id]: data.username || data.display_name || data.id })); } setConversations(prev => prev.map(c => c.isLounge ? { ...c, lastMessage: row.content, lastTime: row.created_at } : c)); })
+    .subscribe(async status => { if (status === "SUBSCRIBED") await channel.track({ lounge_member: true }); }); return () => { void supabase.removeChannel(channel); }; }, [session?.user?.id]);
   useEffect(() => { if (!session?.user?.id) return; const channel = supabase.channel(`messages-${session.user.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `receiver_id=eq.${session.user.id}` }, ({ new: row }: any) => { setMessages(prev => selected?.partnerId === row.sender_id ? [...prev, row] : prev); setConversations(prev => prev.map(c => c.partnerId === row.sender_id ? { ...c, lastMessage: row.content, lastTime: row.created_at, unread: c.partnerId === selected?.partnerId ? 0 : c.unread + 1 } : c)); }).subscribe(); return () => { void supabase.removeChannel(channel); }; }, [session?.user?.id, selected?.partnerId]);
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loungeMessages, selected]);
 
