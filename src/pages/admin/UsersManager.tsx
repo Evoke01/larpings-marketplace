@@ -1,5 +1,6 @@
 ﻿import React, { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
+import BadgePill from "../../components/BadgePill";
 
 const BADGE_OPTIONS = ["trusted_seller", "og", "top_seller", "verified_seller", "early_adopter", "dexter"];
 
@@ -131,9 +132,9 @@ export default function UsersManager() {
                       <td className="px-4 py-3.5">
                         <div className="flex flex-wrap gap-1">
                           {userBadges.map(b => (
-                            <span key={b.id} className="group relative inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.07] text-[10px] text-[#f9f9fb] font-mono">
-                              {b.badge_type}
-                              <button onClick={() => revokeBadge(b, u.username)} className="hidden group-hover:inline text-[#ff0000] ml-0.5">×</button>
+                            <span key={b.id} className="group relative inline-flex items-center gap-1">
+                              <BadgePill badgeType={b.badge_type} compact />
+                              <button aria-label={`Revoke ${b.badge_type} badge`} onClick={() => revokeBadge(b, u.username)} className="absolute -right-1 -top-1 hidden h-4 w-4 items-center justify-center rounded-full bg-[#0e0e11] text-[11px] text-[#ff0000] group-hover:flex">×</button>
                             </span>
                           ))}
                           <button onClick={() => { setModalUser(u); setBadgeInput("trusted_seller"); }}

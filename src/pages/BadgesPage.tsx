@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import BadgePill from "../components/BadgePill";
 
 // Icons for the badges
 const BadgeGuideIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -115,6 +116,18 @@ export default function BadgesPage() {
         <p className="text-[#93939f] leading-relaxed max-w-[576px] mt-5 mb-0 mx-auto">
           Badges are computed from real data — confirmed sales, verification reviews, live rankings and account age. Here's what each one means and exactly how a seller gets it.
         </p>
+      </div>
+
+      <div className="mt-8 rounded-[14px] border border-[#222226] bg-[#111113] px-5 py-4 text-center">
+        <p className="mono-label text-[#93939f]">Live storefront preview</p>
+        <p className="mt-2 text-xs text-[#666]">This is exactly how badges appear beside a username.</p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <BadgePill badgeType="og" />
+          <BadgePill badgeType="dexter" />
+          <BadgePill badgeType="trusted_seller" />
+          <BadgePill badgeType="top_seller" />
+          <BadgePill badgeType="verified_seller" />
+        </div>
       </div>
 
       {/* Badges Grid */}

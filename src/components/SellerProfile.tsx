@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import ReputationPanel from "./ReputationPanel";
+import BadgePill from "./BadgePill";
 
 type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rating: number | null; reviews: number | null; rep_count: number | null; vouch_count: number | null; created_at: string };
 type Listing = { id: string; handle: string; description: string | null; category: string | null; platform: string | null; price: number; created_at: string; verification_status: "unverified" | "pending" | "verified" | null };
@@ -88,7 +89,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
         <Link to={`/messages?user=${encodeURIComponent(profile.id)}`} className="bg-[#ff0000] text-white font-medium px-4 py-2.5 rounded-[10px]">Message</Link>
       </div>
       <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2 px-6"><Link to="/badges" className="rounded-full border border-[#333338] px-3 py-1 text-xs font-medium text-[#93939f] transition-colors hover:border-[#ff0000] hover:text-[#ff0000]">Badge guide →</Link>{badges.map((badge) => <span key={badge.id} className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-xs font-medium ${badge.badge_type === "dexter" ? "border-[#ff0000]/60 bg-[#ff0000]/10 text-[#ff5555]" : "border-[#333338] text-[#b7b7c2]"}`}>{badge.badge_type === "dexter" && <img src="/dexter-badge.png" alt="" className="h-5 w-5 rounded-full object-cover" />}{badge.badge_type === "dexter" ? "DEXTER" : badge.badge_type.replaceAll("_", " ")}</span>)}</div>
+      <div className="mt-4 flex flex-wrap items-center gap-2 px-6"><Link to="/badges" className="rounded-full border border-[#333338] px-3 py-1 text-xs font-medium text-[#93939f] transition-colors hover:border-[#ff0000] hover:text-[#ff0000]">Badge guide →</Link>{badges.map((badge) => <BadgePill key={badge.id} badgeType={badge.badge_type} />)}</div>
       <section aria-label="Seller stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rep</p><p className="font-mono text-xl mt-1.5">{profile.rep_count ?? 0}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Vouch</p><p className="font-mono text-xl mt-1.5">{profile.vouch_count ?? 0}</p></div>
