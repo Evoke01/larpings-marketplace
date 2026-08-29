@@ -82,6 +82,7 @@ export default function ListingPage() {
   const [loading, setLoading] = useState(true);
   const [paySuccess, setPaySuccess] = useState(false);
   const [userOffer, setUserOffer] = useState<any>(null);
+  const [sellerWallets, setSellerWallets] = useState<any>(null);
 
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -101,14 +102,12 @@ export default function ListingPage() {
       
       if (listingData) {
         setListing(listingData);
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', listingData.seller_id)
-          .single();
-        if (profileData) {
-          setSeller(profileData);
-        }
+        const [{ data: profileData }, { data: walletsData }] = await Promise.all([
+          supabase.from('profiles').select('*').eq('id', listingData.seller_id).single(),
+          supabase.from('seller_wallets').select('*').eq('seller_id', listingData.seller_id).maybeSingle(),
+        ]);
+        if (profileData) setSeller(profileData);
+        if (walletsData) setSellerWallets(walletsData);
       }
       setLoading(false);
     }
@@ -350,7 +349,16 @@ export default function ListingPage() {
                 <div>
                   <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
                   <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
-                    {COINS.map(coin => (
+                    {sellerWallets ? COINS.filter(coin => {
+                      if (!sellerWallets) return false;
+                      if (coin.id === 'BTC') return !!sellerWallets.btc_address;
+                      if (coin.id === 'SOL') return !!sellerWallets.sol_address;
+                      if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
+                      if (coin.id === 'TON') return !!sellerWallets.ton_address;
+                      if (coin.id === 'TRX') return !!sellerWallets.trx_address;
+                      // EVM coins (ETH, BNB, USDC, USDT, DAI)
+                      return !!sellerWallets.evm_address;
+                    }).map(coin => (
                       <button
                         key={coin.id}
                         onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
@@ -359,7 +367,9 @@ export default function ListingPage() {
                         <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
                         <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
                       </button>
-                    ))}
+                    )) : (
+                      <p className="col-span-4 md:col-span-5 text-[#93939f] text-xs py-2">Seller hasn't configured payment methods yet.</p>
+                    )}
                   </div>
                 </div>
               )}

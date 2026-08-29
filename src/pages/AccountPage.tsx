@@ -6,10 +6,10 @@ import { useAuth } from "../lib/auth";
 
 type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rep_count: number | null; vouch_count: number | null; created_at: string };
 type FormState = { username: string; display_name: string; bio: string; avatar_url: string; banner_url: string; website_url: string; twitter_url: string; instagram_url: string; discord_url: string };
-type WalletsState = { evm_address: string; btc_address: string; sol_address: string; ton_address: string; trx_address: string };
+type WalletsState = { evm_address: string; btc_address: string; sol_address: string; ltc_address: string; ton_address: string; trx_address: string };
 
 const emptyForm: FormState = { username: "", display_name: "", bio: "", avatar_url: "", banner_url: "", website_url: "", twitter_url: "", instagram_url: "", discord_url: "" };
-const emptyWallets: WalletsState = { evm_address: "", btc_address: "", sol_address: "", ton_address: "", trx_address: "" };
+const emptyWallets: WalletsState = { evm_address: "", btc_address: "", sol_address: "", ltc_address: "", ton_address: "", trx_address: "" };
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(value));
 
@@ -34,7 +34,7 @@ export default function AccountPage() {
     ]);
     if (p.error) setError("We couldn’t load your profile details.");
     if (p.data) { setProfile(p.data); setForm({ username: p.data.username ?? "", display_name: p.data.display_name ?? "", bio: p.data.bio ?? "", avatar_url: p.data.avatar_url ?? "", banner_url: p.data.banner_url ?? "", website_url: p.data.website_url ?? "", twitter_url: p.data.twitter_url ?? "", instagram_url: p.data.instagram_url ?? "", discord_url: p.data.discord_url ?? "" }); }
-    if (w.data) { setWallets({ evm_address: w.data.evm_address ?? "", btc_address: w.data.btc_address ?? "", sol_address: w.data.sol_address ?? "", ton_address: w.data.ton_address ?? "", trx_address: w.data.trx_address ?? "" }); }
+    if (w.data) { setWallets({ evm_address: w.data.evm_address ?? "", btc_address: w.data.btc_address ?? "", sol_address: w.data.sol_address ?? "", ltc_address: w.data.ltc_address ?? "", ton_address: w.data.ton_address ?? "", trx_address: w.data.trx_address ?? "" }); }
     setListingCount(l.count ?? 0); setVerificationStatus(v.data?.status ?? null); setLoading(false);
   })(); }, [user]);
 
@@ -74,6 +74,7 @@ export default function AccountPage() {
       evm_address: wallets.evm_address.trim() || null,
       btc_address: wallets.btc_address.trim() || null,
       sol_address: wallets.sol_address.trim() || null,
+      ltc_address: wallets.ltc_address.trim() || null,
       ton_address: wallets.ton_address.trim() || null,
       trx_address: wallets.trx_address.trim() || null,
       updated_at: new Date().toISOString()
@@ -130,6 +131,7 @@ export default function AccountPage() {
                 <label className="text-sm">EVM Address (ETH, BNB, USDC)<input value={wallets.evm_address} onChange={updateWallet("evm_address")} placeholder="0x..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
                 <label className="text-sm">Bitcoin Address (BTC)<input value={wallets.btc_address} onChange={updateWallet("btc_address")} placeholder="bc1q..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
                 <label className="text-sm">Solana Address (SOL)<input value={wallets.sol_address} onChange={updateWallet("sol_address")} placeholder="HN7c..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
+                <label className="text-sm">Litecoin Address (LTC)<input value={wallets.ltc_address} onChange={updateWallet("ltc_address")} placeholder="ltc1q..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
                 <label className="text-sm">Toncoin Address (TON)<input value={wallets.ton_address} onChange={updateWallet("ton_address")} placeholder="EQBv..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
                 <label className="text-sm">Tron Address (TRX)<input value={wallets.trx_address} onChange={updateWallet("trx_address")} placeholder="T9yD..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
               </div>

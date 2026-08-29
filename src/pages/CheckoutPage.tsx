@@ -27,6 +27,7 @@ export default function CheckoutPage() {
   const { user } = useAuth();
   
   const [listing, setListing] = useState<any>(null);
+  const [sellerWallets, setSellerWallets] = useState<any>(null);
   const [cryptoPrice, setCryptoPrice] = useState<number | null>(null);
   const [exactCryptoAmount, setExactCryptoAmount] = useState<string | null>(null);
   
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Fetch listing and user offer price
+  // Fetch listing, offer price, and seller wallet addresses
   useEffect(() => {
     async function loadListing() {
       if (!listingId || !user) return;
@@ -55,19 +56,17 @@ export default function CheckoutPage() {
       
       let finalUsdPrice = listingData.price;
       
-      const { data: offerData } = await supabase
-        .from('listing_offers')
-        .select('*')
-        .eq('listing_id', listingId)
-        .eq('buyer_id', user.id)
-        .eq('status', 'accepted')
-        .maybeSingle();
+      const [{ data: offerData }, { data: walletsData }] = await Promise.all([
+        supabase.from('listing_offers').select('*').eq('listing_id', listingId).eq('buyer_id', user.id).eq('status', 'accepted').maybeSingle(),
+        supabase.from('seller_wallets').select('*').eq('seller_id', listingData.seller_id).maybeSingle(),
+      ]);
 
       if (offerData) {
         finalUsdPrice = Number(offerData.amount);
       }
 
       setListing({ ...listingData, finalUsdPrice });
+      setSellerWallets(walletsData || null);
     }
     loadListing();
   }, [listingId, user]);
@@ -121,8 +120,20 @@ export default function CheckoutPage() {
   if (!coin) return <div className="p-8 text-center">Invalid coin selected</div>;
   if (!listing) return <div className="p-8 text-center text-[#93939f]">Loading order details...</div>;
 
+  // Get the actual seller wallet address for this coin
+  const sellerAddress = (() => {
+    if (!sellerWallets || !coin) return coin?.address || '';
+    if (coin.id === 'BTC') return sellerWallets.btc_address || coin.address;
+    if (coin.id === 'SOL') return sellerWallets.sol_address || coin.address;
+    if (coin.id === 'LTC') return sellerWallets.ltc_address || coin.address;
+    if (coin.id === 'TON') return sellerWallets.ton_address || coin.address;
+    if (coin.id === 'TRX') return sellerWallets.trx_address || coin.address;
+    // EVM (ETH, BNB, USDC, USDT, DAI)
+    return sellerWallets.evm_address || coin.address;
+  })();
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(coin.address);
+    navigator.clipboard.writeText(sellerAddress);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -155,19 +166,18 @@ export default function CheckoutPage() {
         
         try {
           if (coin.id === "BTC") {
-            const res = await fetch(`https://mempool.space/api/address/${coin.address}/txs`);
+            const res = await fetch(`https://mempool.space/api/address/${sellerAddress}/txs`);
             const txs = await res.json();
             const expectedSats = Math.floor(expectedAmount * 100000000);
-            const found = txs.find((tx: any) => tx.vout.some((v: any) => v.scriptpubkey_address === coin.address && Math.abs(v.value - expectedSats) < 100)); // allow small variance
+            const found = txs.find((tx: any) => tx.vout.some((v: any) => v.scriptpubkey_address === sellerAddress && Math.abs(v.value - expectedSats) < 100));
             if (found) foundTxHash = found.txid;
           } else if (coin.id === "SOL") {
             const res = await fetch("https://api.mainnet-beta.solana.com", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [coin.address, { limit: 5 }] })
+              body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [sellerAddress, { limit: 5 }] })
             });
             const data = await res.json();
-            // Since we can't easily check amount without fetching each tx, we just check if there's a new transaction in the last 15 mins for MVP
             const found = data.result?.find((sig: any) => sig.blockTime > Date.now() / 1000 - 900);
             if (found) foundTxHash = found.signature;
           } else {
@@ -233,7 +243,7 @@ The buyer has successfully deposited the funds. You can now coordinate delivery 
     navigate(`/messages`);
   };
 
-  const qrValue = `${coin.id.toLowerCase()}:${coin.address}?amount=${exactCryptoAmount}`;
+  const qrValue = `${coin.id.toLowerCase()}:${sellerAddress}?amount=${exactCryptoAmount}`;
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 max-w-xl mx-auto">
@@ -295,7 +305,7 @@ The buyer has successfully deposited the funds. You can now coordinate delivery 
             <div>
               <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Escrow Address:</p>
               <div className="flex items-center gap-2 bg-[#09090b] rounded-[10px] border border-[#222226] p-3">
-                <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{coin.address}</code>
+                <code className="text-xs font-mono text-white/90 flex-1 break-all select-all">{sellerAddress}</code>
                 <button 
                   onClick={handleCopy} 
                   className="text-[10px] font-medium text-[#93939f] hover:text-white flex-shrink-0 border border-[#222226] rounded-md px-3 py-1.5 transition-colors bg-[#111113]"

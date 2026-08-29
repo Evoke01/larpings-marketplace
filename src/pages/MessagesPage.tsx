@@ -71,7 +71,9 @@ type Conversation = {
   orderStatus?: string;
   buyerClosed?: boolean;
   sellerClosed?: boolean;
-    payChain?: string;
+  sellerAccepted?: boolean;
+  orderCreatedAt?: string;
+  payChain?: string;
   isBuyer?: boolean;
 };
 
@@ -302,22 +304,66 @@ export default function MessagesPage() {
 
       }));
 
-      const allConvs = [loungeConv, ...dealConvs, ...Object.values(map)];
+      const sortedDeals = [...dealConvs].sort((a, b) =>
+        new Date(b.lastTime || 0).getTime() - new Date(a.lastTime || 0).getTime()
+      );
+      const sortedDMs = Object.values(map).sort((a, b) =>
+        new Date(b.lastTime || 0).getTime() - new Date(a.lastTime || 0).getTime()
+      );
+      const allConvs = [loungeConv, ...sortedDeals, ...sortedDMs];
       setConversations(allConvs);
-      let requested = params.get("user");
+      let requested = params.get("user") || params.get("order");
       if (!requested && params.get("username"))
         requested =
           Object.entries(names).find(
             ([, n]) => n === params.get("username"),
           )?.[0] || null;
       if (requested && requested !== user.id) {
-        const conv = allConvs.find(c => c.partnerId === requested) || {
-          partnerId: requested,
-          partnerName: names[requested] || requested,
-          lastMessage: "",
-          lastTime: null,
-          unread: 0,
-        };
+        let conv = allConvs.find(c => c.partnerId === requested);
+        
+        // Fallback: if the order isn't in allConvs yet (race condition after checkout),
+        // fetch it directly from the database
+        if (!conv && params.get("order")) {
+          const { data: freshOrder } = await supabase
+            .from("orders")
+            .select("*, listings(handle)")
+            .eq("id", requested)
+            .maybeSingle();
+          if (freshOrder) {
+            conv = {
+              partnerId: freshOrder.id,
+              partnerName: `Deal: @${freshOrder.listings?.handle || 'unknown'}`,
+              lastMessage: 'Coordinate your deal securely.',
+              lastTime: freshOrder.created_at,
+              unread: 0,
+              isDeal: true,
+              orderId: freshOrder.id,
+              orderStatus: freshOrder.status,
+              buyerClosed: freshOrder.buyer_closed,
+              sellerClosed: freshOrder.seller_closed,
+              sellerAccepted: freshOrder.seller_accepted,
+              orderCreatedAt: freshOrder.created_at,
+              isBuyer: freshOrder.buyer_id === user.id,
+              payChain: freshOrder.pay_chain,
+            };
+            // Add it to the conversation list
+            setConversations(prev => {
+              if (prev.find(c => c.partnerId === requested)) return prev;
+              return [prev[0], conv!, ...prev.slice(1)]; // insert after Lounge
+            });
+          }
+        }
+
+        if (!conv) {
+          conv = {
+            partnerId: requested,
+            partnerName: names[requested] || requested,
+            lastMessage: "",
+            lastTime: null,
+            unread: 0,
+          };
+        }
+        
         setSelected(conv);
         
         if (conv.isDeal) {
@@ -661,7 +707,13 @@ export default function MessagesPage() {
                       {!selected.isLounge && !selected.isDeal && <BadgeCheck className="h-4 w-4 shrink-0 text-accent" />}
                     </p>
                     <p className="truncate text-[11px] text-muted-foreground">
-                      {selected.isLounge ? `${online.length} online · community chat` : selected.isDeal ? (selected.orderStatus === 'closed' ? 'Deal Closed' : 'ESCROW ACTIVE') : "Private conversation"}
+                      {selected.isLounge
+                        ? `${online.length} online · community chat`
+                        : selected.isDeal
+                          ? selected.orderStatus === 'closed'
+                            ? 'Deal Closed'
+                            : (<span className="flex items-center gap-1.5">ESCROW ACTIVE {selected.orderCreatedAt && <OrderTimer createdAt={selected.orderCreatedAt} />}</span>)
+                          : "Private conversation"}
                     </p>
                   </div>
                 </div>
