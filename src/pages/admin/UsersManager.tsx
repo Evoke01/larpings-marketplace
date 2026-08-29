@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
 
-const BADGE_OPTIONS = ["trusted_seller", "og", "top_seller", "verified_seller", "early_adopter"];
+const BADGE_OPTIONS = ["trusted_seller", "og", "top_seller", "verified_seller", "early_adopter", "dexter"];
 
 interface Profile {
   id: string;
@@ -177,7 +177,7 @@ export default function UsersManager() {
             <label className="block text-xs text-[#93939f] mb-1.5 font-mono uppercase tracking-wider">Badge Type</label>
             <select value={badgeInput} onChange={e => setBadgeInput(e.target.value)}
               className="w-full px-3 py-2.5 rounded-[10px] border border-white/[0.1] bg-white/[0.04] text-sm text-[#f9f9fb] mb-5 outline-none">
-              {BADGE_OPTIONS.map(b => <option key={b} value={b}>{b}</option>)}
+              {BADGE_OPTIONS.map(b => <option key={b} value={b}>{b === "dexter" ? "DEXTER" : b}</option>)}
             </select>
             <div className="flex gap-2">
               <button onClick={grantBadge} className="btn-accent flex-1">Grant</button>
