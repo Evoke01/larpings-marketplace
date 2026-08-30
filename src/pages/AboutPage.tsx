@@ -225,7 +225,7 @@ export default function AboutPage() {
           </div>
           <div>
             <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">1%</div>
-            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">flat seller fee</div>
+            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">0% platform fee</div>
           </div>
         </div>
       </section>
@@ -259,7 +259,7 @@ export default function AboutPage() {
               <EyeIcon className="h-4 w-4 text-[#ff0000]" />
             </div>
             <h3 className="mt-5 text-lg text-white font-medium">Transparency</h3>
-            <p className="mt-2.5 text-sm leading-relaxed text-[#93939f]">One flat 1% seller fee. Public sold archive. Order states you can watch in real time. If something is held or pending, you can see exactly why.</p>
+            <p className="mt-2.5 text-sm leading-relaxed text-[#93939f]">Zero platform fees for standard peer-to-peer deals. Public sold archive. Order states you can watch in real time. If something is held or pending, you can see exactly why.</p>
           </div>
           <div className="rounded-[14px] border border-[#222226] bg-[#111113] p-6 transition-colors hover:border-[#ff0000]/40 md:p-8">
             <div className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#ff0000]/30 bg-[#ff0000]/10">

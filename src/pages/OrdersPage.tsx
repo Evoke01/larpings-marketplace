@@ -69,7 +69,7 @@ export default function OrdersPage() {
             Your <span className="text-[#ff0000]">orders.</span>
           </h1>
           <p className="text-[#93939f] leading-5 text-sm mt-2">
-            Track every transfer — confirm delivery to release payment to the seller.
+            Track your transactions and communicate directly with your trading partners in the deal room.
           </p>
         </div>
 
@@ -98,36 +98,67 @@ export default function OrdersPage() {
             </Link>
           </div>
         ) : (
-          <div className="space-y-3 pb-8">
+          <div className="space-y-4 pb-12">
             {orders.map(order => (
-              <div key={order.id} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226]">
-                <div className="flex items-start justify-between gap-4">
+              <Link 
+                to={`/messages?order=${order.id}`} 
+                key={order.id} 
+                className="group block bg-[#0e0e11] p-5 md:p-6 rounded-[16px] border border-white/[0.06] hover:border-[#ff0000]/30 hover:bg-[#131316] transition-all relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-[#ff0000]/[0.02] rounded-full blur-3xl group-hover:bg-[#ff0000]/[0.05] transition-all -translate-y-1/2 translate-x-1/2"></div>
+                
+                <div className="flex items-start justify-between gap-4 relative z-10">
                   <div>
-                    <p className="font-semibold text-lg">{order.listings?.category === "username" || order.listings?.category === "account" ? "@" : ""}{order.listings?.category === "fansign" ? order.listings?.details?.recipient || order.listings?.handle : order.listings?.category === "service" ? order.listings?.details?.service_name || order.listings?.handle : order.listings?.handle}</p>
-                    <p className="text-[#93939f] text-sm capitalize">{order.listings?.platform} · {order.listings?.category}</p>
-                    {order.listings?.category === "fansign" && <p className="mt-1 text-xs text-[#b7b7c2]">Fansign · {order.listings?.details?.delivery_format || "custom delivery"}</p>}
-                    {order.listings?.category === "service" && <p className="mt-1 text-xs text-[#b7b7c2]">{order.listings?.details?.service_group || "Service"} · {order.listings?.details?.service_option || "custom scope"}</p>}
+                    <div className="flex items-center gap-3">
+                      <p className="font-semibold text-xl tracking-tight text-white group-hover:text-[#ff0000] transition-colors">
+                        {order.listings?.category === "username" || order.listings?.category === "account" ? "@" : ""}
+                        {order.listings?.category === "fansign" ? order.listings?.details?.recipient || order.listings?.handle : order.listings?.category === "service" ? order.listings?.details?.service_name || order.listings?.handle : order.listings?.handle}
+                      </p>
+                      <span className={`font-mono font-medium text-[10px] tracking-widest uppercase px-2 py-0.5 rounded-[6px] border ${STATUS_COLORS[order.status] ?? 'text-[#93939f] bg-[#111113] border-[#222226]'}`}>
+                        {order.status}
+                      </span>
+                    </div>
+                    
+                    <p className="text-[#93939f] text-sm capitalize mt-1 flex items-center gap-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/[0.15]"></span>
+                        {order.listings?.platform}
+                      </span>
+                      <span className="opacity-50">/</span>
+                      <span>{order.listings?.category}</span>
+                    </p>
+                    
+                    {order.listings?.category === "fansign" && <p className="mt-1.5 text-xs text-[#737380] font-mono">Fansign · {order.listings?.details?.delivery_format || "custom delivery"}</p>}
+                    {order.listings?.category === "service" && <p className="mt-1.5 text-xs text-[#737380] font-mono">{order.listings?.details?.service_group || "Service"} · {order.listings?.details?.service_option || "custom scope"}</p>}
                   </div>
-                  <span className={`font-mono font-medium text-[11px] tracking-widest uppercase px-2.5 py-1.5 rounded-[8px] border ${STATUS_COLORS[order.status] ?? 'text-[#93939f] bg-[#111113] border-[#222226]'}`}>
-                    {order.status}
-                  </span>
+                  
+                  <div className="text-right flex flex-col items-end">
+                    <span className="font-mono text-xl font-semibold text-white tracking-tight">${Number(order.listings?.price).toLocaleString()}</span>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between mt-4">
-                  <span className="font-mono font-semibold">${Number(order.listings?.price).toLocaleString()}</span>
-                  {(order.status === 'Paid' || order.status === 'Delivered' || order.status === 'delivered') && (
-                    <button
-                      onClick={() => confirmDelivery(order)}
-                      className="bg-[#ff0000] text-white text-sm font-medium px-4 py-2 rounded-[8px] hover:bg-[#cc0000] transition-colors"
-                    >
-                      Confirm Delivery
-                    </button>
-                  )}
+
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/[0.04] relative z-10">
+                  <div className="flex items-center gap-3">
+                    <p className="text-[#737380] font-mono text-[10px] uppercase tracking-wider">
+                      {new Date(order.created_at).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                    {order.pay_chain && (
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-white/[0.1]"></span>
+                        <span className="text-[#93939f] font-mono text-[10px] uppercase tracking-wider flex items-center gap-1">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-3 h-3"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                          Paid via {order.pay_chain}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-xs font-medium text-[#ff0000] opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all">
+                    Open Deal Room
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                  </div>
                 </div>
-                <p className="text-[#93939f] font-mono text-[10px] mt-3">{new Date(order.created_at).toLocaleString()}
-                  {order.pay_chain && <span className="ml-2 opacity-60">· paid via {order.pay_chain}</span>}
-                  {order.tx_hash && <span className="ml-1 opacity-50">· <a href={`https://etherscan.io/tx/${order.tx_hash}`} target="_blank" rel="noreferrer" className="underline">tx</a></span>}
-                </p>
-              </div>
+              </Link>
             ))}
           </div>
         )}

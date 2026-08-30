@@ -16,6 +16,7 @@ const labels: Record<string, string> = {
   sales_100: "100 Sales",
   sales_500: "500 Sales",
   sales_1000: "1000 Sales",
+  middleman: "Escrow MM",
 };
 
 const VerifiedIcon = () => (
@@ -37,13 +38,14 @@ const BadgeIcon = ({ type }: { type: string }) => {
   if (type === "sales_500") return <svg {...common}><path d="M2.7 10.3a2.41 2.41 0 0 0 0 3.41l7.59 7.59a2.41 2.41 0 0 0 3.41 0l7.59-7.59a2.41 2.41 0 0 0 0-3.41l-7.59-7.59a2.41 2.41 0 0 0-3.41 0Z" /></svg>;
   if (type === "sales_1000") return <svg {...common}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" /><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" /><path d="M4 22h16" /><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" /><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" /><path d="M18 2H6v7c0 3.31 2.69 6 6 6s6-2.69 6-6V2Z" /></svg>;
   if (/sales/.test(type)) return <svg {...common}><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" /></svg>;
+  if (type === "middleman") return <svg {...common}><path d="M12 3v18"/><path d="M3 7h18"/><path d="M5 7v6a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V7"/><path d="M15 7v6a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V7"/></svg>;
   return null;
 };
 
 const pillTheme = (type: string) => {
   if (type === "verified_seller") return "border-[#1f62ff]/50 bg-[#1f62ff]/10 text-[#3978ff]";
   if (type === "og" || type === "early_adopter") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
-  if (type === "trusted_seller") return "border-white/[0.12] bg-white/[0.04] text-[#a7a7b3]";
+  if (type === "trusted_seller") return "border-blue-400/40 bg-blue-400/10 text-blue-300";
   if (type === "top_seller") return "border-amber-400/40 bg-amber-400/10 text-amber-300";
   if (type === "sales_10") return "border-blue-400/40 bg-blue-400/10 text-blue-300";
   if (type === "sales_30") return "border-orange-400/40 bg-orange-400/10 text-orange-300";
@@ -52,6 +54,7 @@ const pillTheme = (type: string) => {
   if (type === "sales_500") return "border-fuchsia-400/40 bg-fuchsia-400/10 text-fuchsia-300";
   if (type === "sales_1000") return "border-rose-400/40 bg-rose-400/10 text-rose-300";
   if (/sales/.test(type)) return "border-yellow-400/40 bg-yellow-400/10 text-yellow-300";
+  if (type === "middleman") return "border-[#cc00ff]/40 bg-[#cc00ff]/10 text-[#e57dff]";
   return "border-white/[0.09] bg-white/[0.05] text-[#d1d1d9]";
 };
 

@@ -20,7 +20,7 @@ const TOURS: Record<string, TourStep[]> = {
     { title: "You get paid after delivery", body: "Once the buyer confirms delivery, your earnings move through the platform hold before payout." },
   ],
   "/dashboard": [
-    { title: "Your seller control room", body: "Track active listings, confirmed sales, ratings, orders and badge progress in one place." },
+    { title: "Your seller control room", body: "Track active listings, confirmed sales, orders and badge progress in one place." },
     { title: "Manage listings", body: "Use Add listing to publish a new drop, or open a listing to verify ownership and review its status." },
     { title: "Build trust", body: "Complete ownership verification and keep your storefront profile, avatar and bio up to date." },
   ],
@@ -40,7 +40,7 @@ const TOURS: Record<string, TourStep[]> = {
     { title: "Confirm only when ready", body: "Open the order after checking what you received. Confirm delivery only when it matches the listing." },
   ],
   "/seller": [
-    { title: "Know the seller", body: "Review the seller’s bio, profile links, rating, history and active listings before you buy." },
+    { title: "Know the seller", body: "Review the seller’s bio, profile links, history and active listings before you buy." },
     { title: "Read the badges", body: "Badges summarize track record signals. Open the badge guide to see how each one is earned." },
     { title: "Ask a question", body: "Use Message to contact the seller directly and keep the conversation connected to your purchase." },
   ],

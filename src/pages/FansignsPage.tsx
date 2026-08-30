@@ -257,10 +257,14 @@ export default function FansignsPage() {
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-14 gap-y-5 w-fit mt-9">
                 {[
-                  { val: "1,102", label: "Live listings" },
-                  { val: "+522", label: "New this week" },
-                  { val: "$40,000", label: "Top ask" },
-                  { val: "$39", label: "Floor price" },
+                  { val: allListings.length.toLocaleString(), label: "Live listings" },
+                  { val: `+${allListings.filter(l => {
+                    const oneWeekAgo = new Date();
+                    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+                    return new Date(l.created_at) >= oneWeekAgo;
+                  }).length.toLocaleString()}`, label: "New this week" },
+                  { val: allListings.length > 0 ? `$${Math.max(...allListings.map(l => l.price)).toLocaleString()}` : '—', label: "Top ask" },
+                  { val: allListings.length > 0 ? `$${Math.min(...allListings.map(l => l.price)).toLocaleString()}` : '—', label: "Floor price" },
                 ].map(({ val, label }) => (
                   <div key={label}>
                     <div className="font-mono text-[30px] leading-9">{val}</div>

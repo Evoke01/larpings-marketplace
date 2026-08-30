@@ -230,7 +230,7 @@ export default function MarketplacePage() {
       setLoadingListings(true);
       const { data } = await supabase
         .from('listings')
-        .select('*, profiles(username, rating, reviews)')
+        .select('*, profiles(username)')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
       setAllListings(data ?? []);

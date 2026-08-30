@@ -407,41 +407,30 @@ export default function ListingPage() {
             <div className="mt-6 space-y-4">
               {user?.id !== listing.seller_id && !isSold && (
                 <div>
-                  <p className="text-[#93939f] font-mono text-[10px] tracking-widest uppercase mb-2.5">Pay with Crypto</p>
                   {existingOrder ? (
                     <div className="rounded-[10px] border border-amber-500/30 bg-amber-500/10 p-3 text-center">
                       <p className="text-amber-300 text-xs font-medium mb-2">You already have an active deal on this listing.</p>
                       <button onClick={() => navigate(`/messages?order=${existingOrder.id}`)} className="text-[11px] text-amber-400 underline">View Deal Chat →</button>
                     </div>
                   ) : (
-                  <div className="grid grid-cols-4 md:grid-cols-5 gap-2">
-                    {sellerWallets === undefined ? (
-                      // Still loading wallet info
-                      Array.from({length: 4}).map((_, i) => (
-                        <div key={i} className="h-16 rounded-[10px] border border-[#222226] bg-[#09090b]/40 animate-pulse" />
-                      ))
-                    ) : sellerWallets === null ? (
-                      <p className="col-span-4 md:col-span-5 text-[#93939f] text-xs py-2">Seller hasn't configured payment methods yet.</p>
-                    ) : (
-                      COINS.filter(coin => {
-                        if (coin.id === 'BTC') return !!sellerWallets.btc_address;
-                        if (coin.id === 'SOL') return !!sellerWallets.sol_address;
-                        if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
-                        if (coin.id === 'TON') return !!sellerWallets.ton_address;
-                        if (coin.id === 'TRX') return !!sellerWallets.trx_address;
-                        return !!sellerWallets.evm_address;
-                      }).map(coin => (
-                        <button
-                          key={coin.id}
-                          onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
-                          className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition-all"
-                        >
-                          <span className={`w-5 h-5 flex items-center justify-center ${coin.color}`}>{coin.icon}</span>
-                          <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
-                        </button>
-                      ))
-                    )}
-                  </div>
+                    <button
+                      onClick={async () => {
+                        if (!user) return navigate(`/login?returnTo=/listing/${listing.handle}`);
+                        const { data, error } = await supabase.from('orders').insert({
+                          listing_id: listing.id,
+                          buyer_id: user.id,
+                          status: 'pending'
+                        }).select().single();
+                        if (error) {
+                          alert(error.message);
+                          return;
+                        }
+                        navigate(`/messages?order=${data.id}`);
+                      }}
+                      className="w-full bg-[#ff0000] text-white font-medium text-[15px] px-5 py-4 rounded-[12px] hover:bg-[#cc0000] transition-colors"
+                    >
+                      Buy Now
+                    </button>
                   )}
                 </div>
               )}

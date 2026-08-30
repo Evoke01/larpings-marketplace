@@ -8,11 +8,10 @@ interface Stats {
   orders: number;
   revenue: number;
   pendingVerifs: number;
-  platformFees: number;
 }
 
 export default function PancakeDashboard() {
-  const [stats, setStats] = useState<Stats>({ users: 0, listings: 0, orders: 0, revenue: 0, pendingVerifs: 0, platformFees: 0 });
+  const [stats, setStats] = useState<Stats>({ users: 0, listings: 0, orders: 0, revenue: 0, pendingVerifs: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +31,6 @@ export default function PancakeDashboard() {
       ]);
 
       const revenue = (orderData ?? []).reduce((sum: number, o: any) => sum + (o.listings?.price ?? 0), 0);
-      const platformFees = revenue * 0.01;
 
       setStats({
         users: users ?? 0,
@@ -40,7 +38,6 @@ export default function PancakeDashboard() {
         orders: orders ?? 0,
         revenue,
         pendingVerifs: pendingVerifs ?? 0,
-        platformFees,
       });
       setLoading(false);
     };
@@ -51,7 +48,7 @@ export default function PancakeDashboard() {
     { label: "Total Users", value: stats.users.toLocaleString(), sub: "registered accounts", to: "/pancake/users" },
     { label: "Active Listings", value: stats.listings.toLocaleString(), sub: "live on marketplace", to: "/pancake/listings" },
     { label: "Total Orders", value: stats.orders.toLocaleString(), sub: "all time", to: "/pancake/orders" },
-    { label: "Platform Fees", value: `$${stats.platformFees.toFixed(2)}`, sub: "1% of GMV", to: "/pancake/orders" },
+
     { label: "Pending Verifs", value: stats.pendingVerifs.toLocaleString(), sub: "$49 requests awaiting", to: "/pancake/verifications", urgent: stats.pendingVerifs > 0 },
     { label: "Gross Revenue", value: `$${stats.revenue.toLocaleString()}`, sub: "total confirmed GMV", to: "/pancake/orders" },
   ];

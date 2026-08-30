@@ -1,16 +1,27 @@
-﻿import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { supabase } from "../../lib/supabase";
 import BadgePill from "../../components/BadgePill";
 
-const BADGE_OPTIONS = ["trusted_seller", "og", "top_seller", "verified_seller", "early_adopter", "dexter"];
+const BADGE_OPTIONS = [
+  "trusted_seller",
+  "verified_seller",
+  "top_seller",
+  "og",
+  "early_adopter",
+  "dexter",
+  "sales_10",
+  "sales_30",
+  "sales_50",
+  "sales_100",
+  "sales_500",
+  "sales_1000"
+];
 
 interface Profile {
   id: string;
   username: string;
   display_name: string | null;
   role: string;
-  rating: number;
-  reviews: number;
   rep_count: number;
   vouch_count: number;
   banned_at: string | null;
@@ -105,7 +116,7 @@ export default function UsersManager() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  {["User", "Role", "Rep / Vouch", "Rating", "Badges", "Joined", "Actions"].map(h => (
+                  {["User", "Role", "Rep / Vouch", "Badges", "Joined", "Actions"].map(h => (
                     <th key={h} className="px-4 py-3 text-left font-mono text-[10px] tracking-widest uppercase text-[#93939f]">{h}</th>
                   ))}
                 </tr>
@@ -128,7 +139,6 @@ export default function UsersManager() {
                         }`}>{u.role}</span>
                       </td>
                       <td className="px-4 py-3.5 font-mono text-xs">{u.rep_count} / {u.vouch_count}</td>
-                      <td className="px-4 py-3.5 font-mono text-xs">{u.rating > 0 ? u.rating.toFixed(1) : "—"} <span className="text-[#93939f]">({u.reviews})</span></td>
                       <td className="px-4 py-3.5">
                         <div className="flex flex-wrap gap-1">
                           {userBadges.map(b => (
@@ -178,7 +188,7 @@ export default function UsersManager() {
             <label className="block text-xs text-[#93939f] mb-1.5 font-mono uppercase tracking-wider">Badge Type</label>
             <select value={badgeInput} onChange={e => setBadgeInput(e.target.value)}
               className="w-full px-3 py-2.5 rounded-[10px] border border-white/[0.1] bg-white/[0.04] text-sm text-[#f9f9fb] mb-5 outline-none">
-              {BADGE_OPTIONS.map(b => <option key={b} value={b}>{b === "dexter" ? "DEXTER" : b}</option>)}
+              {BADGE_OPTIONS.map(b => <option key={b} value={b}>{b.split("_").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ")}</option>)}
             </select>
             <div className="flex gap-2">
               <button onClick={grantBadge} className="btn-accent flex-1">Grant</button>

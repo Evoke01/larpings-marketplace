@@ -68,8 +68,16 @@ export default function ShopMenu({ onClose }: { onClose: () => void }) {
       if (data) {
         const c: Record<string, number> = { all: data.length, instagram: 0, tiktok: 0, twitter: 0, snapchat: 0, telegram: 0, youtube: 0, discord: 0 };
         data.forEach(item => {
-          if (c[item.platform] !== undefined) c[item.platform]++;
-          else c[item.platform] = 1;
+          let p = (item.platform || '').toLowerCase();
+          if (p.includes('instagram')) p = 'instagram';
+          else if (p.includes('tiktok')) p = 'tiktok';
+          else if (p.includes('twitter') || p.includes('x')) p = 'twitter';
+          else if (p.includes('snapchat')) p = 'snapchat';
+          else if (p.includes('telegram')) p = 'telegram';
+          else if (p.includes('youtube')) p = 'youtube';
+          else if (p.includes('discord')) p = 'discord';
+          
+          if (c[p] !== undefined) c[p]++;
         });
         setCounts(c);
       }

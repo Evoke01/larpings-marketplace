@@ -228,7 +228,7 @@ export default function SupportPage() {
               <PlusIcon className="w-4 h-4 shrink-0 text-[#93939f] transition-transform duration-200 group-open:rotate-45" aria-hidden="true" />
             </summary>
             <p className="px-5 pb-5 text-sm leading-relaxed text-[#93939f] md:px-6 m-0">
-              Only after you confirm delivery. Your payment is held by the platform; when you press confirm on the order, the sale amount minus our flat 1% fee is credited to the seller. Until then, the order can still be disputed and refunded.
+              Only after you confirm delivery. Your payment is held by the platform; when you press confirm on the order, the full sale amount is credited to the seller. Until then, the order can still be disputed and refunded.
             </p>
           </details>
           <details className="group rounded-[12px] border border-[#222226] bg-[#111113] hover:border-[#ff0000]/40 transition-colors">

@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 
-type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rep_count: number | null; vouch_count: number | null; created_at: string };
+type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rep_count: number | null; vouch_count: number | null; created_at: string; is_middleman: boolean; };
 type FormState = { username: string; display_name: string; bio: string; avatar_url: string; banner_url: string; website_url: string; twitter_url: string; instagram_url: string; discord_url: string };
 type WalletsState = { evm_address: string; btc_address: string; sol_address: string; ltc_address: string; ton_address: string; trx_address: string };
 
@@ -27,7 +27,7 @@ export default function AccountPage() {
 
   useEffect(() => { if (!user) return; (async () => {
     const [p, l, v, w] = await Promise.all([
-      supabase.from("profiles").select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at").eq("id", user.id).maybeSingle(),
+      supabase.from("profiles").select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at, is_middleman").eq("id", user.id).maybeSingle(),
       supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", user.id).eq("status", "active"),
       supabase.from("seller_verifications").select("status").eq("seller_id", user.id).maybeSingle(),
       supabase.from("seller_wallets").select("*").eq("seller_id", user.id).maybeSingle(),
@@ -63,7 +63,7 @@ export default function AccountPage() {
     const username = form.username.trim().toLowerCase().replace(/^@+/, "");
     if (!/^[a-z0-9._-]{3,30}$/.test(username)) { setError("Username must be 3–30 characters using letters, numbers, dots, underscores, or hyphens."); setSaving(false); return; }
     
-    const { data, error: saveError } = await supabase.from("profiles").update({ ...form, username, display_name: form.display_name.trim() || null, bio: form.bio.trim() || null }).eq("id", user.id).select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at").single();
+    const { data, error: saveError } = await supabase.from("profiles").update({ ...form, username, display_name: form.display_name.trim() || null, bio: form.bio.trim() || null }).eq("id", user.id).select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at, is_middleman").single();
     if (saveError) {
       setError(saveError.code === "23505" ? "That username is already taken." : "Couldn’t save your profile.");
       setSaving(false); return;
@@ -96,7 +96,18 @@ export default function AccountPage() {
   
   return (
     <main className="mx-auto max-w-6xl px-4 pb-32 pt-8">
-      <header className="mb-8"><span className="mono-label text-[#93939f]">Your account</span><h1 className="mt-3 text-3xl font-medium tracking-tight md:text-4xl">Profile & account</h1><p className="mt-2 max-w-xl text-sm text-[#93939f]">Customize how buyers see you on larpings.com.</p></header>
+      <header className="mb-8 flex items-center justify-between">
+        <div>
+          <span className="mono-label text-[#93939f]">Your account</span>
+          <h1 className="mt-3 text-3xl font-medium tracking-tight md:text-4xl">Profile & account</h1>
+          <p className="mt-2 max-w-xl text-sm text-[#93939f]">Customize how buyers see you on larpings.com.</p>
+        </div>
+        {profile?.is_middleman && (
+          <Link to="/mm/dashboard" className="bg-[#cc00ff]/10 text-[#e57dff] border border-[#cc00ff]/30 px-5 py-2.5 rounded-[10px] font-medium text-sm hover:bg-[#cc00ff]/20 transition-colors">
+            MM Dashboard
+          </Link>
+        )}
+      </header>
       <div className="grid gap-6 lg:grid-cols-12">
         <section id="customize" className="lg:col-span-8 space-y-6">
           <form onSubmit={save} className="rounded-[14px] border border-[#222226] bg-[#111113] p-5 md:p-6">

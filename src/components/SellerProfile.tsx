@@ -4,7 +4,7 @@ import { supabase } from "../lib/supabase";
 import ReputationPanel from "./ReputationPanel";
 import BadgePill from "./BadgePill";
 
-type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rating: number | null; reviews: number | null; rep_count: number | null; vouch_count: number | null; created_at: string };
+type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rep_count: number | null; vouch_count: number | null; created_at: string };
 type Listing = { id: string; handle: string; description: string | null; category: string | null; platform: string | null; price: number; created_at: string; verification_status: "unverified" | "pending" | "verified" | null };
 type Badge = { id: string; badge_type: string };
 
@@ -30,7 +30,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
       setError(null);
       const { data: seller, error: profileError } = await supabase
         .from("profiles")
-        .select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rating, reviews, rep_count, vouch_count, created_at")
+        .select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at")
         .eq("username", normalizedHandle)
         .maybeSingle();
 
@@ -52,7 +52,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
         .select("id, handle, description, category, platform, price, created_at, verification_status")
         .eq("seller_id", seller.id)
         .eq("status", "active")
-        .order("created_at", { ascending: false }), supabase.from("orders").select("id, listings!inner(seller_id)").eq("listings.seller_id", seller.id).eq("status", "confirmed"), supabase.from("seller_verifications").select("seller_id").eq("seller_id", seller.id).eq("status", "verified").maybeSingle(), supabase.from("badges").select("id, badge_type").eq("user_id", seller.id)]);
+        .order("created_at", { ascending: false }), supabase.from("orders").select("id, listings!inner(seller_id)").eq("listings.seller_id", seller.id).in("status", ["confirmed", "closed"]), supabase.from("seller_verifications").select("seller_id").eq("seller_id", seller.id).eq("status", "verified").maybeSingle(), supabase.from("badges").select("id, badge_type").eq("user_id", seller.id)]);
 
       if (!active) return;
       setProfile(seller);
@@ -89,7 +89,7 @@ export default function SellerProfile({ handle }: { handle: string }) {
         <Link to={`/messages?user=${encodeURIComponent(profile.id)}`} className="bg-[#ff0000] text-white font-medium px-4 py-2.5 rounded-[10px]">Message</Link>
       </div>
       <p className="text-[#93939f] text-sm mt-6 px-6">{profile.bio || "Verified seller storefront on larpings.com."}</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2 px-6"><Link to="/badges" className="rounded-full border border-[#333338] px-3 py-1 text-xs font-medium text-[#93939f] transition-colors hover:border-[#ff0000] hover:text-[#ff0000]">Badge guide →</Link>{badges.map((badge) => <BadgePill key={badge.id} badgeType={badge.badge_type} />)}</div>
+      <div className="mt-4 flex flex-wrap items-center gap-2 px-6"><Link to="/badges" className="rounded-full border border-[#333338] px-3 py-1 text-xs font-medium text-[#93939f] transition-colors hover:border-[#ff0000] hover:text-[#ff0000]">Badge Guide →</Link>{badges.map((badge) => <BadgePill key={badge.id} badgeType={badge.badge_type} />)}</div>
       <section aria-label="Seller stats" className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Rep</p><p className="font-mono text-xl mt-1.5">{profile.rep_count ?? 0}</p></div>
         <div className="bg-[#111113] p-4 rounded-[12px] border border-[#222226]"><p className="text-[#93939f] font-mono text-[11px] uppercase tracking-[1.76px]">Vouch</p><p className="font-mono text-xl mt-1.5">{profile.vouch_count ?? 0}</p></div>

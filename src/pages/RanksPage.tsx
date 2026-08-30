@@ -7,8 +7,8 @@ type Seller = {
   username: string;
   display_name: string | null;
   avatar_url: string | null;
-  rating: number | null;
-  reviews: number | null;
+  rep_count: number | null;
+  vouch_count: number | null;
   activeListings: number;
 };
 
@@ -28,14 +28,14 @@ export default function RanksPage() {
   useEffect(() => {
     async function loadRanks() {
       const [{ data: profiles }, { data: listings }] = await Promise.all([
-        supabase.from("profiles").select("id, username, display_name, avatar_url, rating, reviews, created_at"),
+        supabase.from("profiles").select("id, username, display_name, avatar_url, rep_count, vouch_count, created_at"),
         supabase.from("listings").select("seller_id").eq("status", "active"),
       ]);
       const listingCounts = new Map<string, number>();
       (listings ?? []).forEach((listing) => listingCounts.set(listing.seller_id, (listingCounts.get(listing.seller_id) ?? 0) + 1));
       const ranked = (profiles ?? []).map((profile) => ({ ...profile, activeListings: listingCounts.get(profile.id) ?? 0 }))
-        .filter((seller) => seller.activeListings > 0 || (seller.reviews ?? 0) > 0)
-        .sort((a, b) => (b.reviews ?? 0) - (a.reviews ?? 0) || (b.rating ?? 0) - (a.rating ?? 0) || b.activeListings - a.activeListings)
+        .filter((seller) => seller.activeListings > 0 || (seller.rep_count ?? 0) > 0)
+        .sort((a, b) => (b.rep_count ?? 0) - (a.rep_count ?? 0) || (b.vouch_count ?? 0) - (a.vouch_count ?? 0) || b.activeListings - a.activeListings)
         .slice(0, 31);
       setSellers(ranked);
       setLoading(false);
@@ -58,10 +58,10 @@ export default function RanksPage() {
       {loading ? <div className="h-48 animate-pulse rounded-[14px] border border-[#222226] bg-[#111113]" /> : sellers.length === 0 ? <EmptyRanks /> : <div className="grid gap-4 md:grid-cols-3 md:items-end">{podium.map((seller, index) => <PodiumCard key={seller.id} seller={seller} rank={index === 0 ? 2 : index === 1 ? 1 : 3} />)}</div>}
     </section>
 
-    {!loading && sellers.length > 0 && <section className="mt-14"><div className="mb-5"><p className="mono-label text-[#ff0000]">THE CHASING PACK</p><h2 className="mt-2 text-2xl font-medium">Ranks 4–31</h2></div><div className="overflow-hidden rounded-[14px] border border-[#222226] bg-[#111113]">{sellers.slice(3).map((seller, index) => <Link key={seller.id} to={`/${seller.username}`} className="flex items-center gap-4 border-b border-[#222226] px-4 py-4 transition-colors last:border-0 hover:bg-[#171719]"><span className="w-7 text-center font-mono text-sm text-[#666]">{index + 4}</span><Avatar seller={seller} size="h-10 w-10" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{seller.display_name || `@${seller.username}`}</span><span className="text-xs text-[#777]">@{seller.username} · {seller.activeListings} active listing{seller.activeListings === 1 ? "" : "s"}</span></span><span className="hidden text-right sm:block"><span className="block font-mono text-sm">{seller.reviews ?? 0}</span><span className="mono-label text-[#666]">sales</span></span><ArrowIcon /></Link>)}</div></section>}
+    {!loading && sellers.length > 0 && <section className="mt-14"><div className="mb-5"><p className="mono-label text-[#ff0000]">THE CHASING PACK</p><h2 className="mt-2 text-2xl font-medium">Ranks 4–31</h2></div><div className="overflow-hidden rounded-[14px] border border-[#222226] bg-[#111113]">{sellers.slice(3).map((seller, index) => <Link key={seller.id} to={`/${seller.username}`} className="flex items-center gap-4 border-b border-[#222226] px-4 py-4 transition-colors last:border-0 hover:bg-[#171719]"><span className="w-7 text-center font-mono text-sm text-[#666]">{index + 4}</span><Avatar seller={seller} size="h-10 w-10" /><span className="min-w-0 flex-1"><span className="block truncate font-medium">{seller.display_name || `@${seller.username}`}</span><span className="text-xs text-[#777]">@{seller.username} · {seller.activeListings} active listing{seller.activeListings === 1 ? "" : "s"}</span></span><span className="hidden text-right sm:block"><span className="block font-mono text-sm">{seller.vouch_count ?? 0}</span><span className="mono-label text-[#666]">sales</span></span><ArrowIcon /></Link>)}</div></section>}
     <div className="mt-14 flex flex-col items-center rounded-[14px] border border-[#222226] bg-[#111113] px-6 py-10 text-center"><p className="mono-label text-[#ff0000]">YOUR NAME BELONGS UP HERE</p><h2 className="mt-3 text-2xl font-medium">List a handle. Start climbing.</h2><p className="mt-3 max-w-md text-sm leading-relaxed text-[#93939f]">Build a track record through secure checkout, clear delivery and verified ownership.</p><Link to="/sell" className="mt-6 inline-flex items-center gap-2 rounded-[10px] bg-[#ff0000] px-5 py-3 text-sm font-medium text-white transition-transform hover:scale-[1.02]">Create a listing <ArrowIcon /></Link></div>
   </div>;
 }
 
-function PodiumCard({ seller, rank }: { seller: Seller; rank: number }) { return <Link to={`/${seller.username}`} className={`group rounded-[14px] border bg-[#111113] p-5 text-center transition-all hover:-translate-y-1 hover:border-[#ff0000]/50 ${rank === 1 ? "border-[#ff0000]/60 md:-translate-y-4" : "border-[#222226]"}`}><div className="flex justify-center"><Avatar seller={seller} size={rank === 1 ? "h-20 w-20" : "h-16 w-16"} /></div><p className="mt-4 font-mono text-xs text-[#ff0000]">#{rank}</p><h3 className="mt-1 truncate text-lg font-medium">@{seller.username}</h3><p className="mt-1 text-xs text-[#777]">{seller.activeListings} active listing{seller.activeListings === 1 ? "" : "s"}</p><p className="mt-5 font-mono text-2xl">{seller.reviews ?? 0}</p><p className="mono-label text-[#666]">sales / track record</p></Link>; }
+function PodiumCard({ seller, rank }: { seller: Seller; rank: number }) { return <Link to={`/${seller.username}`} className={`group rounded-[14px] border bg-[#111113] p-5 text-center transition-all hover:-translate-y-1 hover:border-[#ff0000]/50 ${rank === 1 ? "border-[#ff0000]/60 md:-translate-y-4" : "border-[#222226]"}`}><div className="flex justify-center"><Avatar seller={seller} size={rank === 1 ? "h-20 w-20" : "h-16 w-16"} /></div><p className="mt-4 font-mono text-xs text-[#ff0000]">#{rank}</p><h3 className="mt-1 truncate text-lg font-medium">@{seller.username}</h3><p className="mt-1 text-xs text-[#777]">{seller.activeListings} active listing{seller.activeListings === 1 ? "" : "s"}</p><p className="mt-5 font-mono text-2xl">{seller.vouch_count ?? 0}</p><p className="mono-label text-[#666]">sales / track record</p></Link>; }
 function EmptyRanks() { return <div className="rounded-[14px] border border-[#222226] bg-[#111113] px-6 py-12 text-center text-[#93939f]">Seller rankings will appear once active storefronts begin building a track record.</div>; }

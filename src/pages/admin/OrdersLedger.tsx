@@ -33,7 +33,6 @@ export default function OrdersLedger() {
   const filtered = orders.filter(o => statusFilter === "all" || o.status === statusFilter);
   const confirmed = orders.filter(o => o.status === "confirmed");
   const gmv = confirmed.reduce((sum, o) => sum + ((o.listings as any)?.price ?? 0), 0);
-  const platformFees = gmv * 0.01;
 
   const statusColor = (s: string) => {
     if (s === "confirmed") return "bg-green-500/15 text-green-400";
@@ -54,7 +53,7 @@ export default function OrdersLedger() {
         {[
           { label: "Total Orders", value: orders.length.toLocaleString(), sub: "all time" },
           { label: "Gross GMV", value: `$${gmv.toLocaleString()}`, sub: "confirmed sales" },
-          { label: "Platform Fees", value: `$${platformFees.toFixed(2)}`, sub: "1% of GMV", accent: true },
+
         ].map(c => (
           <div key={c.label} className={`rounded-[14px] border p-5 ${c.accent ? "border-[#ff0000]/30 bg-[#ff0000]/5" : "border-white/[0.07] bg-[#0e0e11]"}`}>
             <p className="font-mono text-[10px] tracking-widest uppercase text-[#93939f] mb-2">{c.label}</p>

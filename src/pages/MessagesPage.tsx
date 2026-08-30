@@ -68,48 +68,42 @@ type Conversation = {
   orderCreatedAt?: string;
   payChain?: string;
   isBuyer?: boolean;
+  mmId?: string | null;
+  mmFee?: number | null;
+  isMm?: boolean;
 };
 
 
 
-function OrderTimer({ createdAt }: { createdAt: string }) {
-  const [timeLeft, setTimeLeft] = React.useState('');
 
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      const msLeft = (6 * 3600 * 1000) - (Date.now() - new Date(createdAt).getTime());
-      if (msLeft <= 0) {
-        setTimeLeft('Expired');
-        clearInterval(interval);
-      } else {
-        const h = Math.floor(msLeft / 3600000);
-        const m = Math.floor((msLeft % 3600000) / 60000);
-        setTimeLeft(`${h}h ${m}m remaining`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [createdAt]);
-
-  return <span className="text-amber-400 font-mono text-xs">{timeLeft}</span>;
-}
 
 
 export default function MessagesPage() {
-  const [session, setSession] = useState<any>(null),
-    [conversations, setConversations] = useState<Conversation[]>([]),
-    [selected, setSelected] = useState<Conversation | null>(null);
+  const [session, setSession] = useState<{ user: any } | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [selected, setSelected] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<any[]>([]),
     [loungeMessages, setLoungeMessages] = useState<any[]>([]),
-    [authors, setAuthors] = useState<Record<string, string>>({}),
-    [online, setOnline] = useState<{ id: string; username: string }[]>([]);
+    [authors, setAuthors] = useState<Record<string, string>>({});
+  const [avatars, setAvatars] = useState<Record<string, string | null>>({});
+  const [online, setOnline] = useState<{ id: string; username: string }[]>([]);
   const [draft, setDraft] = useState(""),
     [loading, setLoading] = useState(true),
     [sending, setSending] = useState(false);
+  const [mms, setMms] = useState<any[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null),
     [params, setParams] = useSearchParams();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,7 +172,7 @@ export default function MessagesPage() {
         return;
       }
       setSession({ user });
-      const [{ data: dms }, { data: lounge, error: loungeError }, { data: asBuyer }, { data: userListings }] =
+      const [{ data: dms }, { data: lounge, error: loungeError }, { data: asBuyer }, { data: userListings }, { data: asMiddlemanData }, { data: mmListData }] =
         await Promise.all([
           supabase
             .from("messages")
@@ -191,16 +185,21 @@ export default function MessagesPage() {
             .order("created_at", { ascending: true })
             .limit(200),
           supabase.from("orders").select("*, listings(handle)").eq("buyer_id", user.id),
-          supabase.from("listings").select("id, handle").eq("seller_id", user.id)
+          supabase.from("listings").select("id, handle").eq("seller_id", user.id),
+          supabase.from("orders").select("*, listings(handle)").eq("mm_id", user.id),
+          supabase.from("profiles").select("id, username, display_name, mm_fee_percent, mm_fee_flat").eq("is_middleman", true)
         ]);
       if (loungeError) console.error("Lounge load error:", loungeError);
+      
+      if (mmListData) setMms(mmListData);
       
       let asSeller: any[] = [];
       if (userListings?.length) {
         const { data } = await supabase.from("orders").select("*").in("listing_id", userListings.map(l => l.id));
         asSeller = data?.map(o => ({ ...o, listings: userListings.find(l => l.id === o.listing_id) })) || [];
       }
-      const orders = [...(asBuyer || []), ...asSeller];
+      const asMiddleman = asMiddlemanData || [];
+      const orders = [...(asBuyer || []), ...asSeller, ...asMiddleman];
       const ids = [
         ...new Set([
           ...(dms ?? []).map((m: any) =>
@@ -208,20 +207,24 @@ export default function MessagesPage() {
           ),
           ...(lounge ?? []).map((m: any) => m.sender_id),
           ...orders.map(o => o.buyer_id),
+          ...orders.map(o => o.mm_id).filter(Boolean),
           ...asSeller.map(o => user.id)
         ]),
       ];
       const { data: profiles } = ids.length
         ? await supabase
             .from("profiles")
-            .select("id,username,display_name")
+            .select("id,username,display_name,avatar_url")
             .in("id", ids)
         : { data: [] };
       const names: Record<string, string> = {};
+      const avatarMap: Record<string, string | null> = {};
       (profiles ?? []).forEach((p: any) => {
         names[p.id] = p.username || p.display_name || p.id;
+        avatarMap[p.id] = p.avatar_url || null;
       });
       setAuthors(names);
+      setAvatars(avatarMap);
       setLoungeMessages(lounge ?? []);
       const map: Record<string, Conversation> = {};
       (dms ?? []).forEach((m: any) => {
@@ -262,9 +265,10 @@ export default function MessagesPage() {
         sellerAccepted: o.seller_accepted,
         orderCreatedAt: o.created_at,
         isBuyer: o.buyer_id === user.id,
-
-        payChain: o.pay_chain
-
+        payChain: o.pay_chain,
+        mmId: o.mm_id,
+        mmFee: o.mm_fee,
+        isMm: o.mm_id === user.id
       }));
 
       const sortedDeals = [...dealConvs].sort((a, b) =>
@@ -286,12 +290,13 @@ export default function MessagesPage() {
         if (!requested) {
           const { data } = await supabase
             .from("profiles")
-            .select("id, username")
+            .select("id, username, avatar_url")
             .ilike("username", targetUsername ?? "")
             .maybeSingle();
           if (data) {
             requested = data.id;
             names[data.id] = data.username;
+            avatarMap[data.id] = data.avatar_url;
           }
         }
       }
@@ -322,6 +327,9 @@ export default function MessagesPage() {
               orderCreatedAt: freshOrder.created_at,
               isBuyer: freshOrder.buyer_id === user.id,
               payChain: freshOrder.pay_chain,
+              mmId: freshOrder.mm_id,
+              mmFee: freshOrder.mm_fee,
+              isMm: freshOrder.mm_id === user.id
             };
             // Add it to the conversation list
             setConversations(prev => {
@@ -401,14 +409,19 @@ export default function MessagesPage() {
           if (!authors[row.sender_id]) {
             const { data } = await supabase
               .from("profiles")
-              .select("id,username,display_name")
+              .select("id,username,display_name,avatar_url")
               .eq("id", row.sender_id)
               .maybeSingle();
-            if (data)
+            if (data) {
               setAuthors((prev) => ({
                 ...prev,
                 [data.id]: data.username || data.display_name || data.id,
               }));
+              setAvatars((prev) => ({
+                ...prev,
+                [data.id]: data.avatar_url || null,
+              }));
+            }
           }
           setConversations((prev) =>
             prev.map((c) =>
@@ -695,7 +708,7 @@ export default function MessagesPage() {
                             ? 'Deal Closed'
                             : selected.orderStatus === 'disputed'
                               ? <span className="text-red-400">Dispute Under Review</span>
-                              : (<span className="flex items-center gap-1.5">ESCROW ACTIVE {selected.orderCreatedAt && <OrderTimer createdAt={selected.orderCreatedAt} />}</span>)
+                              : (<span className="flex items-center gap-1.5 text-emerald-400">ESCROW ACTIVE</span>)
                           : "Private conversation"}
                     </p>
                   </div>
@@ -708,11 +721,18 @@ export default function MessagesPage() {
                     ) : (
                       <>
                         <button
-                          onClick={async () => {
-                            if (!window.confirm("Are you sure? This will lock the deal and call an admin to review the chat logs.")) return;
-                            await supabase.from('orders').update({ status: 'disputed' }).eq('id', selected.orderId);
-                            await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "🚨 A dispute has been opened. An admin will review this chat shortly." });
-                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'disputed' }) : prev);
+                          onClick={() => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: "Open Dispute",
+                              description: "Are you sure? This will lock the deal and call an admin to review the chat logs.",
+                              onConfirm: async () => {
+                                await supabase.from('orders').update({ status: 'disputed' }).eq('id', selected.orderId);
+                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "🚨 A dispute has been opened. An admin will review this chat shortly." });
+                                setSelected(prev => prev ? ({ ...prev, orderStatus: 'disputed' }) : prev);
+                                setConfirmModal(null);
+                              }
+                            });
                           }}
                           className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
                         >
@@ -722,27 +742,79 @@ export default function MessagesPage() {
 
                           <button 
                             onClick={async () => {
-                              const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
-                              await supabase.from('orders').update(updateField).eq('id', selected.orderId);
-                              const { data } = await supabase.from('orders').select('buyer_closed, seller_closed').eq('id', selected.orderId).single();
-                              if (data?.buyer_closed && data?.seller_closed) {
-                                await supabase.from('orders').update({ status: 'closed' }).eq('id', selected.orderId);
-                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: `✅ Both parties have confirmed. The deal is now closed.` });
-                                setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                              } else {
-                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: `✅ The ${selected.isBuyer ? 'Buyer' : 'Seller'} has confirmed the deal. Waiting for the ${selected.isBuyer ? 'Seller' : 'Buyer'} to confirm.` });
-                                setSelected(prev => prev ? ({ ...prev, ...updateField }) : prev);
+                              if (isClosing) return;
+                              setIsClosing(true);
+                              try {
+                                const { data, error } = await supabase.rpc('confirm_p2p_deal', { p_order_id: selected.orderId, p_is_buyer: selected.isBuyer });
+                                if (error) {
+                                  console.error(error);
+                                  return;
+                                }
+                                if (data?.status === 'closed') {
+                                  setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                                } else {
+                                  setSelected(prev => prev ? ({ ...prev, buyerClosed: data.buyer_closed, sellerClosed: data.seller_closed }) : prev);
+                                }
+                              } finally {
+                                setIsClosing(false);
                               }
                             }}
-                            disabled={selected.isBuyer ? selected.buyerClosed : selected.sellerClosed}
+                            disabled={isClosing || (selected.isBuyer ? selected.buyerClosed : selected.sellerClosed)}
                             className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
                           >
-                            {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
+                            {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : (isClosing ? 'Confirming...' : 'Close Deal')}
                           </button>
                       </>
                     )}
                   </div>
                 )}
+
+                {selected.isDeal && !selected.mmId && selected.isBuyer && (
+                  <div className="mt-4 bg-[#cc00ff]/10 border border-[#cc00ff]/30 p-4 rounded-xl">
+                    <h3 className="text-sm font-semibold text-[#e57dff] mb-2 flex items-center gap-2">
+                      <ShieldIcon className="w-4 h-4" /> Choose an Escrow Middleman
+                    </h3>
+                    <p className="text-xs text-[#93939f] mb-4">Select a trusted third-party to mediate this deal. They will verify delivery and release funds.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {mms.map(mm => (
+                        <button
+                          key={mm.id}
+                          onClick={() => {
+                            setConfirmModal({
+                              isOpen: true,
+                              title: "Assign Middleman",
+                              description: `Are you sure you want to assign ${mm.username || mm.display_name} as Middleman for this deal?`,
+                              onConfirm: async () => {
+                                const { error } = await supabase.from('orders').update({ mm_id: mm.id, mm_fee: mm.mm_fee_flat }).eq('id', selected.orderId);
+                                if (error) return console.error(error);
+                                
+                                await supabase.from('order_messages').insert({
+                                  order_id: selected.orderId, sender_id: session.user.id,
+                                  content: `✅ Escrow Middleman @${mm.username || mm.display_name} has been assigned to mediate this deal.`
+                                });
+                                setSelected({ ...selected, mmId: mm.id });
+                                setConfirmModal(null);
+                              }
+                            });
+                          }}
+                          className="flex flex-col text-left bg-[#09090b] border border-[#222226] p-3 rounded-lg hover:border-[#cc00ff]/50 transition-colors"
+                        >
+                          <span className="font-bold text-sm text-white">@{mm.username || mm.display_name}</span>
+                          <span className="text-xs text-[#93939f] mt-1">Fee: {mm.mm_fee_percent}% + ${mm.mm_fee_flat} flat</span>
+                        </button>
+                      ))}
+                      {mms.length === 0 && <span className="text-xs text-muted-foreground">No middlemen available.</span>}
+                    </div>
+                  </div>
+                )}
+                
+                {selected.isDeal && selected.mmId && (
+                   <div className="mt-3 flex items-center gap-2 bg-[#111113] px-3 py-2 border border-[#222226] rounded-lg">
+                      <ShieldIcon className="w-4 h-4 text-[#e57dff]" />
+                      <span className="text-xs text-[#93939f]">Mediated by MM</span>
+                   </div>
+                )}
+
                 {!selected.isDeal && !selected.isLounge && (
                    <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
                 )}
@@ -753,8 +825,9 @@ export default function MessagesPage() {
                   {visible.length ? (
                     visible.map((m: any, idx: number) => {
                       const mine = m.sender_id === session.user.id;
-                      const author = selected.isLounge ? (mine ? "you" : authors[m.sender_id] || m.sender_id.slice(0, 8)) : selected.partnerName;
+                      const author = (selected.isLounge || selected.isDeal) ? (mine ? "you" : authors[m.sender_id] || m.sender_id.slice(0, 8)) : selected.partnerName;
                       const showDivider = idx === 0 || new Date(m.created_at).toDateString() !== new Date(visible[idx - 1].created_at).toDateString();
+                      const isMmMessage = selected.isDeal && m.sender_id === selected.mmId;
                       
                       return (
                         <div key={m.id}>
@@ -767,30 +840,53 @@ export default function MessagesPage() {
                               <span className="h-px flex-1 bg-border"></span>
                             </div>
                           )}
-                          <div className={`group relative flex items-end gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
-                            {!mine && (
-                               <span className="w-7 shrink-0" aria-hidden="true"></span>
-                            )}
-                            <div className={`flex min-w-0 max-w-[82%] flex-col sm:max-w-[68%] ${mine ? 'items-end' : 'items-start'}`}>
-                              <div className={`w-fit max-w-full px-3.5 py-2.5 rounded-[14px] ${mine ? 'rounded-br-[4px] bg-accent text-white' : 'rounded-bl-[4px] border border-border bg-card text-foreground'}`}>
-                                {selected.isLounge && !mine && (
-                                  <p className="mb-1 text-[11px] font-semibold text-red-500">@{author}</p>
-                                )}
-                                
-                                {m.content.startsWith('![attachment](') && m.content.endsWith(')') ? (
-                                  <a href={m.content.slice(14, -1)} target="_blank" rel="noreferrer">
-                                    <img src={m.content.slice(14, -1)} alt="Attachment" className="max-w-[200px] max-h-[200px] object-contain rounded-lg" />
-                                  </a>
-                                ) : (
-                                  <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.content}</p>
-                                )}
-
-                                <span className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground/70'}`}>
-                                  {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
+                          {(m.content.startsWith('✅') || m.content.startsWith('🚨') || m.content.startsWith('⚠️')) ? (
+                            <div className="my-3 flex justify-center">
+                              <div className="bg-red-500/10 text-red-500 border border-red-500/30 px-5 py-3 rounded-lg text-sm max-w-[85%] text-center whitespace-pre-wrap leading-relaxed shadow-sm">
+                                {m.content}
                               </div>
                             </div>
-                          </div>
+                          ) : (
+                            <div className={`group relative flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
+                              {!mine && (
+                                 <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222226] flex items-center justify-center text-xs font-semibold text-[#93939f] border border-[#333338]">
+                                   {avatars[m.sender_id] ? (
+                                     <img src={avatars[m.sender_id]!} alt="" className="w-full h-full object-cover" />
+                                   ) : (
+                                     (authors[m.sender_id] || m.sender_id).slice(0, 2).toUpperCase()
+                                   )}
+                                 </div>
+                              )}
+                              <div className={`flex min-w-0 max-w-[82%] flex-col sm:max-w-[68%] ${mine ? 'items-end' : 'items-start'}`}>
+                                {((selected.isLounge || selected.isDeal) && !mine) && (
+                                  <p className={`mb-1 ml-1 text-xs font-medium ${isMmMessage ? 'text-[#e57dff]' : 'text-[#93939f]'}`}>
+                                    {isMmMessage ? 'Middleman ' : ''}@{author}
+                                  </p>
+                                )}
+                                
+                                <div className={`w-fit max-w-full px-4 py-2.5 rounded-2xl ${
+                                  mine 
+                                    ? 'rounded-br-sm bg-[#ff0000] text-white shadow-sm' 
+                                    : isMmMessage
+                                      ? 'rounded-bl-sm border border-[#cc00ff]/30 bg-[#cc00ff]/10 text-white shadow-sm'
+                                      : 'rounded-bl-sm border border-[#222226] bg-[#171719] text-foreground shadow-sm'
+                                }`}>
+                                  
+                                  {m.content.startsWith('![attachment](') && m.content.endsWith(')') ? (
+                                    <a href={m.content.slice(14, -1)} target="_blank" rel="noreferrer">
+                                      <img src={m.content.slice(14, -1)} alt="Attachment" className="max-w-[200px] max-h-[200px] object-contain rounded-lg" />
+                                    </a>
+                                  ) : (
+                                    <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{m.content}</p>
+                                  )}
+
+                                  <span className={`mt-1 flex items-center justify-end gap-1 text-[10px] ${mine ? 'text-white/70' : 'text-muted-foreground/70'}`}>
+                                    {new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })
@@ -844,6 +940,32 @@ export default function MessagesPage() {
           </div>
         )}
       </div>
+
+      {/* Custom Confirm Modal */}
+      {confirmModal && confirmModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-[#111113] border border-[#222226] rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-semibold text-white mb-2">{confirmModal.title}</h3>
+            <p className="text-[#93939f] text-sm mb-6 leading-relaxed">
+              {confirmModal.description}
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <button 
+                onClick={() => setConfirmModal(null)}
+                className="flex-1 bg-transparent hover:bg-white/5 border border-[#222226] text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmModal.onConfirm}
+                className="flex-1 bg-[#ff0000] hover:bg-[#cc0000] text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
