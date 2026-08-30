@@ -228,7 +228,7 @@ export default function SupportPage() {
               <PlusIcon className="w-4 h-4 shrink-0 text-[#93939f] transition-transform duration-200 group-open:rotate-45" aria-hidden="true" />
             </summary>
             <p className="px-5 pb-5 text-sm leading-relaxed text-[#93939f] md:px-6 m-0">
-              Only after you confirm delivery. Your payment is held by the platform; when you press confirm on the order, the sale amount minus our flat 3% fee is credited to the seller. Until then, the order can still be disputed and refunded.
+              Only after you confirm delivery. Your payment is held by the platform; when you press confirm on the order, the sale amount minus our flat 1% fee is credited to the seller. Until then, the order can still be disputed and refunded.
             </p>
           </details>
           <details className="group rounded-[12px] border border-[#222226] bg-[#111113] hover:border-[#ff0000]/40 transition-colors">
@@ -246,7 +246,7 @@ export default function SupportPage() {
               <PlusIcon className="w-4 h-4 shrink-0 text-[#93939f] transition-transform duration-200 group-open:rotate-45" aria-hidden="true" />
             </summary>
             <p className="px-5 pb-5 text-sm leading-relaxed text-[#93939f] md:px-6 m-0">
-              A flat 3% of the sale price, taken when the order completes. Listing is free — you only pay when you actually sell.
+              A flat 1% of the sale price, taken when the order completes. Listing is free — you only pay when you actually sell.
             </p>
           </details>
           <details className="group rounded-[12px] border border-[#222226] bg-[#111113] hover:border-[#ff0000]/40 transition-colors">
@@ -329,9 +329,9 @@ export default function SupportPage() {
               </div>
             </div>
             
-            <button className="bg-[#ff0000] text-white leading-none font-medium text-[14px] w-full inline-flex justify-center items-center gap-2 shadow-[0_1px_rgba(255,255,255,0.18)_inset,0_10px_30px_-12px_rgba(255,0,0,0.55)] mt-6 px-[22px] py-3 rounded-[10px] hover:bg-[#cc0000] hover:shadow-[0_1px_#ffffff2e_inset,0_16px_40px_-12px_rgba(255,0,0,0.65)] hover:-translate-y-px transition-all">
+            <Link to="/messages?username=guardian" className="bg-[#ff0000] text-white leading-none font-medium text-[14px] w-full inline-flex justify-center items-center gap-2 shadow-[0_1px_rgba(255,255,255,0.18)_inset,0_10px_30px_-12px_rgba(255,0,0,0.55)] mt-6 px-[22px] py-3 rounded-[10px] hover:bg-[#cc0000] hover:shadow-[0_1px_#ffffff2e_inset,0_16px_40px_-12px_rgba(255,0,0,0.65)] hover:-translate-y-px transition-all">
               <ChatIcon className="w-4 h-4" /> Chat with @Guardian
-            </button>
+            </Link>
             
             <ul className="mt-6 mb-0 pl-0 space-y-3">
               <li className="flex items-start gap-3">

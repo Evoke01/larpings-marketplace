@@ -1,7 +1,24 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 export default function Footer() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+    const { error } = await supabase.from("newsletter_subscribers").insert({ email });
+    if (error && error.code !== "23505") { // Ignore unique violation if already subscribed
+      setStatus("error");
+    } else {
+      setStatus("success");
+      setEmail("");
+    }
+  };
+
   return (
     <footer className="relative mt-24 overflow-hidden border-t border-border bg-[hsl(var(--section-background))] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       <div className="mx-auto max-w-6xl px-4">
@@ -12,18 +29,22 @@ export default function Footer() {
             <h3 className="text-lg text-foreground font-medium tracking-tight">Never miss a drop</h3>
             <p className="mt-1 text-sm text-muted-foreground">One email when rare goods hit the marketplace. No spam, unsubscribe anytime.</p>
           </div>
-          <form className="flex w-full max-w-md gap-2" onSubmit={(e) => e.preventDefault()}>
+          <form className="flex w-full max-w-md gap-2" onSubmit={handleSubscribe}>
             <input 
               type="email" 
               required 
               placeholder="you@example.com" 
-              className="h-11 flex-1 rounded-[10px] border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none transition-colors" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={status === "loading" || status === "success"}
+              className="h-11 flex-1 rounded-[10px] border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-accent focus:outline-none transition-colors disabled:opacity-50" 
             />
             <button 
               type="submit" 
-              className="btn-white !py-0 h-11 shrink-0"
+              disabled={status === "loading" || status === "success"}
+              className="btn-white !py-0 h-11 shrink-0 disabled:opacity-50"
             >
-              Get alerts 
+              {status === "success" ? "Subscribed!" : status === "loading" ? "..." : "Get alerts"}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />

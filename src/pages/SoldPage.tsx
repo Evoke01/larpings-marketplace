@@ -1,7 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 
 // Platform icons
+const SearchIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="11" cy="11" r="8" />
+    <path d="m21 21-4.3-4.3" />
+  </svg>
+);
 const InstagramIcon = () => (
   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 align-middle block" aria-hidden="true">
     <defs>
@@ -31,39 +37,81 @@ const XIcon = () => (
   </svg>
 );
 
-// Data
-const hallOfFame = [
-  { handle: "a•••a", category: "username", price: "$45,000", time: "1 month ago", platform: "instagram", color: "#ed459c" },
-  { handle: "s•••e", category: "fansign", price: "$32,000", time: "9 months ago", platform: "instagram", color: "#ed459c" },
-  { handle: "s•••e", category: "username", price: "$28,500", time: "5 months ago", platform: "instagram", color: "#ed459c" },
+import { supabase } from "../lib/supabase";
+
+const PLATFORMS = [
+  { id: "all", label: "All platforms", color: "" },
+  { id: "instagram", label: "Instagram", color: "#ed459c" },
+  { id: "tiktok", label: "TikTok", color: "#1fe0f9" },
+  { id: "twitter", label: "X / Twitter", color: "#d3d9de" },
+  { id: "snapchat", label: "Snapchat", color: "#fbcf23" },
+  { id: "telegram", label: "Telegram", color: "#2aa0f4" },
+  { id: "youtube", label: "YouTube", color: "#ff0000" },
+  { id: "discord", label: "Discord", color: "#5865F2" },
 ];
 
-const soldHandles = [
-  { handle: "T•••t", category: "fansign", price: "$10", time: "1 day ago", platform: "instagram", color: "#ed459c" },
-  { handle: "r•••e", category: "username", price: "$3,200", time: "1 week ago", platform: "instagram", color: "#ed459c" },
-  { handle: "d•••t", category: "account", price: "$5,400", time: "3 weeks ago", platform: "tiktok", color: "#1fe0f9" },
-  { handle: "o•••x", category: "service", price: "$2,100", time: "4 weeks ago", platform: "telegram", color: "#2aa0f4" },
-  { handle: "g•••t", category: "username", price: "$19,000", time: "2 months ago", platform: "instagram", color: "#ed459c" },
-  { handle: "l•••n", category: "account", price: "$950", time: "2 months ago", platform: "snapchat", color: "#fbcf23" },
-  { handle: "s•••c", category: "username", price: "$7,800", time: "3 months ago", platform: "twitter", color: "#d3d9de" },
-  { handle: "m•••e", category: "service", price: "$1,500", time: "3 months ago", platform: "tiktok", color: "#1fe0f9" },
-  { handle: "v•••t", category: "fansign", price: "$6,200", time: "4 months ago", platform: "telegram", color: "#2aa0f4" },
-  { handle: "h•••e", category: "username", price: "$12,500", time: "4 months ago", platform: "instagram", color: "#ed459c" },
-  { handle: "p•••l", category: "username", price: "$3,900", time: "4 months ago", platform: "twitter", color: "#d3d9de" },
-  { handle: "e•••s", category: "account", price: "$640", time: "5 months ago", platform: "snapchat", color: "#fbcf23" },
-];
+const maskHandle = (handle: string) => {
+  if (!handle || handle.length <= 2) return handle;
+  return handle[0] + "•••" + handle[handle.length - 1];
+};
 
-const filterOptions = [
-  { id: "all", label: "All platforms", count: 26 },
-  { id: "instagram", label: "Instagram", color: "#ed459c", count: 9 },
-  { id: "tiktok", label: "TikTok", color: "#1fe0f9", count: 5 },
-  { id: "twitter", label: "X / Twitter", color: "#d3d9de", count: 4 },
-  { id: "snapchat", label: "Snapchat", color: "#fbcf23", count: 4 },
-  { id: "telegram", label: "Telegram", color: "#2aa0f4", count: 4 },
-];
+const formatTimeAgo = (date: string) => {
+  if (!date) return "";
+  const diff = Date.now() - new Date(date).getTime();
+  const days = Math.floor(diff / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "1 day ago";
+  if (days < 30) return `${days} days ago`;
+  const months = Math.floor(days / 30);
+  if (months === 1) return "1 month ago";
+  return `${months} months ago`;
+};
+
+const getPlatformColor = (id: string) => PLATFORMS.find(p => p.id === id)?.color || "#ed459c";
 
 export default function SoldPage() {
   const [activeFilter, setActiveFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [soldListings, setSoldListings] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchSold = async () => {
+      const { data } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('status', 'sold')
+        .order('updated_at', { ascending: false });
+      setSoldListings(data ?? []);
+    };
+    fetchSold();
+  }, []);
+
+  const hallOfFame = useMemo(() => {
+    return [...soldListings].sort((a, b) => b.price - a.price).slice(0, 3);
+  }, [soldListings]);
+
+  const filteredSold = useMemo(() => {
+    let list = soldListings;
+    if (activeFilter !== "all") list = list.filter(l => l.platform === activeFilter);
+    if (search.trim()) list = list.filter(l => l.handle.toLowerCase().includes(search.toLowerCase()));
+    return list;
+  }, [soldListings, activeFilter, search]);
+
+  const platformCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: soldListings.length };
+    for (const l of soldListings) {
+      counts[l.platform] = (counts[l.platform] ?? 0) + 1;
+    }
+    return counts;
+  }, [soldListings]);
+
+  const filterOptions = PLATFORMS.map(p => ({
+    ...p,
+    count: platformCounts[p.id] ?? 0
+  })).filter(p => p.count > 0 || p.id === "all");
+
+  const highestSale = hallOfFame.length > 0 ? hallOfFame[0].price : 0;
+  const uniquePlatforms = Object.keys(platformCounts).filter(k => k !== 'all').length;
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 pt-4 pb-20 font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
@@ -140,18 +188,32 @@ export default function SoldPage() {
           <p className="mt-5 max-w-2xl text-base leading-relaxed text-[#93939f] md:text-lg">
             A running record of names that changed hands on larpings.com. Prices are real, transfers were protected — most items are partially hidden to protect buyer privacy.
           </p>
+
+          {/* Search */}
+          <div className="max-w-[576px] mt-7">
+            <div className="bg-[rgba(9,9,11,0.7)] flex items-center gap-2 backdrop-blur-sm rounded-[12px] border border-[#222226] px-4">
+              <span className="text-[#93939f]"><SearchIcon /></span>
+              <input
+                placeholder='Search a sold name…'
+                aria-label="Search sold items"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="bg-transparent text-sm w-full h-12 outline-none placeholder-[#555]"
+              />
+            </div>
+          </div>
           
           <div className="mt-10 grid w-fit grid-cols-2 gap-x-10 gap-y-6 sm:grid-cols-4 md:gap-x-14">
             <div>
-              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">1,226+</div>
+              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">{soldListings.length.toLocaleString()}</div>
               <div className="font-mono mt-1.5 text-[11px] tracking-[1.76px] uppercase text-[#93939f]">grails sold</div>
             </div>
             <div>
-              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">$45K</div>
+              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">${highestSale >= 1000 ? (highestSale / 1000).toFixed(1) + 'K' : highestSale.toLocaleString()}</div>
               <div className="font-mono mt-1.5 text-[11px] tracking-[1.76px] uppercase text-[#93939f]">highest sale</div>
             </div>
             <div>
-              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">5</div>
+              <div className="text-2xl font-semibold text-[#f9f9fb] md:text-3xl tracking-tight">{uniquePlatforms || '—'}</div>
               <div className="font-mono mt-1.5 text-[11px] tracking-[1.76px] uppercase text-[#93939f]">platforms</div>
             </div>
             <div>
@@ -204,20 +266,20 @@ export default function SoldPage() {
         
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {hallOfFame.map((item, i) => (
-            <div key={i} className="lumen-card p-6">
+            <div key={item.id || i} className="lumen-card p-6">
               <span className="lumen-sheen" />
               <div className="flex items-center justify-between">
                 <span className="font-mono text-[11px] tracking-[1.76px] uppercase text-[#93939f]">#{i+1} all-time</span>
                 <span className="font-mono text-[11px] tracking-[1.76px] uppercase rounded-[8px] border border-[rgba(255,0,0,0.3)] bg-[rgba(255,0,0,0.1)] px-2 py-1 text-[#ff0000]">Sold</span>
               </div>
-              <p className="mt-5 truncate text-3xl font-medium tracking-tight text-[#f9f9fb]">{['username', 'account'].includes(item.category) ? '@' : '$'}{item.handle}</p>
+              <p className="mt-5 truncate text-3xl font-medium tracking-tight text-[#f9f9fb]">{['username', 'account'].includes(item.category) ? '@' : ''}{maskHandle(item.handle)}</p>
               <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#93939f]">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: item.color }} />
-                <span className="capitalize">{item.platform}</span>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: getPlatformColor(item.platform) }} />
+                <span className="capitalize">{item.platform === "twitter" ? "X / Twitter" : item.platform}</span>
               </div>
               <div className="mt-6 flex items-end justify-between gap-3">
-                <span className="font-mono text-2xl font-semibold text-[#f9f9fb]">{item.price}</span>
-                <span className="text-xs text-[#93939f]">{item.time}</span>
+                <span className="font-mono text-2xl font-semibold text-[#f9f9fb]">${item.price?.toLocaleString()}</span>
+                <span className="text-xs text-[#93939f]">{formatTimeAgo(item.updated_at || item.created_at)}</span>
               </div>
             </div>
           ))}
@@ -227,19 +289,19 @@ export default function SoldPage() {
       {/* Sold Grid */}
       <section className="mt-14" aria-label="Sold items">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 xl:grid-cols-4">
-          {soldHandles.map((item, i) => (
-            <article key={i} className="rounded-[12px] border border-[#222226] bg-[#111113] p-4 transition-colors hover:border-[rgba(255,0,0,0.4)] md:p-5">
+          {filteredSold.map((item, i) => (
+            <article key={item.id || i} className="rounded-[12px] border border-[#222226] bg-[#111113] p-4 transition-colors hover:border-[rgba(255,0,0,0.4)] md:p-5">
               <div className="flex items-start justify-between gap-2">
-                <p className="truncate text-base font-medium text-[#f9f9fb] md:text-lg">{['username', 'account'].includes(item.category) ? '@' : '$'}{item.handle}</p>
+                <p className="truncate text-base font-medium text-[#f9f9fb] md:text-lg">{['username', 'account'].includes(item.category) ? '@' : ''}{maskHandle(item.handle)}</p>
                 <span className="font-mono text-[10px] tracking-[1px] uppercase shrink-0 rounded-[8px] border border-[rgba(255,0,0,0.3)] bg-[rgba(255,0,0,0.1)] px-1.5 py-0.5 text-[#ff0000]">Sold</span>
               </div>
               <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#93939f]">
-                <span className="w-1.5 h-1.5 rounded-full" style={{ background: item.color }} />
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: getPlatformColor(item.platform) }} />
                 <span className="capitalize">{item.platform === "twitter" ? "X / Twitter" : item.platform}</span>
               </div>
               <div className="mt-5 flex items-end justify-between gap-2">
-                <span className="font-mono text-base font-medium text-[#f9f9fb] md:text-lg">{item.price}</span>
-                <span className="text-[11px] text-[#93939f]">{item.time}</span>
+                <span className="font-mono text-base font-medium text-[#f9f9fb] md:text-lg">${item.price?.toLocaleString()}</span>
+                <span className="text-[11px] text-[#93939f]">{formatTimeAgo(item.updated_at || item.created_at)}</span>
               </div>
             </article>
           ))}

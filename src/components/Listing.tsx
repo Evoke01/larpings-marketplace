@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { supabase } from "../lib/supabase";
 
 const Icon1 = (props: any) => (
   <svg
@@ -616,6 +617,21 @@ const Icon25 = (props: any) => (
 );
 
 export default function Listing() {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setStatus("loading");
+    const { error } = await supabase.from("newsletter_subscribers").insert({ email });
+    if (error && error.code !== "23505") { // Ignore unique violation if already subscribed
+      setStatus("error");
+    } else {
+      setStatus("success");
+      setEmail("");
+    }
+  };
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] leading-normal [font-family:Poppins,ui-sans-serif,system-ui,sans-serif,system-ui,sans-serif] caret-[#f9f9fb]">
       <div id="root" className="caret-[#f9f9fb]">
@@ -1251,24 +1267,29 @@ export default function Listing() {
                     unsubscribe anytime.
                   </p>
                 </div>
-                <form className="w-full max-w-[448px] flex gap-y-2 gap-x-2 caret-[#f9f9fb] mb-0">
+                <form className="w-full max-w-[448px] flex gap-y-2 gap-x-2 caret-[#f9f9fb] mb-0" onSubmit={handleSubscribe}>
                   <input
                     type="email"
                     required
                     placeholder="you@example.com"
-                    value=""
-                    className="bg-zinc-950 leading-[20px] text-[14px] h-11 block grow basis-[0%] caret-[#f9f9fb] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] px-4 py-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={status === "loading" || status === "success"}
+                    className="bg-zinc-950 leading-[20px] text-[14px] h-11 block grow basis-[0%] caret-[#f9f9fb] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] px-4 py-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border disabled:opacity-50"
                   />
                   <button
                     type="submit"
-                    className="bg-white text-[#0e0e11] leading-none font-medium text-[14px] h-11 flex shrink-0 justify-center items-center gap-y-2 gap-x-2 shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] caret-[#0e0e11] [appearance:button] px-[22px] py-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] hover:shadow-[0_1px_#fff6_inset,0_14px_34px_-12px_hsl(var(--accent)_/_0.45)] hover:-translate-y-px active:translate-y-0 group"
+                    disabled={status === "loading" || status === "success"}
+                    className="bg-white text-[#0e0e11] leading-none font-medium text-[14px] h-11 flex shrink-0 justify-center items-center gap-y-2 gap-x-2 shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] caret-[#0e0e11] [appearance:button] px-[22px] py-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] hover:shadow-[0_1px_#fff6_inset,0_14px_34px_-12px_hsl(var(--accent)_/_0.45)] hover:-translate-y-px active:translate-y-0 group disabled:opacity-50"
                   >
-                    Get alerts{" "}
-                    <Icon17
-                      width="24"
-                      height="24"
-                      className="text-center align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#0e0e11] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#0e0e11]"
-                    />
+                    {status === "success" ? "Subscribed!" : status === "loading" ? "..." : "Get alerts"}{" "}
+                    {status !== "success" && status !== "loading" && (
+                      <Icon17
+                        width="24"
+                        height="24"
+                        className="text-center align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#0e0e11] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#0e0e11]"
+                      />
+                    )}
                   </button>
                 </form>
               </div>

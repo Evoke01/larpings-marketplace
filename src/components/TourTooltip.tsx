@@ -8,11 +8,15 @@ export interface TourStep {
 interface TourTooltipProps {
   steps: TourStep[];
   onDone?: () => void;
+  tourId?: string;
 }
 
-export default function TourTooltip({ steps, onDone }: TourTooltipProps) {
+export default function TourTooltip({ steps, onDone, tourId = "default_tour" }: TourTooltipProps) {
   const [current, setCurrent] = useState(0);
-  const [dismissed, setDismissed] = useState(false);
+  const storageKey = `larpings_tour_dismissed_${tourId}`;
+  const [dismissed, setDismissed] = useState(() => {
+    return localStorage.getItem(storageKey) === 'true';
+  });
 
   if (dismissed || steps.length === 0) return null;
 
@@ -20,18 +24,22 @@ export default function TourTooltip({ steps, onDone }: TourTooltipProps) {
   const total = steps.length;
   const isLast = current === total - 1;
 
+  const dismissTour = () => {
+    setDismissed(true);
+    localStorage.setItem(storageKey, 'true');
+    onDone?.();
+  };
+
   const handleNext = () => {
     if (isLast) {
-      setDismissed(true);
-      onDone?.();
+      dismissTour();
     } else {
       setCurrent(c => c + 1);
     }
   };
 
   const handleSkip = () => {
-    setDismissed(true);
-    onDone?.();
+    dismissTour();
   };
 
   return (

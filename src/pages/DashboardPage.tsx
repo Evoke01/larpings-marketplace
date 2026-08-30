@@ -115,7 +115,7 @@ export default function DashboardPage() {
           <p className="mono-label mt-0.5 text-muted-foreground">Seller dashboard</p>
         </div>
         {profile?.username && (
-          <div className="flex shrink-0 gap-2"><Link className="btn-white !px-3.5 !py-2 !text-xs" to="/sell">+ Add listing</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to="/account#customize">Customize profile</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to={`/seller/${profile.username}`}>Storefront</Link></div>
+          <div className="flex shrink-0 gap-2"><Link className="btn-white !px-3.5 !py-2 !text-xs" to="/sell">+ Add listing</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to="/account#customize">Customize profile</Link><Link className="btn-outline-dim !px-3.5 !py-2 !text-xs" to={`/${profile.username}`}>Storefront</Link></div>
         )}
       </div>
       <div className="grid gap-6 lg:grid-cols-12">
@@ -125,8 +125,8 @@ export default function DashboardPage() {
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chart-column h-3.5 w-3.5"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg><span className="mono-label">Revenue</span>
               </div>
-              <p className="mt-2 truncate font-mono text-2xl text-foreground">$0.00</p>
-              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">after the 3% fee</p>
+              <p className="mt-2 truncate font-mono text-2xl text-foreground">${soldTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+              <p className="mt-0.5 truncate text-[10px] text-muted-foreground">after the 1% fee</p>
             </div>
             <div className="rounded-[12px] border border-border bg-card p-4">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -265,11 +265,17 @@ export default function DashboardPage() {
           </div>
           <div className="mkt-enter" style={{ animationDelay: "190ms" }}>
             <div className="rounded-[14px] border border-border bg-card p-5 md:p-6">
-              <p className="mono-label text-muted-foreground">Available for payout</p>
-              <h2 className="mt-2 font-mono text-4xl text-foreground">$0.00</h2>
-              <p className="mt-4 border-t border-border pt-4 text-xs text-muted-foreground">Earnings unlock <span className="font-medium text-foreground">3 days</span> after each sale.</p>
-              <button disabled className="btn-white mt-4 w-full disabled:cursor-not-allowed disabled:opacity-60">Request payout</button>
-              <p className="mt-2 text-center text-[10px] text-muted-foreground">Minimum payout: $10</p>
+              <p className="mono-label text-muted-foreground">Listing Analytics</p>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Views</p>
+                  <p className="font-mono text-2xl text-foreground">{listings.reduce((sum, l) => sum + (l.views || 0), 0)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Clicks</p>
+                  <p className="font-mono text-2xl text-foreground">{listings.reduce((sum, l) => sum + (l.clicks || 0), 0)}</p>
+                </div>
+              </div>
             </div>
           </div>
           <div className="mkt-enter rounded-[14px] border border-border bg-card p-4" style={{ animationDelay: "250ms" }}>

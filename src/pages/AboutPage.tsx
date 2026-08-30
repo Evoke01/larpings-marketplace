@@ -94,7 +94,7 @@ export default function AboutPage() {
             <Link to="/marketplace" className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-white px-[22px] py-3 text-[14px] font-medium text-[#0e0e11] shadow-[0_1px_rgba(255,255,255,0.4)_inset,0_8px_24px_-12px_rgba(0,0,0,0.8)] transition-all hover:-translate-y-px hover:shadow-[0_1px_rgba(255,255,255,0.4)_inset,0_14px_34px_-12px_rgba(255,0,0,0.45)]">
               <StoreIcon className="h-4 w-4" /> Browse the marketplace <ArrowRightIcon className="h-3.5 w-3.5" />
             </Link>
-            <Link to="/contact" className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#222226] bg-transparent px-5 py-3 text-[14px] font-medium text-white transition-all hover:border-[#ff0000]/55 hover:bg-[#ff0000]/10">
+            <Link to="/support" className="inline-flex items-center justify-center gap-2 rounded-[10px] border border-[#222226] bg-transparent px-5 py-3 text-[14px] font-medium text-white transition-all hover:border-[#ff0000]/55 hover:bg-[#ff0000]/10">
               <MessageSquareIcon className="h-4 w-4" /> Talk to us
             </Link>
           </div>
@@ -224,7 +224,7 @@ export default function AboutPage() {
             <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">seller protection window</div>
           </div>
           <div>
-            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">3%</div>
+            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">1%</div>
             <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">flat seller fee</div>
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function AboutPage() {
               <EyeIcon className="h-4 w-4 text-[#ff0000]" />
             </div>
             <h3 className="mt-5 text-lg text-white font-medium">Transparency</h3>
-            <p className="mt-2.5 text-sm leading-relaxed text-[#93939f]">One flat 3% seller fee. Public sold archive. Order states you can watch in real time. If something is held or pending, you can see exactly why.</p>
+            <p className="mt-2.5 text-sm leading-relaxed text-[#93939f]">One flat 1% seller fee. Public sold archive. Order states you can watch in real time. If something is held or pending, you can see exactly why.</p>
           </div>
           <div className="rounded-[14px] border border-[#222226] bg-[#111113] p-6 transition-colors hover:border-[#ff0000]/40 md:p-8">
             <div className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#ff0000]/30 bg-[#ff0000]/10">

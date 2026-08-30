@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
-import { useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { ESCROW_ABI, ESCROW_ADDRESSES, uuidToBytes32 } from "../lib/wagmi";
 
 const ClipboardIcon = () => (
   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,7 +27,6 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState<any>(null);
-  const { writeContract } = useWriteContract();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
@@ -47,19 +44,7 @@ export default function OrdersPage() {
   }, []);
 
   async function confirmDelivery(order: any) {
-    // For EVM orders with an on-chain escrow, call the smart contract
-    if ((order.pay_chain === "ETH" || order.pay_chain === "BNB") && order.chain_id) {
-      const contractAddress = ESCROW_ADDRESSES[order.chain_id];
-      if (contractAddress && contractAddress !== "0x0000000000000000000000000000000000000000") {
-        writeContract({
-          address: contractAddress,
-          abi: ESCROW_ABI,
-          functionName: "confirmDelivery",
-          args: [uuidToBytes32(order.id)],
-        });
-        return;
-      }
-    }
+
     // Fallback: legacy RPC (non-EVM or pre-contract orders)
     const { error } = await supabase.rpc('confirm_order_delivery', { p_order_id: order.id });
     if (!error) setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'confirmed' } : o));

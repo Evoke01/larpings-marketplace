@@ -116,7 +116,7 @@ The acceptance record is per account, not per browser. It is stored in Supabase 
 5. Service listings use predefined service types, subcategories, and offer options from `src/lib/offerCatalog.ts`.
 6. Structured non-handle fields are saved in `listings.details` as JSONB.
 7. The seller supplies price, platform, description, and listing metadata.
-8. The seller pays no listing fee. The current seller UI describes a 3% platform fee deducted when an item sells; the final checkout and payout implementation must remain the source of truth.
+8. The seller pays no listing fee. The current seller UI describes a 1% platform fee deducted when an item sells; the final checkout and payout implementation must remain the source of truth.
 
 Protected ownership fields are not client-insertable. New listings start unverified and can become verified only through the server-side verification functions.
 

@@ -63,7 +63,17 @@ const TOURS: Record<string, TourStep[]> = {
 
 function sectionKey(pathname: string) {
   if (pathname.startsWith("/listing/")) return "/listing";
-  if (pathname.startsWith("/seller/")) return "/seller";
+  if (pathname.startsWith("/checkout/")) return null;
+  if (pathname.startsWith("/pancake/")) return null;
+  if (pathname.startsWith("/profile/")) return null;
+  
+  const staticRoutes = ["/", "/marketplace", "/fansigns", "/sell", "/dashboard", "/messages", "/orders", "/sold", "/legit", "/guides", "/badges", "/ranks", "/get-verified", "/support", "/blog", "/about", "/terms", "/privacy", "/legal-acceptance", "/contact", "/account", "/signin"];
+  
+  // If it's a top level route that isn't static, it's a seller handle
+  if (!staticRoutes.includes(pathname) && pathname.split('/').length === 2 && pathname !== '/') {
+    return "/seller";
+  }
+  
   return pathname;
 }
 

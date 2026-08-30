@@ -89,7 +89,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         </Suspense>
       </main>
       <Footer />
-      {!location.pathname.startsWith('/messages') && (
+      {!location.pathname.startsWith('/messages') && !location.pathname.startsWith('/checkout') && (
         <>
           <MobileNav />
           <button
@@ -129,7 +129,7 @@ export default function App() {
               <Route path="/fansigns" element={<FansignsPage />} />
               <Route path="/listing/:handle" element={<ListingPage />} />
               <Route path="/checkout/:listingId/:coinId" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-              <Route path="/seller/:handle" element={<SellerProfilePage />} />
+              <Route path="/:handle" element={<SellerProfilePage />} />
               <Route path="/profile/:id" element={<UserProfilePage />} />
               <Route path="/sell" element={<ProtectedRoute><SellPage /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

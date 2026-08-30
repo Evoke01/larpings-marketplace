@@ -2,13 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
-import { useAccount, useWriteContract, useWaitForTransactionReceipt } from "wagmi";
-import { ESCROW_ABI, ESCROW_ADDRESSES, uuidToBytes32 } from "../lib/wagmi";
-
-
-
-const EVM_COINS = ["ETH", "BNB", "USDC", "USDT", "DAI"];
-
 const LOUNGE_ID = "__larpings_lounge__";
 const Icon = ({
   children,
@@ -100,36 +93,6 @@ function OrderTimer({ createdAt }: { createdAt: string }) {
   return <span className="text-amber-400 font-mono text-xs">{timeLeft}</span>;
 }
 
-function EvmConfirmButton({ orderId, payChain, onConfirmed }: { orderId: string, payChain: string, onConfirmed: () => void }) {
-  const { writeContract, data: hash, isPending } = useWriteContract();
-  const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({ hash });
-  
-  React.useEffect(() => {
-    if (isSuccess) {
-      onConfirmed();
-    }
-  }, [isSuccess]);
-
-  const handleConfirm = () => {
-    const requiredChainId = payChain === "BNB" ? 56 : 1;
-    writeContract({
-      address: ESCROW_ADDRESSES[requiredChainId],
-      abi: ESCROW_ABI,
-      functionName: "confirmDelivery",
-      args: [uuidToBytes32(orderId)]
-    });
-  };
-
-  return (
-    <button 
-      onClick={handleConfirm}
-      disabled={isPending || isWaiting}
-      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
-    >
-      {isPending || isWaiting ? "Confirming tx..." : "Confirm Delivery (Web3)"}
-    </button>
-  );
-}
 
 export default function MessagesPage() {
   const [session, setSession] = useState<any>(null),
@@ -313,11 +276,25 @@ export default function MessagesPage() {
       const allConvs = [loungeConv, ...sortedDeals, ...sortedDMs];
       setConversations(allConvs);
       let requested = params.get("user") || params.get("order");
-      if (!requested && params.get("username"))
+      if (!requested && params.get("username")) {
+        const targetUsername = params.get("username")?.toLowerCase();
         requested =
           Object.entries(names).find(
-            ([, n]) => n === params.get("username"),
+            ([, n]) => n?.toLowerCase() === targetUsername,
           )?.[0] || null;
+          
+        if (!requested) {
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, username")
+            .ilike("username", targetUsername ?? "")
+            .maybeSingle();
+          if (data) {
+            requested = data.id;
+            names[data.id] = data.username;
+          }
+        }
+      }
       if (requested && requested !== user.id) {
         let conv = allConvs.find(c => c.partnerId === requested);
         
@@ -742,29 +719,7 @@ export default function MessagesPage() {
                           Dispute
                         </button>
 
-                        {EVM_COINS.includes(selected.payChain || '') && selected.isBuyer ? (
-                          <EvmConfirmButton 
-                            orderId={selected.orderId!} 
-                            payChain={selected.payChain!} 
-                            onConfirmed={async () => {
-                              await supabase.from('orders').update({ status: 'closed', buyer_closed: true, seller_closed: true }).eq('id', selected.orderId);
-                              await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "✅ Web3 Escrow Released! The deal is now closed." });
-                              setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                            }} 
-                          />
-                        ) : EVM_COINS.includes(selected.payChain || '') && !selected.isBuyer ? (
-                          <button 
-                            onClick={async () => {
-                              await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "📦 The seller has marked the item as delivered. Buyer, please verify and confirm the Web3 transaction to release the funds." });
-                              await supabase.from('orders').update({ seller_closed: true }).eq('id', selected.orderId);
-                              setSelected(prev => prev ? ({ ...prev, sellerClosed: true }) : prev);
-                            }}
-                            disabled={selected.sellerClosed}
-                            className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
-                          >
-                             {selected.sellerClosed ? "✓ Delivered" : "Mark Delivered"}
-                          </button>
-                        ) : (
+
                           <button 
                             onClick={async () => {
                               const updateField = selected.isBuyer ? { buyer_closed: true } : { seller_closed: true };
@@ -784,7 +739,6 @@ export default function MessagesPage() {
                           >
                             {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : 'Close Deal'}
                           </button>
-                        )}
                       </>
                     )}
                   </div>

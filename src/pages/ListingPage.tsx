@@ -4,17 +4,23 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import ReputationPanel from "../components/ReputationPanel";
 
+const BtcIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M14.5 10c1.5 0 2.5-1 2.5-2.5S16 5 14.5 5H9v2h1v10H9v2h5.5c1.5 0 3-1 3-3s-1-2.5-2.5-3zM12 7h2.5c.5 0 1 .5 1 1s-.5 1-1 1H12V7zm3.5 8H12v-2h3.5c.5 0 1 .5 1 1s-.5 1-1 1z"/></svg>;
+const EthIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2L5 11l7 4 7-4-7-9zM5 13l7 9 7-9-7 4-7-4z"/></svg>;
+const SolIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M4 17h12l4-3H8l-4 3zm16-7H8l-4 3h12l4-3zm0-4l-4 3H4l4-3h12z"/></svg>;
+const LtcIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M9 18l1-4H8l1-2h2.5l1-4h3l-1 4h2l-1 2h-2l-1.5 6H18l-1 2H7z"/></svg>;
+const BnbIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 4l-4 4-2-2 6-6 6 6-2 2-4-4zm-5 9l2-2 2 2-2 2-2-2zm10 0l2-2 2 2-2 2-2-2zm-3 3l-2-2 2-2 2 2-2 2zm0 4l-4-4-2 2 6 6 6-6-2-2-4 4z"/></svg>;
+const TonIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 3l9 9-9 10-9-10 9-9zm0 2.5L6 11l6 8 6-8-6-5.5zm-3 8h6M12 6v9"/></svg>;
+const TrxIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 3L3 10l9 12 9-12-9-9zm0 3.5l5 4-5 1.5V6.5zM7.5 10l5-1.5v3L7.5 10zm9 0l-5 1.5v-3l5 1.5zM8.5 11.5l3.5 8V13l-3.5-1.5zm7 0V20l3.5-8-3.5 1.5z"/></svg>;
+const UsdcIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2A10 10 0 1022 12 10 10 0 0012 2zm0 18a8 8 0 118-8 8 8 0 01-8 8zm1-4.5v2h-2V16c-1.5-.4-2.5-1.5-2.5-3h2c0 1 1.5 1.5 2.5 1 1-.5 1-1.5 0-2-1.5-.6-3.5-1-3.5-3s1-2.5 2.5-3V4h2v2c1.5.4 2.5 1.5 2.5 3h-2c0-1-1.5-1.5-2.5-1-1 .5-1 1.5 0 2 1.5.6 3.5 1 3.5 3s-1 2.5-2.5 3z"/></svg>;
+const UsdtIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm-4-8c0 1.5 1.8 2.5 4 2.5s4-1 4-2.5c0-.4-.2-.8-1-1H9c-.8.2-1 .6-1 1zM13 9V6h3V4H8v2h3v3c-2 .2-4 .8-4 2 0 1.5 2 2.5 5 2.5s5-1 5-2.5c0-1.5-2-2-4-2z"/></svg>;
+const DaiIcon = () => <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full"><path d="M12 2L2 12l10 10 10-10L12 2zm0 17L4 12l8-7 8 7-8 7zM10.5 8h3v1.5h-3zM10.5 14h3v1.5h-3zM9 11h6v1.5H9z"/></svg>;
+
 const COINS = [
-  { id: "BTC", name: "Bitcoin", icon: "₿", color: "text-[#f7931a]" },
-  { id: "ETH", name: "Ethereum", icon: "Ξ", color: "text-[#627eea]" },
-  { id: "SOL", name: "Solana", icon: "◎", color: "text-[#14f195]" },
-  { id: "LTC", name: "Litecoin", icon: "Ł", color: "text-[#345d9d]" },
-  { id: "BNB", name: "Binance Coin", icon: "BNB", color: "text-[#f3ba2f]" },
-  { id: "TON", name: "Toncoin", icon: "💎", color: "text-[#0098ea]" },
-  { id: "TRX", name: "Tron", icon: "TRX", color: "text-[#ef0027]" },
-  { id: "USDC", name: "USD Coin", icon: "$", color: "text-[#2775ca]" },
-  { id: "USDT", name: "Tether", icon: "₮", color: "text-[#26a17b]" },
-  { id: "DAI", name: "Dai", icon: "◈", color: "text-[#f5ac37]" },
+  { id: "BTC", name: "Bitcoin", icon: <BtcIcon />, color: "text-[#f7931a]" },
+  { id: "SOL", name: "Solana", icon: <SolIcon />, color: "text-[#14f195]" },
+  { id: "LTC", name: "Litecoin", icon: <LtcIcon />, color: "text-[#345d9d]" },
+  { id: "TON", name: "Toncoin", icon: <TonIcon />, color: "text-[#0098ea]" },
+  { id: "TRX", name: "Tron", icon: <TrxIcon />, color: "text-[#ef0027]" },
 ];
 
 // Icons needed for the listing page
@@ -84,6 +90,10 @@ export default function ListingPage() {
   const [userOffer, setUserOffer] = useState<any>(null);
   const [sellerWallets, setSellerWallets] = useState<any>(undefined); // undefined=loading, null=no record, {...}=loaded
   const [existingOrder, setExistingOrder] = useState<any>(null);
+  
+  // Likes state
+  const [isLiked, setIsLiked] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
 
   // Offer modal state
   const [showOfferModal, setShowOfferModal] = useState(false);
@@ -103,6 +113,11 @@ export default function ListingPage() {
       
       if (listingData) {
         setListing(listingData);
+        setLikesCount(listingData.likes_count || 0);
+        
+        // Fire and forget view increment
+        supabase.rpc('increment_listing_view', { p_listing_id: listingData.id }).then();
+        
         const [{ data: profileData }, { data: walletsData }] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', listingData.seller_id).single(),
           supabase.from('seller_wallets').select('*').eq('seller_id', listingData.seller_id).maybeSingle(),
@@ -129,6 +144,15 @@ export default function ListingPage() {
         .maybeSingle();
       if (data) setUserOffer(data);
     }
+    async function loadLikeStatus() {
+      const { data } = await supabase
+        .from('listing_likes')
+        .select('*')
+        .eq('listing_id', listing.id)
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      if (data) setIsLiked(true);
+    }
     async function checkExistingOrder() {
       const { data } = await supabase
         .from('orders')
@@ -139,9 +163,24 @@ export default function ListingPage() {
         .maybeSingle();
       if (data) setExistingOrder(data);
     }
+    loadLikeStatus();
     loadOffer();
     checkExistingOrder();
   }, [user, listing]);
+
+  const handleLike = async () => {
+    if (!user) return navigate(`/signin?returnTo=/listing/${handle}`);
+    
+    if (isLiked) {
+      setIsLiked(false);
+      setLikesCount(prev => Math.max(0, prev - 1));
+      await supabase.from('listing_likes').delete().eq('listing_id', listing.id).eq('user_id', user.id);
+    } else {
+      setIsLiked(true);
+      setLikesCount(prev => prev + 1);
+      await supabase.from('listing_likes').insert({ listing_id: listing.id, user_id: user.id });
+    }
+  };
 
   const handleMakeOffer = async () => {
     if (!user) {
@@ -315,27 +354,37 @@ export default function ListingPage() {
         {/* Right Column: Sticky Sidebar */}
         <div className="lg:sticky lg:self-start lg:top-24">
           <div className="bg-[#111113] p-6 rounded-[18px] border border-[#222226]">
-            {user?.id === listing.seller_id ? (
-              <div className="bg-amber-500/10 text-amber-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-amber-500/30">
-                You are the seller
-              </div>
-            ) : (
-              <div className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
-                <span className="w-1.5 h-1.5 relative flex">
-                  <span className="bg-emerald-400 w-full h-full absolute opacity-[0.4] rounded-full animate-ping" />
-                  <span className="bg-emerald-400 w-1.5 h-1.5 relative rounded-full" />
-                </span>
-                Available — reserves instantly
-              </div>
-            )}
-            
-            <div className="flex justify-between items-end gap-4 mt-5">
-              <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase pb-2">Price</span>
-              <div className="text-right">
-                <div className="leading-none font-mono text-[48px]">${effectivePrice.toLocaleString()}</div>
-                <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-2">
-                  {userOffer?.status === 'accepted' ? 'Accepted Offer Price' : 'All-in · no fees on top'}
+            <div className="flex items-center justify-between mb-6">
+              {user?.id === listing.seller_id ? (
+                <div className="bg-amber-500/10 text-amber-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-amber-500/30">
+                  You are the seller
                 </div>
+              ) : (
+                <div className="bg-[rgba(52,211,153,0.1)] text-emerald-400 font-mono font-medium text-[11px] tracking-[1.76px] uppercase inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-[8px] border border-[rgba(52,211,153,0.35)]">
+                  <span className="w-1.5 h-1.5 relative flex shrink-0">
+                    <span className="bg-emerald-400 w-full h-full absolute opacity-[0.4] rounded-full animate-ping" />
+                    <span className="bg-emerald-400 w-1.5 h-1.5 relative rounded-full" />
+                  </span>
+                  Available now
+                </div>
+              )}
+              
+              <button 
+                onClick={handleLike} 
+                className={`flex items-center gap-1.5 text-xs font-mono font-medium tracking-widest uppercase transition-colors ${isLiked ? "text-[#ff0000]" : "text-[#93939f] hover:text-[#ff0000]"}`}
+              >
+                <svg className={`w-5 h-5 ${isLiked ? "fill-[#ff0000]" : "fill-none"}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                </svg>
+                {likesCount}
+              </button>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Price</span>
+              <div className="leading-none font-mono text-[48px]">${effectivePrice.toLocaleString()}</div>
+              <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase mt-1">
+                {userOffer?.status === 'accepted' ? 'Accepted Offer Price' : 'All-in · no fees on top'}
               </div>
             </div>
 
@@ -387,7 +436,7 @@ export default function ListingPage() {
                           onClick={() => navigate(`/checkout/${listing.id}/${coin.id}`)}
                           className="flex flex-col items-center justify-center gap-1.5 py-3 rounded-[10px] border border-[#222226] bg-[#09090b]/40 hover:border-[#ff0000]/40 hover:bg-[#ff0000]/5 transition-all"
                         >
-                          <span className={`text-xl leading-none ${coin.color}`}>{coin.icon}</span>
+                          <span className={`w-5 h-5 flex items-center justify-center ${coin.color}`}>{coin.icon}</span>
                           <span className="text-[#93939f] font-mono text-[9px] uppercase tracking-widest">{coin.id}</span>
                         </button>
                       ))
@@ -502,7 +551,7 @@ export default function ListingPage() {
             <Link to={seller ? `/messages?user=${encodeURIComponent(seller.id)}` : '/messages'} className="bg-[#ff0000] text-white font-medium text-[12px] w-full inline-flex justify-center items-center gap-2 mt-4 px-[22px] py-2.5 rounded-[10px] hover:bg-[#cc0000] transition-colors shadow-[0_10px_30px_-12px_rgba(255,0,0,0.5)]">
               <ContactIcon /> Contact the seller
             </Link>
-            <Link to={seller ? `/seller/${seller.username}` : '#'} className="bg-transparent text-[#b7b7c2] font-medium text-[12px] flex grow justify-center items-center gap-1.5 px-3 py-2 rounded-[10px] border border-[#222226] hover:bg-white/5 transition-colors mt-2">
+            <Link to={seller ? `/${seller.username}` : '#'} className="bg-transparent text-[#b7b7c2] font-medium text-[12px] flex grow justify-center items-center gap-1.5 px-3 py-2 rounded-[10px] border border-[#222226] hover:bg-white/5 transition-colors mt-2">
                 <ProfileIcon /> Profile
             </Link>
             {seller && <ReputationPanel profileId={seller.id} profileHandle={seller.username} compact />}

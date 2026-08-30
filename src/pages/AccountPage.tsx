@@ -147,7 +147,7 @@ export default function AccountPage() {
         <aside className="space-y-6 lg:col-span-4">
           <div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5">
             <p className="mono-label text-[#93939f]">Account actions</p>
-            <Link to={`/seller/${encodeURIComponent(username)}`} className="mt-4 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">View storefront →</Link>
+            <Link to={`/${encodeURIComponent(username)}`} className="mt-4 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">View storefront →</Link>
             <Link to="/messages" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Messages →</Link>
             <Link to="/dashboard" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Seller dashboard →</Link>
           </div>
