@@ -9,6 +9,9 @@ create table if not exists order_messages (
 
 alter table order_messages enable row level security;
 
+drop policy if exists "Users can view messages for their orders"
+on order_messages;
+
 create policy "Users can view messages for their orders"
   on order_messages for select
   using (
@@ -16,27 +19,41 @@ create policy "Users can view messages for their orders"
       select 1 from orders
       join listings on listings.id = orders.listing_id
       where orders.id = order_messages.order_id
-      and (orders.buyer_id = auth.uid() or listings.seller_id = auth.uid())
+      and (
+        orders.buyer_id = auth.uid()
+        or listings.seller_id = auth.uid()
+      )
     )
   );
+
+drop policy if exists "Users can insert messages for their orders"
+on order_messages;
 
 create policy "Users can insert messages for their orders"
   on order_messages for insert
   with check (
-    auth.uid() = sender_id and
-    exists (
+    auth.uid() = sender_id
+    and exists (
       select 1 from orders
       join listings on listings.id = orders.listing_id
       where orders.id = order_messages.order_id
-      and (orders.buyer_id = auth.uid() or listings.seller_id = auth.uid())
+      and (
+        orders.buyer_id = auth.uid()
+        or listings.seller_id = auth.uid()
+      )
     )
   );
 
--- Admin can read all
+drop policy if exists "Admins can view all order messages"
+on order_messages;
+
 create policy "Admins can view all order messages"
   on order_messages for select
   using (
-    coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin'
+    coalesce(
+      auth.jwt() -> 'app_metadata' ->> 'role',
+      ''
+    ) = 'admin'
   );
 
 -- Publish realtime
