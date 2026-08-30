@@ -66,7 +66,7 @@ export default function DashboardPage() {
       const [{ data: prof }, { data: listingsData }, { data: ordersData }, { data: salesData }, { data: offersData }] = await Promise.all([
         supabase.from('profiles').select('username, rating, reviews').eq('id', user.id).single(),
         supabase.from('listings').select('*').eq('seller_id', user.id).eq('status', 'active'),
-        supabase.from('orders').select('*, listings(handle, price)').eq('buyer_id', user.id),
+        supabase.from('orders').select('*, listings!inner(handle, price, seller_id)').eq('listings.seller_id', user.id).order('created_at', { ascending: false }).limit(10),
         supabase.from('orders').select('id, listings!inner(seller_id, price)').eq('listings.seller_id', user.id).eq('status', 'confirmed'),
         supabase.from('listing_offers').select('*, listings!inner(handle, price), profiles!buyer_id(username, display_name)').eq('listings.seller_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }),
       ]);
@@ -95,7 +95,9 @@ export default function DashboardPage() {
   const earnedBadges = new Set([
     ...(confirmedSales >= 1 ? ["1 Sales"] : []), ...(confirmedSales >= 10 ? ["10 Sales"] : []), ...(confirmedSales >= 30 ? ["30 Sales"] : []), ...(confirmedSales >= 50 ? ["50 Sales"] : []), ...(confirmedSales >= 100 ? ["100 Sales"] : []), ...(confirmedSales >= 500 ? ["500 Sales"] : []), ...(confirmedSales >= 1000 ? ["1000 Sales"] : []), ...(confirmedSales >= 2000 ? ["2000 Sales", "God Seller"] : []),
   ]);
-  const salesProgress = Math.min((confirmedSales / 10) * 100, 100);
+  
+  const nextBadgeTarget = confirmedSales >= 2000 ? 2000 : confirmedSales >= 1000 ? 2000 : confirmedSales >= 500 ? 1000 : confirmedSales >= 100 ? 500 : confirmedSales >= 50 ? 100 : confirmedSales >= 30 ? 50 : confirmedSales >= 10 ? 30 : confirmedSales >= 1 ? 10 : 1;
+  const salesProgress = Math.min((confirmedSales / nextBadgeTarget) * 100, 100);
 
   const handleOffer = async (offerId: string, status: 'accepted' | 'rejected') => {
     setOffers(prev => prev.filter(o => o.id !== offerId));
@@ -244,14 +246,14 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="inline-flex items-center gap-1.5 rounded-full border font-medium border-yellow-400/40 bg-yellow-400/10 text-yellow-300 px-2.5 py-1 text-xs">
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-zap h-3.5 w-3.5"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg>
-                  {confirmedSales >= 2000 ? "2000" : confirmedSales >= 1000 ? "1000" : confirmedSales >= 500 ? "500" : confirmedSales >= 100 ? "100" : confirmedSales >= 50 ? "50" : confirmedSales >= 30 ? "30" : confirmedSales >= 10 ? "10" : "1"} Sales
+                  {nextBadgeTarget} Sales
                 </span>
-                <p className="shrink-0 text-xs text-muted-foreground"><span className="font-mono text-foreground">{confirmedSales}</span><span className="font-mono">/10</span> sales</p>
+                <p className="shrink-0 text-xs text-muted-foreground"><span className="font-mono text-foreground">{confirmedSales}</span><span className="font-mono">/{nextBadgeTarget}</span> sales</p>
               </div>
               <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
                 <div className="h-full rounded-full bg-accent transition-all duration-700" style={{ width: `${salesProgress}%` }}></div>
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground"><span className="font-mono text-foreground">{Math.max((confirmedSales >= 2000 ? 2000 : confirmedSales >= 1000 ? 1000 : confirmedSales >= 500 ? 500 : confirmedSales >= 100 ? 100 : confirmedSales >= 50 ? 50 : confirmedSales >= 30 ? 30 : confirmedSales >= 10 ? 10 : 1) - confirmedSales, 0)}</span> more confirmed sales to unlock it.</p>
+              <p className="mt-2 text-[11px] text-muted-foreground"><span className="font-mono text-foreground">{Math.max(nextBadgeTarget - confirmedSales, 0)}</span> more confirmed sales to unlock it.</p>
             </div>
           </div>
           <div className="mkt-enter rounded-[14px] border border-border bg-card p-5" style={{ animationDelay: "155ms" }}>
