@@ -63,9 +63,9 @@ const TOURS: Record<string, TourStep[]> = {
 
 function sectionKey(pathname: string) {
   if (pathname.startsWith("/listing/")) return "/listing";
-  if (pathname.startsWith("/checkout/")) return null;
-  if (pathname.startsWith("/pancake/")) return null;
-  if (pathname.startsWith("/profile/")) return null;
+  if (pathname.startsWith("/checkout/")) return "";
+  if (pathname.startsWith("/pancake/")) return "";
+  if (pathname.startsWith("/profile/")) return "";
   
   const staticRoutes = ["/", "/marketplace", "/fansigns", "/sell", "/dashboard", "/messages", "/orders", "/sold", "/legit", "/guides", "/badges", "/ranks", "/get-verified", "/support", "/blog", "/about", "/terms", "/privacy", "/legal-acceptance", "/contact", "/account", "/signin"];
   

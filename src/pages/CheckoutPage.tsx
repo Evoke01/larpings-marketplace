@@ -98,30 +98,26 @@ export default function CheckoutPage() {
     return () => clearInterval(interval);
   }, [coin]);
 
-  // Calculate unique exact amount once price is loaded (only needed for non-EVM, but safe to do always)
+  // Calculate unique exact amount once price is loaded
   useEffect(() => {
     if (listing && cryptoPrice && !exactCryptoAmount) {
       const baseUsd = listing.finalUsdPrice;
       const baseCrypto = baseUsd / cryptoPrice;
       
-      if (isEVM) {
-        setExactCryptoAmount(baseCrypto.toString()); // Web3 component uses raw value
-      } else {
-        // Generate a unique amount by adding a deterministic or random small fraction
-        const randomOffset = (Math.floor(Math.random() * 99) + 1) / 100000;
-        let amount = baseCrypto + randomOffset;
-        
-        // Format decimal places based on coin
-        if (coinId?.toUpperCase() === 'BTC') setExactCryptoAmount(amount.toFixed(8));
-        else if (['USDC', 'USDT', 'DAI'].includes(coinId?.toUpperCase() || '')) setExactCryptoAmount((baseUsd + Math.floor(Math.random() * 99)/100).toFixed(2));
-        else setExactCryptoAmount(amount.toFixed(5));
-      }
+      // Generate a unique amount by adding a deterministic or random small fraction
+      const randomOffset = (Math.floor(Math.random() * 99) + 1) / 100000;
+      let amount = baseCrypto + randomOffset;
+      
+      // Format decimal places based on coin
+      if (coinId?.toUpperCase() === 'BTC') setExactCryptoAmount(amount.toFixed(8));
+      else if (['USDC', 'USDT', 'DAI'].includes(coinId?.toUpperCase() || '')) setExactCryptoAmount((baseUsd + Math.floor(Math.random() * 99)/100).toFixed(2));
+      else setExactCryptoAmount(amount.toFixed(5));
     }
-  }, [listing, cryptoPrice, coinId, exactCryptoAmount, isEVM]);
+  }, [listing, cryptoPrice, coinId, exactCryptoAmount]);
 
   if (!coin) return <div className="p-8 text-center">Invalid coin selected</div>;
   if (!listing) return <div className="p-8 text-center text-[#93939f]">Loading order details...</div>;
-  if (sellerWallets === null && !isEVM) return (
+  if (sellerWallets === null) return (
     <div className="pt-24 pb-12 px-4 max-w-xl mx-auto text-center">
       <p className="text-[#93939f] text-sm mb-4">This seller hasn't set up a {coin.name} wallet address yet.</p>
       <button onClick={() => navigate(-1)} className="text-[#ff0000] underline text-sm">← Go back</button>
@@ -131,7 +127,7 @@ export default function CheckoutPage() {
   // Validate that seller actually has an address for this coin (prevents URL manipulation)
   const sellerHasWallet = (() => {
     if (!sellerWallets) return true; // still loading, don't block yet
-    if (isEVM) return !!sellerWallets.evm_address;
+    if (['ETH', 'USDT', 'USDC', 'DAI', 'BNB'].includes(coin.id)) return !!sellerWallets.evm_address;
     if (coin.id === 'BTC') return !!sellerWallets.btc_address;
     if (coin.id === 'SOL') return !!sellerWallets.sol_address;
     if (coin.id === 'LTC') return !!sellerWallets.ltc_address;
@@ -283,31 +279,34 @@ The buyer has successfully deposited the funds. You can now coordinate delivery 
           <div className="text-right">
             <div className="text-[10px] text-[#93939f] font-mono tracking-widest uppercase mb-1">Time remaining</div>
             <div className="text-amber-400 font-mono text-sm">{formatTime(timeLeft)}</div>
+          </div>
         </div>
-            <div className="text-center py-2">
-              <p className="text-sm text-[#93939f] mb-1">Send EXACTLY this amount:</p>
-              <div className="flex justify-center items-baseline gap-2">
-                <p className="text-4xl font-mono text-white cursor-pointer hover:text-emerald-400 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
-                  {exactCryptoAmount || "..."} 
-                </p>
-                <span className="text-lg text-[#93939f]">{coin.id}</span>
-              {/* Wait for Verification */ }
-          <div className="w-full flex-1 md:w-1/2 flex flex-col pt-8 md:pt-0 pb-12 items-center justify-center relative">
-              <div className="bg-white p-4 rounded-2xl shadow-inner">
-                {exactCryptoAmount ? (
-                  <QRCode 
-                    value={qrValue}
-                    size={200}
-                    level="M"
-                  />
-                ) : (
-                  <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-xl">
-                    <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
+
+        <div className="text-center py-2">
+          <p className="text-sm text-[#93939f] mb-1">Send EXACTLY this amount:</p>
+          <div className="flex justify-center items-baseline gap-2">
+            <p className="text-4xl font-mono text-white cursor-pointer hover:text-emerald-400 transition-colors" onClick={handleCopyAmount} title="Copy Amount">
+              {exactCryptoAmount || "..."} 
+            </p>
+            <span className="text-lg text-[#93939f]">{coin.id}</span>
+          </div>
+        </div>
+
+        <div className="w-full flex flex-col items-center justify-center relative">
+          <div className="bg-white p-4 rounded-2xl shadow-inner">
+            {exactCryptoAmount ? (
+              <QRCode 
+                value={qrValue}
+                size={200}
+                level="M"
+              />
+            ) : (
+              <div className="w-[200px] h-[200px] flex items-center justify-center bg-gray-100 rounded-xl">
+                <div className="w-6 h-6 border-2 border-zinc-900 border-t-transparent rounded-full animate-spin" />
               </div>
-            </div>
-            </div>
+            )}
+          </div>
+        </div>
 
             <div>
               <p className="text-xs text-[#93939f] mb-1.5 font-medium">To Escrow Address:</p>

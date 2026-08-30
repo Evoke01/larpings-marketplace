@@ -55,6 +55,7 @@ export default function DashboardPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [offers, setOffers] = useState<any[]>([]);
   const [salesCount, setSalesCount] = useState(0);
+  const [soldTotal, setSoldTotal] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function DashboardPage() {
         supabase.from('profiles').select('username, rating, reviews').eq('id', user.id).single(),
         supabase.from('listings').select('*').eq('seller_id', user.id).eq('status', 'active'),
         supabase.from('orders').select('*, listings(handle, price)').eq('buyer_id', user.id),
-        supabase.from('orders').select('id, listings!inner(seller_id)').eq('listings.seller_id', user.id).eq('status', 'confirmed'),
+        supabase.from('orders').select('id, listings!inner(seller_id, price)').eq('listings.seller_id', user.id).eq('status', 'confirmed'),
         supabase.from('listing_offers').select('*, listings!inner(handle, price), profiles!buyer_id(username, display_name)').eq('listings.seller_id', user.id).eq('status', 'pending').order('created_at', { ascending: false }),
       ]);
 
@@ -75,6 +76,7 @@ export default function DashboardPage() {
       setOrders(ordersData ?? []);
       setOffers(offersData ?? []);
       setSalesCount(salesData?.length ?? 0);
+      setSoldTotal(salesData?.reduce((acc, order) => acc + ((order.listings as any)?.price || 0) * 0.99, 0) ?? 0);
       setLoading(false);
     };
     init();

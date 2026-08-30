@@ -349,13 +349,10 @@ export default function FansignsPage() {
                 </button>
               ))}
             </div>
-
-
+          </aside>
 
           {/* ── Grid / List ── */}
           <div className="flex-1 min-w-0">
-          <div className="flex-1 min-w-0">
-
             {filtered.length === 0 ? (
               <div className="text-center py-24 text-[#93939f]">
                 <p className="text-lg font-medium">No listings found</p>
