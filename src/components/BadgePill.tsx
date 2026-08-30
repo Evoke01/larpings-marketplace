@@ -19,29 +19,14 @@ const labels: Record<string, string> = {
 };
 
 const VerifiedIcon = () => (
-  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="#2575ff" stroke="white" strokeWidth="1.5" aria-hidden="true">
+  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="currentColor" stroke="white" strokeWidth="1.5" aria-hidden="true">
     <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
     <path d="m9 12 2 2 4-4" fill="none" />
   </svg>
 );
 
 const BadgeIcon = ({ type }: { type: string }) => {
-  const tone = type === "top_seller"
-    ? "text-amber-300"
-    : type === "trusted_seller"
-      ? "text-[#a7a7b3]"
-      : type === "og" || type === "early_adopter"
-        ? "text-emerald-300"
-        : type === "sales_30"
-          ? "text-orange-300"
-          : type === "sales_50"
-            ? "text-cyan-300"
-            : type === "sales_100" || type === "sales_500"
-              ? "text-violet-300"
-              : /sales/.test(type)
-                ? "text-yellow-300"
-                : "text-[#a7a7b3]";
-  const common = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, className: `h-3.5 w-3.5 shrink-0 ${tone}`, "aria-hidden": true };
+  const common = { viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, className: "h-3.5 w-3.5 shrink-0", "aria-hidden": true };
   if (type === "top_seller") return <svg {...common}><path d="m11.56 3.27-3.1 5.6a1 1 0 0 1-1.52.3L2.82 5.5a.5.5 0 0 0-.8.52l2.84 10.25a1 1 0 0 0 .96.73h12.36a1 1 0 0 0 .96-.73L21.98 6.02a.5.5 0 0 0-.8-.52l-4.28 3.66a1 1 0 0 1-1.52-.3l-2.95-5.6a.5.5 0 0 0-.88 0Z" /><path d="M5 21h14" /></svg>;
   if (type === "trusted_seller") return <svg {...common}><path d="M12 3 4.5 6v5c0 4.7 3.1 8.6 7.5 10 4.4-1.4 7.5-5.3 7.5-10V6z" /><path d="m8.5 12 2.2 2.2 4.8-4.8" /></svg>;
   if (type === "og" || type === "early_adopter") return <svg {...common}><path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15" /><path d="M11 12 5.12 2.2" /><path d="m13 12 5.88-9.8" /><path d="M8 7h8" /><circle cx="12" cy="17" r="5" /><path d="M12 18v-2h-.5" /></svg>;
@@ -53,15 +38,16 @@ const BadgeIcon = ({ type }: { type: string }) => {
   return null;
 };
 
-const iconMarkClass = (type: string) => {
-  if (type === "verified_seller") return "border-[#3978ff]/35 bg-[#1f62ff]/20";
-  if (type === "og" || type === "early_adopter") return "border-emerald-400/30 bg-emerald-400/10";
-  if (type === "top_seller") return "border-amber-400/35 bg-amber-400/10";
-  if (type === "sales_30") return "border-orange-400/35 bg-orange-400/10";
-  if (type === "sales_50") return "border-cyan-400/35 bg-cyan-400/10";
-  if (type === "sales_100" || type === "sales_500") return "border-violet-400/35 bg-violet-400/10";
-  if (/sales/.test(type)) return "border-yellow-400/35 bg-yellow-400/10";
-  return "border-white/[0.09] bg-white/[0.035]";
+const pillTheme = (type: string) => {
+  if (type === "verified_seller") return "border-[#1f62ff]/50 bg-[#1f62ff]/10 text-[#3978ff]";
+  if (type === "og" || type === "early_adopter") return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+  if (type === "top_seller") return "border-amber-400/40 bg-amber-400/10 text-amber-300";
+  if (type === "sales_30") return "border-orange-400/40 bg-orange-400/10 text-orange-300";
+  if (type === "sales_50") return "border-sky-400/40 bg-sky-400/10 text-sky-300";
+  if (type === "sales_100") return "border-violet-400/40 bg-violet-400/10 text-violet-300";
+  if (type === "sales_500") return "border-fuchsia-400/40 bg-fuchsia-400/10 text-fuchsia-300";
+  if (/sales/.test(type)) return "border-yellow-400/40 bg-yellow-400/10 text-yellow-300";
+  return "border-white/[0.09] bg-white/[0.05] text-[#d1d1d9]";
 };
 
 export default function BadgePill({ badgeType, compact = false }: BadgePillProps) {
@@ -69,11 +55,13 @@ export default function BadgePill({ badgeType, compact = false }: BadgePillProps
   const label = labels[type] ?? type.replaceAll("_", " ");
   const isDexter = type === "dexter";
   const isVerified = type === "verified_seller";
+  
+  const theme = isDexter ? "border-[#ff2a2a]/40 bg-[#160b0d] text-[#ff5b5b]" : pillTheme(type);
 
   return (
     <span
       title={label}
-      className={`inline-flex items-center gap-1.5 rounded-full border border-[#2b2b33] bg-[#141416] font-[Poppins,ui-sans-serif,system-ui,sans-serif] font-medium leading-none text-[#d1d1d9] transition-[border-color,background-color] hover:border-[#474752] hover:bg-[#19191c] ${
+      className={`inline-flex items-center gap-1.5 rounded-full border font-[Poppins,ui-sans-serif,system-ui,sans-serif] font-medium leading-none transition-[border-color,background-color] hover:brightness-110 ${theme} ${
         compact ? "min-h-7 px-2.5 py-1 text-[11px]" : "min-h-8 px-3 py-1.5 text-[12px]"
       }`}
     >
@@ -82,11 +70,16 @@ export default function BadgePill({ badgeType, compact = false }: BadgePillProps
           <img src="/dexter-badge.svg" alt="" className="dexter-logo h-full w-full rounded-full object-cover" />
         </span>
       ) : (
-        <span className={`flex shrink-0 items-center justify-center rounded-md border ${iconMarkClass(type)} ${compact ? "h-4 w-4" : "h-[18px] w-[18px]"}`}>
-          {isVerified ? <VerifiedIcon /> : <BadgeIcon type={type} />}
+        <span className={`flex shrink-0 items-center justify-center rounded-md ${compact ? "h-4 w-4" : "h-[18px] w-[18px]"}`}>
+          {isVerified ? (
+            <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0 text-[#1f62ff]" fill="currentColor" stroke="white" strokeWidth="1" aria-hidden="true">
+              <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+              <path d="m9 12 2 2 4-4" fill="none" strokeWidth="2.5" />
+            </svg>
+          ) : <BadgeIcon type={type} />}
         </span>
       )}
-      <span className={isDexter ? "text-[#ff5b5b]" : ""}>{label}</span>
+      <span>{label}</span>
     </span>
   );
 }
