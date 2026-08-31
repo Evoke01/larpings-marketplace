@@ -240,12 +240,17 @@ export default function MarketplacePage() {
   }, []);
 
   const platformCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: allListings.length };
-    for (const l of allListings) {
+    let list = allListings;
+    if (categoryFilter !== "all") list = list.filter(l => l.category === categoryFilter);
+    if (quickView === "hot") list = list.filter(l => l.hot);
+    if (search.trim()) list = list.filter(l => l.handle.toLowerCase().includes(search.toLowerCase()));
+
+    const counts: Record<string, number> = { all: list.length };
+    for (const l of list) {
       counts[l.platform] = (counts[l.platform] ?? 0) + 1;
     }
     return counts;
-  }, [allListings]);
+  }, [allListings, categoryFilter, quickView, search]);
 
   const filtered = useMemo(() => {
     let list = allListings;

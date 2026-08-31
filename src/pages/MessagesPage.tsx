@@ -173,7 +173,7 @@ export default function MessagesPage() {
         return;
       }
       setSession({ user });
-      const [{ data: dms }, { data: lounge, error: loungeError }, { data: asBuyer }, { data: userListings }, { data: asMiddlemanData }, { data: mmListData }] =
+      const [{ data: dms }, { data: lounge, error: loungeError }, { data: asBuyer }, { data: userListings }, { data: asMiddlemanData }, { data: mmListData }, { data: myProfile }] =
         await Promise.all([
           supabase
             .from("messages")
