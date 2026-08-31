@@ -53,6 +53,7 @@ const TelegramIcon = () => (
 
 export default function HomePage() {
   const [listings, setListings] = useState<any[]>([]);
+  const [liveDropsCount, setLiveDropsCount] = useState<number | null>(null);
 
   useEffect(() => {
     supabase
@@ -62,6 +63,12 @@ export default function HomePage() {
       .order('created_at', { ascending: false })
       .limit(12)
       .then(({ data }) => setListings(data ?? []));
+
+    supabase
+      .from('listings')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active')
+      .then(({ count }) => setLiveDropsCount(count ?? 0));
   }, []);
 
   return (
@@ -94,7 +101,7 @@ export default function HomePage() {
               <span className="absolute inset-0 bg-[#ff0000] rounded-full opacity-40 scale-[2] animate-ping" />
               <span className="relative bg-[#ff0000] rounded-full w-1.5 h-1.5" />
             </span>
-            The marketplace for grails & services — 1102 live drops
+            The marketplace for grails & services — {liveDropsCount !== null ? liveDropsCount : "..."} live drops
           </span>
 
           <h1 className="mt-6 text-5xl font-semibold leading-none tracking-[-2.16px]" style={{ textShadow: "rgba(9,9,11,0.9) 0px 2px 30px, rgba(9,9,11,0.7) 0px 1px 6px" }}>
