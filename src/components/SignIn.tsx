@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useLocation, useNavigate } from "react-router-dom";
 
@@ -94,6 +94,7 @@ export default function SignIn() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [usernameStatus, setUsernameStatus] = useState<"idle" | "checking" | "available" | "taken" | "invalid">("idle");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -104,7 +105,41 @@ export default function SignIn() {
   const handleTabChange = (newTab: "signin" | "signup" | "forgot") => {
     setTab(newTab);
     setError(null);
+    setUsernameStatus("idle");
   };
+
+  useEffect(() => {
+    if (tab !== "signup" || !username) {
+      setUsernameStatus("idle");
+      return;
+    }
+
+    const normalized = username.trim().toLowerCase().replace(/^@+/, "");
+    if (!/^[a-z0-9._-]{3,30}$/.test(normalized)) {
+      setUsernameStatus("invalid");
+      return;
+    }
+
+    setUsernameStatus("checking");
+
+    const timer = setTimeout(async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", normalized)
+        .maybeSingle();
+
+      if (error) {
+        setUsernameStatus("idle"); // Failsafe
+      } else if (data) {
+        setUsernameStatus("taken");
+      } else {
+        setUsernameStatus("available");
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [username, tab]);
 
   const redirectAfterAuth = () => {
     const returnTo = new URLSearchParams(location.search).get("returnTo");
@@ -150,29 +185,24 @@ export default function SignIn() {
         return;
       }
 
-      const normalizedUsername = username.trim().toLowerCase().replace(/^@+/, "");
-      if (!/^[a-z0-9._-]{3,30}$/.test(normalizedUsername)) {
+      if (usernameStatus === "invalid") {
         setError("Username must be 3–30 characters using letters, numbers, dots, underscores, or hyphens");
         setLoading(false);
         return;
       }
-
-      const { data: existingProfile, error: usernameCheckError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", normalizedUsername)
-        .maybeSingle();
-
-      if (usernameCheckError) {
-        setError("Could not verify username availability. Please try again.");
-        setLoading(false);
-        return;
-      }
-      if (existingProfile) {
+      if (usernameStatus === "taken") {
         setError("That username is already taken. Please choose another one.");
         setLoading(false);
         return;
       }
+      if (usernameStatus === "checking") {
+        // Prevent submit until check finishes, or just wait a moment
+        setError("Checking username availability...");
+        setLoading(false);
+        return;
+      }
+
+      const normalizedUsername = username.trim().toLowerCase().replace(/^@+/, "");
 
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: identifier,
@@ -329,9 +359,23 @@ export default function SignIn() {
                         onChange={e => setUsername(e.target.value)}
                         autoComplete="username"
                         placeholder="yourhandle"
-                        className="bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] pl-7 pr-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border outline-none focus:border-[#ff0000] transition-colors"
+                        className={`bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] pl-7 pr-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border outline-none transition-colors ${
+                          usernameStatus === "taken" || usernameStatus === "invalid"
+                            ? "border-[#ff0000]/50 focus:border-[#ff0000]"
+                            : usernameStatus === "available"
+                            ? "border-emerald-500/50 focus:border-emerald-500"
+                            : "border-[#222226] focus:border-[#ff0000]"
+                        }`}
                       />
                     </div>
+                    {usernameStatus !== "idle" && (
+                      <div className="mt-2 text-[12px] font-medium flex items-center">
+                        {usernameStatus === "checking" && <span className="text-[#93939f]">Checking availability...</span>}
+                        {usernameStatus === "available" && <span className="text-emerald-400">✅ Username is available</span>}
+                        {usernameStatus === "taken" && <span className="text-[#ff0000]">❌ Username is taken</span>}
+                        {usernameStatus === "invalid" && <span className="text-[#ff0000]">❌ Invalid format (3-30 chars, letters/numbers/./_/-)</span>}
+                      </div>
+                    )}
                   </div>
                 )}
 
