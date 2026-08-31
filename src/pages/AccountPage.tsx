@@ -6,10 +6,7 @@ import { useAuth } from "../lib/auth";
 
 type Profile = { id: string; username: string; display_name: string | null; bio: string | null; avatar_url: string | null; banner_url: string | null; website_url: string | null; twitter_url: string | null; instagram_url: string | null; discord_url: string | null; rep_count: number | null; vouch_count: number | null; created_at: string; is_middleman: boolean; };
 type FormState = { username: string; display_name: string; bio: string; avatar_url: string; banner_url: string; website_url: string; twitter_url: string; instagram_url: string; discord_url: string };
-type WalletsState = { evm_address: string; btc_address: string; sol_address: string; ltc_address: string; ton_address: string; trx_address: string };
-
 const emptyForm: FormState = { username: "", display_name: "", bio: "", avatar_url: "", banner_url: "", website_url: "", twitter_url: "", instagram_url: "", discord_url: "" };
-const emptyWallets: WalletsState = { evm_address: "", btc_address: "", sol_address: "", ltc_address: "", ton_address: "", trx_address: "" };
 
 const formatDate = (value: string) => new Intl.DateTimeFormat("en", { month: "short", year: "numeric" }).format(new Date(value));
 
@@ -17,7 +14,6 @@ export default function AccountPage() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm);
-  const [wallets, setWallets] = useState<WalletsState>(emptyWallets);
   const [listingCount, setListingCount] = useState(0);
   const [verificationStatus, setVerificationStatus] = useState<"pending" | "verified" | "rejected" | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,15 +51,13 @@ export default function AccountPage() {
   };
 
   useEffect(() => { if (!user) return; (async () => {
-    const [p, l, v, w] = await Promise.all([
+    const [p, l, v] = await Promise.all([
       supabase.from("profiles").select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at, is_middleman").eq("id", user.id).maybeSingle(),
       supabase.from("listings").select("id", { count: "exact", head: true }).eq("seller_id", user.id).eq("status", "active"),
       supabase.from("seller_verifications").select("status").eq("seller_id", user.id).maybeSingle(),
-      supabase.from("seller_wallets").select("*").eq("seller_id", user.id).maybeSingle(),
     ]);
     if (p.error) setError("We couldn’t load your profile details.");
     if (p.data) { setProfile(p.data); setForm({ username: p.data.username ?? "", display_name: p.data.display_name ?? "", bio: p.data.bio ?? "", avatar_url: p.data.avatar_url ?? "", banner_url: p.data.banner_url ?? "", website_url: p.data.website_url ?? "", twitter_url: p.data.twitter_url ?? "", instagram_url: p.data.instagram_url ?? "", discord_url: p.data.discord_url ?? "" }); }
-    if (w.data) { setWallets({ evm_address: w.data.evm_address ?? "", btc_address: w.data.btc_address ?? "", sol_address: w.data.sol_address ?? "", ltc_address: w.data.ltc_address ?? "", ton_address: w.data.ton_address ?? "", trx_address: w.data.trx_address ?? "" }); }
     setListingCount(l.count ?? 0); setVerificationStatus(v.data?.status ?? null); setLoading(false);
   })(); }, [user]);
 
@@ -76,7 +70,6 @@ export default function AccountPage() {
   };
 
   const update = (key: keyof FormState) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm((f) => ({ ...f, [key]: e.target.value }));
-  const updateWallet = (key: keyof WalletsState) => (e: ChangeEvent<HTMLInputElement>) => setWallets((w) => ({ ...w, [key]: e.target.value }));
   
   const upload = async (kind: "avatar" | "banner", e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]; if (!file || !user) return;
@@ -97,23 +90,7 @@ export default function AccountPage() {
       setError(saveError.code === "23505" ? "That username is already taken." : "Couldn’t save your profile.");
       setSaving(false); return;
     } 
-    
-    const { error: walletError } = await supabase.from("seller_wallets").upsert({
-      seller_id: user.id,
-      evm_address: wallets.evm_address.trim() || null,
-      btc_address: wallets.btc_address.trim() || null,
-      sol_address: wallets.sol_address.trim() || null,
-      ltc_address: wallets.ltc_address.trim() || null,
-      ton_address: wallets.ton_address.trim() || null,
-      trx_address: wallets.trx_address.trim() || null,
-      updated_at: new Date().toISOString()
-    });
-    if (walletError) {
-      setError("Couldn't save your wallet addresses.");
-      setSaving(false); return;
-    }
-
-    setProfile(data); setForm((f) => ({ ...f, username: data.username })); setMessage("Profile and wallets saved successfully.");
+    setProfile(data); setForm((f) => ({ ...f, username: data.username })); setMessage("Profile saved successfully.");
     setSaving(false);
   };
 
@@ -171,22 +148,7 @@ export default function AccountPage() {
             <div className="grid gap-4 pt-5 sm:grid-cols-2">
               {fields.map(([key, label]) => <label key={key} className="text-sm">{label}<input value={form[key as keyof FormState]} onChange={update(key as keyof FormState)} placeholder={label.includes("URL") ? "https://" : "@username"} className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000]" /></label>)}
             </div>
-            
-            <div className="mt-8 mb-4 border-t border-[#222226] pt-6">
-              <h3 className="text-lg font-medium">Payout Wallets</h3>
-              <p className="text-sm text-[#93939f] mb-4 mt-1">Add your wallet addresses here to receive funds when escrow deals close.</p>
-              
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="text-sm">EVM Address (ETH, BNB, USDC)<input value={wallets.evm_address} onChange={updateWallet("evm_address")} placeholder="0x..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-                <label className="text-sm">Bitcoin Address (BTC)<input value={wallets.btc_address} onChange={updateWallet("btc_address")} placeholder="bc1q..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-                <label className="text-sm">Solana Address (SOL)<input value={wallets.sol_address} onChange={updateWallet("sol_address")} placeholder="HN7c..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-                <label className="text-sm">Litecoin Address (LTC)<input value={wallets.ltc_address} onChange={updateWallet("ltc_address")} placeholder="ltc1q..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-                <label className="text-sm">Toncoin Address (TON)<input value={wallets.ton_address} onChange={updateWallet("ton_address")} placeholder="EQBv..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-                <label className="text-sm">Tron Address (TRX)<input value={wallets.trx_address} onChange={updateWallet("trx_address")} placeholder="T9yD..." className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000] font-mono" /></label>
-              </div>
-            </div>
-
-            <button disabled={saving} className="mt-6 rounded-[10px] bg-[#ff0000] px-5 py-3 text-sm font-medium text-white disabled:opacity-60">{saving ? "Saving…" : "Save profile & wallets"}</button>
+            <button disabled={saving} className="mt-8 rounded-[10px] btn-accent px-5 py-3 text-sm font-medium disabled:opacity-60">{saving ? "Saving…" : "Save profile"}</button>
           </form>
           <div className="grid gap-3 sm:grid-cols-3">
             {[["Rep", profile?.rep_count ?? 0], ["Vouches", profile?.vouch_count ?? 0], ["Active listings", listingCount]].map(([label, value]) => <div key={label} className="rounded-[12px] border border-[#222226] bg-[#111113] p-4"><p className="mono-label text-[#93939f]">{label}</p><p className="mt-2 font-mono text-2xl">{value}</p></div>)}
