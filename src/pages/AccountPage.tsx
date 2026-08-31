@@ -25,6 +25,35 @@ export default function AccountPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+
+  useEffect(() => {
+    setNotificationsEnabled(localStorage.getItem('larpings_notifications') === 'true');
+    setSoundEnabled(localStorage.getItem('larpings_sound') === 'true');
+  }, []);
+
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled) {
+      if (Notification.permission === 'default' || Notification.permission === 'denied') {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') {
+          setError('Browser notification permission denied. Please enable them in your browser settings.');
+          return;
+        }
+      }
+    }
+    const newState = !notificationsEnabled;
+    setNotificationsEnabled(newState);
+    localStorage.setItem('larpings_notifications', String(newState));
+  };
+
+  const toggleSound = () => {
+    const newState = !soundEnabled;
+    setSoundEnabled(newState);
+    localStorage.setItem('larpings_sound', String(newState));
+  };
+
   useEffect(() => { if (!user) return; (async () => {
     const [p, l, v, w] = await Promise.all([
       supabase.from("profiles").select("id, username, display_name, bio, avatar_url, banner_url, website_url, twitter_url, instagram_url, discord_url, rep_count, vouch_count, created_at, is_middleman").eq("id", user.id).maybeSingle(),
@@ -161,6 +190,22 @@ export default function AccountPage() {
             <Link to={`/${encodeURIComponent(username)}`} className="mt-4 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">View storefront →</Link>
             <Link to="/messages" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Messages →</Link>
             <Link to="/dashboard" className="mt-2 block rounded-lg border border-[#222226] p-3 text-sm hover:border-[#ff0000]/50">Seller dashboard →</Link>
+          </div>
+          
+          <div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5">
+            <p className="mono-label text-[#93939f]">Notification Preferences</p>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm">Browser Notifications</span>
+              <button onClick={toggleNotifications} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notificationsEnabled ? "bg-[#ff0000]" : "bg-[#222226]"}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${notificationsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm text-[#93939f]">Play sound on new message</span>
+              <button onClick={toggleSound} disabled={!notificationsEnabled} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${!notificationsEnabled ? "opacity-50 cursor-not-allowed bg-[#222226]" : soundEnabled ? "bg-[#ff0000]" : "bg-[#222226]"}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${soundEnabled && notificationsEnabled ? "translate-x-6" : "translate-x-1"}`} />
+              </button>
+            </div>
           </div>
           
           <div className="rounded-[14px] border border-[#222226] bg-[#111113] p-5">

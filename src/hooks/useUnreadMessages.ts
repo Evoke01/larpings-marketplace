@@ -15,7 +15,20 @@ export function useUnreadMessages() {
         if (active) setUnreadCount(count ?? 0);
       };
       await load();
-      channel = supabase.channel(`unread-messages-${user.id}`).on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${user.id}` }, () => void load()).subscribe();
+      channel = supabase.channel(`unread-messages-${user.id}`).on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${user.id}` }, (payload) => {
+        void load();
+        if (payload.eventType === "INSERT") {
+          const notifsEnabled = localStorage.getItem("larpings_notifications") === "true";
+          const soundEnabled = localStorage.getItem("larpings_sound") === "true";
+          
+          if (notifsEnabled && Notification.permission === "granted") {
+            new Notification("New message on Larpings", {
+              body: "You just received a new message.",
+              silent: !soundEnabled
+            });
+          }
+        }
+      }).subscribe();
     })();
     return () => { active = false; if (channel) void supabase.removeChannel(channel); };
   }, []);
