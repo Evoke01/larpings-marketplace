@@ -523,15 +523,7 @@ export default function ListingPage() {
             </div>
             
             <div className="flex flex-wrap items-center gap-1.5 mt-3">
-              {listing.verification_status === "verified" ? (
-                <span title="Ownership verified" className="bg-[#ff0000] text-white font-medium text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full border border-[#ff0000]/50">
-                  <VerifiedIcon className="w-3 h-3 text-white fill-white stroke-[#ff0000]" />Verified ownership
-                </span>
-              ) : (
-                <span title="The seller has not completed ownership verification" className="bg-amber-500/10 text-amber-300 font-medium text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/30">
-                  Unverified ownership
-                </span>
-              )}
+
               <span className="bg-amber-500/20 text-amber-300 font-medium text-[10px] flex items-center gap-1 px-2 py-0.5 rounded-full border border-amber-500/40">
                 <TopSellerIcon />Top Seller
               </span>
