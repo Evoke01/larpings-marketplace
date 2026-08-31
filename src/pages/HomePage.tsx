@@ -192,16 +192,36 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { num: "01", title: "Browse & Select", desc: "Find your perfect grail or list your own sauce for sale on the larpings.com marketplace." },
-              { num: "02", title: "Secure Payment", desc: "Pay with crypto at checkout — funds are held safely until both parties confirm the trade." },
-              { num: "03", title: "Facilitation", desc: "We facilitate the transfer between buyer and seller within 24-48 hours." },
-              { num: "04", title: "Activation", desc: "Your new premium loot is active and ready to use. Sellers get paid in crypto." },
-            ].map(({ num, title, desc }) => (
+              { 
+                num: "01", 
+                title: "Browse & Select", 
+                desc: "Find your perfect grail or list your own sauce for sale on the larpings.com marketplace.",
+                icon: <svg className="w-4 h-4 text-[#ff0000]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              },
+              { 
+                num: "02", 
+                title: "Secure Payment", 
+                desc: "Pay with crypto at checkout — funds are held safely until both parties confirm the trade.",
+                icon: <svg className="w-4 h-4 text-[#ff0000]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
+              },
+              { 
+                num: "03", 
+                title: "Facilitation", 
+                desc: "We facilitate the transfer between buyer and seller within 24-48 hours.",
+                icon: <svg className="w-4 h-4 text-[#ff0000]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              },
+              { 
+                num: "04", 
+                title: "Activation", 
+                desc: "Your new premium loot is active and ready to use. Sellers get paid in crypto.",
+                icon: <svg className="w-4 h-4 text-[#ff0000]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              },
+            ].map(({ num, title, desc, icon }) => (
               <div key={num} className="bg-[#111113] p-6 rounded-[14px] border border-[#222226]">
                 <div className="flex justify-between items-center">
                   <span className="text-[#ff0000] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">{num}</span>
                   <span className="bg-[rgba(255,0,0,0.1)] w-9 h-9 flex justify-center items-center rounded-[10px]">
-                    <svg className="w-4 h-4 text-[#ff0000]" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /></svg>
+                    {icon}
                   </span>
                 </div>
                 <h3 className="mt-5 text-lg font-medium tracking-[-0.54px]">{title}</h3>
