@@ -71,7 +71,7 @@ export default function ShopMenu({ onClose }: { onClose: () => void }) {
           let p = (item.platform || '').toLowerCase();
           if (p.includes('instagram')) p = 'instagram';
           else if (p.includes('tiktok')) p = 'tiktok';
-          else if (p.includes('twitter') || p.includes('x')) p = 'twitter';
+          else if (p.includes('twitter') || p === 'x') p = 'twitter';
           else if (p.includes('snapchat')) p = 'snapchat';
           else if (p.includes('telegram')) p = 'telegram';
           else if (p.includes('youtube')) p = 'youtube';
