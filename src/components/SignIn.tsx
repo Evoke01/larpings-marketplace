@@ -98,6 +98,7 @@ export default function SignIn() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const location = useLocation();
@@ -105,6 +106,7 @@ export default function SignIn() {
   const handleTabChange = (newTab: "signin" | "signup" | "forgot") => {
     setTab(newTab);
     setError(null);
+    setMessage(null);
     setUsernameStatus("idle");
   };
 
@@ -151,6 +153,7 @@ export default function SignIn() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setMessage(null);
     setLoading(true);
 
     if (tab === "forgot") {
@@ -167,7 +170,7 @@ export default function SignIn() {
       if (resetError) {
         setError(resetError.message);
       } else {
-        setError("✅ Password reset link sent! Check your inbox.");
+        setMessage("Password reset link sent! Check your inbox.");
       }
       setLoading(false);
       return;
@@ -221,7 +224,7 @@ export default function SignIn() {
            redirectAfterAuth();
         } else {
            // Email confirmation required — show a friendly message
-           setError("✅ Account created! Check your email and click the confirmation link to log in.");
+           setMessage("Account created! Check your email and click the confirmation link to log in.");
         }
       }
     } else {
@@ -342,8 +345,14 @@ export default function SignIn() {
               {/* Form fields */}
               <form onSubmit={handleSubmit}>
                 {error && (
-                  <div className={`text-[13px] font-medium p-3.5 rounded-[10px] mb-5 border ${error.startsWith('✅') ? 'bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400' : 'bg-[rgba(255,0,0,0.08)] border-[rgba(255,0,0,0.2)] text-[#ff0000]'}`}>
+                  <div className="text-[13px] font-medium p-3.5 rounded-[10px] mb-5 border bg-[rgba(255,0,0,0.08)] border-[rgba(255,0,0,0.2)] text-[#ff0000]">
                     {error}
+                  </div>
+                )}
+                {message && (
+                  <div className="text-[13px] font-medium p-3.5 rounded-[10px] mb-5 border bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400 flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    {message}
                   </div>
                 )}
                 {isSignup && (

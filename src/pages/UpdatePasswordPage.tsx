@@ -44,7 +44,7 @@ export default function UpdatePasswordPage() {
       setError(updateError.message);
       setLoading(false);
     } else {
-      setMessage("✅ Password updated successfully! Redirecting...");
+      setMessage("Password updated successfully! Redirecting...");
       setTimeout(() => {
         navigate("/dashboard", { replace: true });
       }, 2000);
@@ -64,7 +64,8 @@ export default function UpdatePasswordPage() {
             </div>
           )}
           {message && (
-            <div className="text-[13px] font-medium p-3.5 rounded-[10px] border bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400">
+            <div className="text-[13px] font-medium p-3.5 rounded-[10px] border bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400 flex items-center gap-2">
+              <svg className="w-4 h-4 flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
               {message}
             </div>
           )}
