@@ -212,7 +212,7 @@ export default function AboutPage() {
       <section className="mt-24 rounded-[14px] border border-[#222226] bg-[#111113] px-6 py-10 md:px-10">
         <div className="grid grid-cols-2 gap-x-6 gap-y-8 md:grid-cols-4">
           <div>
-            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">5</div>
+            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">7</div>
             <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">platforms covered</div>
           </div>
           <div>
@@ -220,12 +220,12 @@ export default function AboutPage() {
             <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">human support</div>
           </div>
           <div>
-            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">3-day</div>
-            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">seller protection window</div>
+            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">100%</div>
+            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">escrow protected</div>
           </div>
           <div>
-            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">1%</div>
-            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">0% platform fee</div>
+            <div className="text-3xl text-white md:text-4xl font-medium tracking-tight">0%</div>
+            <div className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] mt-2 text-[#93939f]">platform fee</div>
           </div>
         </div>
       </section>
