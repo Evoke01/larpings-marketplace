@@ -46,13 +46,17 @@ export default function MMDashboardPage() {
   const saveSettings = async () => {
     if (!user) return;
     setSaving(true);
+    
+    const finalPercent = Math.max(0, Number(feePercent));
+    const finalFlat = Math.max(0, Number(feeFlat));
+
     await supabase.from('profiles').update({
-      mm_fee_percent: Number(feePercent),
-      mm_fee_flat: Number(feeFlat),
+      mm_fee_percent: finalPercent,
+      mm_fee_flat: finalFlat,
       mm_bio: bio
     }).eq('id', user.id);
     
-    setProfile({ ...profile, mm_fee_percent: Number(feePercent), mm_fee_flat: Number(feeFlat), mm_bio: bio });
+    setProfile({ ...profile, mm_fee_percent: finalPercent, mm_fee_flat: finalFlat, mm_bio: bio });
     setEditingSettings(false);
     setSaving(false);
   };
@@ -97,11 +101,11 @@ export default function MMDashboardPage() {
               <div className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Fee Percentage (%)</label>
-                  <input type="number" step="0.1" value={feePercent} onChange={e => setFeePercent(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
+                  <input type="number" min="0" step="0.1" value={feePercent} onChange={e => setFeePercent(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Flat Fee ($)</label>
-                  <input type="number" value={feeFlat} onChange={e => setFeeFlat(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
+                  <input type="number" min="0" value={feeFlat} onChange={e => setFeeFlat(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground block mb-1">Short Bio</label>
@@ -137,11 +141,11 @@ export default function MMDashboardPage() {
             <h2 className="mono-label mb-5 text-muted-foreground">Performance</h2>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-background rounded-lg border border-border p-4 text-center">
-                <p className="text-3xl font-mono font-bold text-foreground">{totalDeals}</p>
+                <p className="text-3xl font-bold text-foreground">{totalDeals}</p>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Closed Deals</p>
               </div>
               <div className="bg-background rounded-lg border border-border p-4 text-center">
-                <p className="text-3xl font-mono font-bold text-accent">{ongoingDeals.length}</p>
+                <p className="text-3xl font-bold text-accent">{ongoingDeals.length}</p>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Active</p>
               </div>
             </div>

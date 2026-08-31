@@ -159,7 +159,9 @@ export default function ListingPage() {
         .select('id, status')
         .eq('listing_id', listing.id)
         .eq('buyer_id', user!.id)
-        .not('status', 'eq', 'closed')
+        .neq('status', 'closed')
+        .neq('status', 'cancelled')
+        .limit(1)
         .maybeSingle();
       if (data) setExistingOrder(data);
     }

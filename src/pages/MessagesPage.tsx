@@ -50,6 +50,15 @@ const BadgeCheck = (p: React.SVGProps<SVGSVGElement>) => (
 const ImagePlus = (p: React.SVGProps<SVGSVGElement>) => (
   <Icon {...p}><path d="M16 5h6"/><path d="M19 2v6"/><path d="M21 11.5V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.5"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/><circle cx="9" cy="9" r="2"/></Icon>
 );
+const BanIcon = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></Icon>
+);
+const CheckCircleIcon = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></Icon>
+);
+const AlertTriangleIcon = (p: React.SVGProps<SVGSVGElement>) => (
+  <Icon {...p}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></Icon>
+);
 
 
 type Conversation = {
@@ -721,158 +730,124 @@ export default function MessagesPage() {
                 
                 {selected.isDeal && selected.orderStatus !== 'closed' && (
                   <div className="flex items-center gap-2">
-                    {selected.orderStatus === 'disputed' ? (
-                      <div className="flex items-center gap-2">
-                        <div className="text-xs text-red-500 font-medium px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30">Disputed</div>
-                        {(selected.isMm || (!selected.mmId && isAdmin)) && (
-                          <>
-                            <button
-                              onClick={async () => {
-                                if (isClosing) return;
-                                setIsClosing(true);
-                                try {
-                                  const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'refund_buyer' });
-                                  if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
-                                } finally { setIsClosing(false); }
-                              }}
-                              disabled={isClosing}
-                              className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20 disabled:!opacity-50"
-                            >
-                              Refund Buyer
-                            </button>
-                            <button
-                              onClick={async () => {
-                                if (isClosing) return;
-                                setIsClosing(true);
-                                try {
-                                  const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'release_to_seller' });
-                                  if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                                } finally { setIsClosing(false); }
-                              }}
-                              disabled={isClosing}
-                              className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
-                            >
-                              Release to Seller
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    ) : (
+                    {selected.orderStatus === 'disputed' && (
+                      <div className="text-xs text-red-500 font-medium px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30">Disputed</div>
+                    )}
+                    
+                    {(selected.isMm || (!selected.mmId && isAdmin)) ? (
                       <>
                         <button
-                          onClick={() => {
-                            setConfirmModal({
-                              isOpen: true,
-                              title: "Open Dispute",
-                              description: "Are you sure? This will lock the deal and call an admin to review the chat logs.",
-                              onConfirm: async () => {
-                                await supabase.from('orders').update({ status: 'disputed' }).eq('id', selected.orderId);
-                                await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "🚨 A dispute has been opened. An admin will review this chat shortly." });
-                                setSelected(prev => prev ? ({ ...prev, orderStatus: 'disputed' }) : prev);
-                                setConfirmModal(null);
-                              }
-                            });
+                          onClick={async () => {
+                            if (isClosing) return;
+                            setIsClosing(true);
+                            try {
+                              const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'refund_buyer' });
+                              if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
+                            } finally { setIsClosing(false); }
                           }}
-                          className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
+                          disabled={isClosing}
+                          className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20 disabled:!opacity-50"
                         >
-                          Dispute
+                          Refund Buyer
                         </button>
-
-
-                          <button 
-                            onClick={async () => {
-                              if (isClosing) return;
-                              setIsClosing(true);
-                              try {
-                                const { data, error } = await supabase.rpc('confirm_p2p_deal', { p_order_id: selected.orderId, p_is_buyer: selected.isBuyer });
-                                if (error) {
-                                  console.error(error);
-                                  return;
+                        <button
+                          onClick={async () => {
+                            if (isClosing) return;
+                            setIsClosing(true);
+                            try {
+                              const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'release_to_seller' });
+                              if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                            } finally { setIsClosing(false); }
+                          }}
+                          disabled={isClosing}
+                          className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                        >
+                          Release to Seller
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {selected.orderStatus !== 'disputed' && (
+                          <button
+                            onClick={() => {
+                              setConfirmModal({
+                                isOpen: true,
+                                title: "Open Dispute",
+                                description: "Are you sure? This will lock the deal and call an admin to review the chat logs.",
+                                onConfirm: async () => {
+                                  await supabase.from('orders').update({ status: 'disputed' }).eq('id', selected.orderId);
+                                  await supabase.from('order_messages').insert({ order_id: selected.orderId, sender_id: session.user.id, content: "🚨 A dispute has been opened. An admin will review this chat shortly." });
+                                  setSelected(prev => prev ? ({ ...prev, orderStatus: 'disputed' }) : prev);
+                                  setConfirmModal(null);
                                 }
-                                if (data?.status === 'closed') {
-                                  setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                                } else {
-                                  setSelected(prev => prev ? ({ ...prev, buyerClosed: data.buyer_closed, sellerClosed: data.seller_closed }) : prev);
-                                }
-                              } finally {
-                                setIsClosing(false);
-                              }
+                              });
                             }}
-                            disabled={isClosing || (selected.isBuyer ? selected.buyerClosed : selected.sellerClosed)}
-                            className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                            className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
                           >
-                            {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : (isClosing ? 'Confirming...' : 'Close Deal')}
+                            Dispute
                           </button>
-                          
-                          {selected.isBuyer && !['closed', 'confirmed', 'cancelled', 'disputed'].includes(selected.orderStatus || '') && (
-                            <button
-                              onClick={() => {
-                                setConfirmModal({
-                                  isOpen: true,
-                                  title: "Cancel Deal",
-                                  description: "Are you sure you want to cancel this deal?",
-                                  onConfirm: async () => {
-                                    const { error } = await supabase.rpc('cancel_p2p_deal', { p_order_id: selected.orderId });
-                                    if (error) {
-                                      console.error(error);
-                                      return;
-                                    }
-                                    setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
-                                    setConfirmModal(null);
+                        )}
+                        <button 
+                          onClick={async () => {
+                            if (isClosing) return;
+                            setIsClosing(true);
+                            try {
+                              const { data, error } = await supabase.rpc('confirm_p2p_deal', { p_order_id: selected.orderId, p_is_buyer: selected.isBuyer });
+                              if (error) {
+                                console.error(error);
+                                return;
+                              }
+                              if (data?.status === 'closed') {
+                                setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                              } else {
+                                setSelected(prev => prev ? ({ ...prev, buyerClosed: data.buyer_closed, sellerClosed: data.seller_closed }) : prev);
+                              }
+                            } finally {
+                              setIsClosing(false);
+                            }
+                          }}
+                          disabled={isClosing || (selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) || selected.orderStatus === 'disputed'}
+                          className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                        >
+                          {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : (isClosing ? 'Confirming...' : 'Close Deal')}
+                        </button>
+                        
+                        {selected.isBuyer && !['closed', 'confirmed', 'cancelled', 'disputed'].includes(selected.orderStatus || '') && (
+                          <button
+                            onClick={() => {
+                              setConfirmModal({
+                                isOpen: true,
+                                title: "Cancel Deal",
+                                description: "Are you sure you want to cancel this deal?",
+                                onConfirm: async () => {
+                                  const { error } = await supabase.rpc('cancel_p2p_deal', { p_order_id: selected.orderId });
+                                  if (error) {
+                                    console.error(error);
+                                    return;
                                   }
-                                });
-                              }}
-                              className="btn-outline-dim !px-3 !py-2 !text-xs hover:!bg-white/[0.08]"
-                            >
-                              Cancel Deal
-                            </button>
-                          )}
+                                  setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
+                                  setConfirmModal(null);
+                                }
+                              });
+                            }}
+                            className="btn-outline-dim !px-3 !py-2 !text-xs hover:!bg-white/[0.08]"
+                          >
+                            Cancel Deal
+                          </button>
+                        )}
                       </>
                     )}
                   </div>
                 )}
                 
-                {selected.isDeal && selected.orderStatus === 'disputed' && (selected.isMm || isAdmin) && (
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={() => {
-                        setConfirmModal({
-                          isOpen: true,
-                          title: "Refund Buyer",
-                          description: "Cancel this deal and refund the buyer?",
-                          onConfirm: async () => {
-                            await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'refund_buyer' });
-                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
-                            setConfirmModal(null);
-                          }
-                        });
-                      }}
-                      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
-                    >
-                      Refund Buyer
-                    </button>
-                    <button
-                      onClick={() => {
-                        setConfirmModal({
-                          isOpen: true,
-                          title: "Release to Seller",
-                          description: "Close this deal and release funds to the seller?",
-                          onConfirm: async () => {
-                            await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'release_to_seller' });
-                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
-                            setConfirmModal(null);
-                          }
-                        });
-                      }}
-                      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20"
-                    >
-                      Release to Seller
-                    </button>
-                  </div>
+                {!selected.isDeal && !selected.isLounge && (
+                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={/profile/}>View profile</Link>
                 )}
-
+              </div>
+              
+              <div className="min-h-0 flex-1 overflow-y-auto py-4 px-4">
                 {selected.isDeal && !selected.mmId && selected.isBuyer && (
-                  <div className="mt-4 bg-[#cc00ff]/10 border border-[#cc00ff]/30 p-4 rounded-xl">
+                  <div className="mb-4 bg-[#cc00ff]/10 border border-[#cc00ff]/30 p-4 rounded-xl">
                     <h3 className="text-sm font-semibold text-[#e57dff] mb-2 flex items-center gap-2">
                       <ShieldIcon className="w-4 h-4" /> Choose an Escrow Middleman
                     </h3>
@@ -888,34 +863,30 @@ export default function MessagesPage() {
                               setConfirmModal({
                                 isOpen: true,
                                 title: "Assign Middleman",
-                                description: `Are you sure you want to assign ${mm.username || mm.display_name} as Middleman for this deal?`,
+                                description: Are you sure you want to assign  as Middleman for this deal?,
                                 onConfirm: async () => {
                                   const { error } = await supabase.from('orders').update({ mm_id: mm.id, mm_fee: mm.mm_fee_flat }).eq('id', selected.orderId);
                                   if (error) return console.error(error);
                                   
                                   await supabase.from('order_messages').insert({
                                     order_id: selected.orderId, sender_id: session.user.id,
-                                    content: `✅ Escrow Middleman @${mm.username || mm.display_name} has been assigned to mediate this deal.`
+                                    content: ✅ Escrow Middleman @ has been assigned to mediate this deal.
                                   });
                                   setSelected({ ...selected, mmId: mm.id });
                                   setConfirmModal(null);
                                 }
                               });
                             }}
-                            className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors relative ${
-                              isOnline 
-                                ? 'bg-background border-border hover:border-[#e57dff]/50' 
-                                : 'bg-background/50 border-border/50 opacity-50 cursor-not-allowed'
-                            }`}
+                            className={lex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors relative }
                           >
                             <div className="flex items-center justify-between w-full">
                               <span className="font-semibold text-[#f9f9fb]">@{mm.username || mm.display_name}</span>
                               <div className="flex items-center gap-1.5">
-                                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-muted-foreground'}`}></span>
+                                <span className={w-1.5 h-1.5 rounded-full }></span>
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{isOnline ? 'Online' : 'Offline'}</span>
                               </div>
                             </div>
-                            <span className="text-xs text-muted-foreground">Fee: {mm.mm_fee_percent}% + ${mm.mm_fee_flat}</span>
+                            <span className="text-xs text-muted-foreground">Fee: {mm.mm_fee_percent}% + </span>
                           </button>
                         );
                       })}
@@ -925,18 +896,12 @@ export default function MessagesPage() {
                 )}
                 
                 {selected.isDeal && selected.mmId && (
-                   <div className="mt-3 flex items-center gap-2 bg-[#111113] px-3 py-2 border border-[#222226] rounded-lg">
+                   <div className="mb-4 flex items-center gap-2 bg-[#111113] px-3 py-2 border border-[#222226] rounded-lg">
                       <ShieldIcon className="w-4 h-4 text-[#e57dff]" />
                       <span className="text-xs text-[#93939f]">Mediated by MM</span>
                    </div>
                 )}
 
-                {!selected.isDeal && !selected.isLounge && (
-                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
-                )}
-              </div>
-              
-              <div className="min-h-0 flex-1 overflow-y-auto py-4 px-4">
                 <div className="space-y-1.5">
                   {visible.length ? (
                     visible.map((m: any, idx: number) => {
@@ -956,13 +921,49 @@ export default function MessagesPage() {
                               <span className="h-px flex-1 bg-border"></span>
                             </div>
                           )}
-                          {(m.content.startsWith('✅') || m.content.startsWith('🚨') || m.content.startsWith('⚠️')) ? (
-                            <div className="my-3 flex justify-center">
-                              <div className="bg-red-500/10 text-red-500 border border-red-500/30 px-5 py-3 rounded-lg text-sm max-w-[85%] text-center whitespace-pre-wrap leading-relaxed shadow-sm">
-                                {m.content}
-                              </div>
-                            </div>
-                          ) : (
+                          {(() => {
+                            const content = m.content;
+                            const isSysLegacyCancel = content.startsWith("🚫") || content.startsWith("s,?") || content.startsWith("dYs ");
+                            const isSysLegacyConfirm = content.startsWith("✅") || content.startsWith("o.");
+                            const isSysLegacyDispute = content.startsWith("🚨") || content.startsWith("dYs\"") || content.startsWith("s-,?");
+                            const isSysLegacyMM = content.startsWith("✅ Escrow");
+
+                            const isSysCancel = content.startsWith("[SYS_CANCEL]") || isSysLegacyCancel;
+                            const isSysConfirm = content.startsWith("[SYS_CONFIRM]") || isSysLegacyConfirm;
+                            const isSysDispute = content.startsWith("[SYS_DISPUTE]") || isSysLegacyDispute;
+                            const isSysMM = content.startsWith("[SYS_MM_ASSIGN]") || isSysLegacyMM;
+
+                            if (isSysCancel || isSysConfirm || isSysDispute || isSysMM) {
+                              let text = content
+                                .replace(/^\[SYS_\w+\]\s*/, "")
+                                .replace(/^(🚨|✅|🚫|dYs"|dYs |o\.|s,\?|s-,\?|o\.|s,\?|✅ Escrow)\s*/, "")
+                                .trim();
+                              
+                              let IconComponent = ShieldIcon;
+                              let colorClass = "bg-[#111113] text-[#93939f] border-[#222226]";
+                              
+                              if (isSysCancel) {
+                                IconComponent = BanIcon;
+                                colorClass = "bg-red-500/10 text-red-500 border-red-500/30";
+                              } else if (isSysDispute) {
+                                IconComponent = AlertTriangleIcon;
+                                colorClass = "bg-amber-500/10 text-amber-500 border-amber-500/30";
+                              } else if (isSysConfirm) {
+                                IconComponent = CheckCircleIcon;
+                                colorClass = "bg-emerald-500/10 text-emerald-500 border-emerald-500/30";
+                              }
+
+                              return (
+                                <div className="my-3 flex justify-center">
+                                  <div className={`flex items-center gap-2 px-5 py-3 rounded-lg text-sm max-w-[85%] whitespace-pre-wrap leading-relaxed shadow-sm border ${colorClass}`}>
+                                    <IconComponent className="w-5 h-5 shrink-0" />
+                                    <span>{text}</span>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            return (
                             <div className={`group relative flex items-end gap-2 ${mine ? 'justify-end' : 'justify-start'}`}>
                               {!mine && (
                                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 bg-[#222226] flex items-center justify-center text-xs font-semibold text-[#93939f] border border-[#333338]">
