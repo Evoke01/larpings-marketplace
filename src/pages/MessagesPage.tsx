@@ -96,6 +96,7 @@ export default function MessagesPage() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -187,8 +188,10 @@ export default function MessagesPage() {
           supabase.from("orders").select("*, listings(handle)").eq("buyer_id", user.id),
           supabase.from("listings").select("id, handle").eq("seller_id", user.id),
           supabase.from("orders").select("*, listings(handle)").eq("mm_id", user.id),
-          supabase.from("profiles").select("id, username, display_name, mm_fee_percent, mm_fee_flat").eq("is_middleman", true)
+          supabase.from("profiles").select("id, username, display_name, mm_fee_percent, mm_fee_flat").eq("is_middleman", true),
+          supabase.from("profiles").select("role").eq("id", user.id).single()
         ]);
+      if (myProfile) setIsAdmin(myProfile.role === 'admin');
       if (loungeError) console.error("Lounge load error:", loungeError);
       
       if (mmListData) setMms(mmListData);
@@ -706,9 +709,11 @@ export default function MessagesPage() {
                         : selected.isDeal
                           ? selected.orderStatus === 'closed'
                             ? 'Deal Closed'
-                            : selected.orderStatus === 'disputed'
-                              ? <span className="text-red-400">Dispute Under Review</span>
-                              : (<span className="flex items-center gap-1.5 text-emerald-400">ESCROW ACTIVE</span>)
+                            : selected.orderStatus === 'cancelled'
+                              ? <span className="text-red-400">Deal Cancelled</span>
+                              : selected.orderStatus === 'disputed'
+                                ? <span className="text-red-400">Dispute Under Review</span>
+                                : (<span className="flex items-center gap-1.5 text-emerald-400">ESCROW ACTIVE</span>)
                           : "Private conversation"}
                     </p>
                   </div>
@@ -717,7 +722,41 @@ export default function MessagesPage() {
                 {selected.isDeal && selected.orderStatus !== 'closed' && (
                   <div className="flex items-center gap-2">
                     {selected.orderStatus === 'disputed' ? (
-                       <div className="text-xs text-red-500 font-medium px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30">Disputed</div>
+                      <div className="flex items-center gap-2">
+                        <div className="text-xs text-red-500 font-medium px-3 py-1.5 rounded bg-red-500/10 border border-red-500/30">Disputed</div>
+                        {(selected.isMm || (!selected.mmId && isAdmin)) && (
+                          <>
+                            <button
+                              onClick={async () => {
+                                if (isClosing) return;
+                                setIsClosing(true);
+                                try {
+                                  const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'refund_buyer' });
+                                  if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
+                                } finally { setIsClosing(false); }
+                              }}
+                              disabled={isClosing}
+                              className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20 disabled:!opacity-50"
+                            >
+                              Refund Buyer
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (isClosing) return;
+                                setIsClosing(true);
+                                try {
+                                  const { error } = await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'release_to_seller' });
+                                  if (!error) setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                                } finally { setIsClosing(false); }
+                              }}
+                              disabled={isClosing}
+                              className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20 disabled:!opacity-50"
+                            >
+                              Release to Seller
+                            </button>
+                          </>
+                        )}
+                      </div>
                     ) : (
                       <>
                         <button
@@ -764,8 +803,71 @@ export default function MessagesPage() {
                           >
                             {(selected.isBuyer ? selected.buyerClosed : selected.sellerClosed) ? '✓ Confirmed' : (isClosing ? 'Confirming...' : 'Close Deal')}
                           </button>
+                          
+                          {selected.isBuyer && !['closed', 'confirmed', 'cancelled', 'disputed'].includes(selected.orderStatus || '') && (
+                            <button
+                              onClick={() => {
+                                setConfirmModal({
+                                  isOpen: true,
+                                  title: "Cancel Deal",
+                                  description: "Are you sure you want to cancel this deal?",
+                                  onConfirm: async () => {
+                                    const { error } = await supabase.rpc('cancel_p2p_deal', { p_order_id: selected.orderId });
+                                    if (error) {
+                                      console.error(error);
+                                      return;
+                                    }
+                                    setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
+                                    setConfirmModal(null);
+                                  }
+                                });
+                              }}
+                              className="btn-outline-dim !px-3 !py-2 !text-xs hover:!bg-white/[0.08]"
+                            >
+                              Cancel Deal
+                            </button>
+                          )}
                       </>
                     )}
+                  </div>
+                )}
+                
+                {selected.isDeal && selected.orderStatus === 'disputed' && (selected.isMm || isAdmin) && (
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: "Refund Buyer",
+                          description: "Cancel this deal and refund the buyer?",
+                          onConfirm: async () => {
+                            await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'refund_buyer' });
+                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'cancelled' }) : prev);
+                            setConfirmModal(null);
+                          }
+                        });
+                      }}
+                      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-red-500/10 !text-red-400 !border-red-500/30 hover:!bg-red-500/20"
+                    >
+                      Refund Buyer
+                    </button>
+                    <button
+                      onClick={() => {
+                        setConfirmModal({
+                          isOpen: true,
+                          title: "Release to Seller",
+                          description: "Close this deal and release funds to the seller?",
+                          onConfirm: async () => {
+                            await supabase.rpc('resolve_p2p_dispute', { p_order_id: selected.orderId, p_resolution: 'release_to_seller' });
+                            setSelected(prev => prev ? ({ ...prev, orderStatus: 'closed', buyerClosed: true, sellerClosed: true }) : prev);
+                            setConfirmModal(null);
+                          }
+                        });
+                      }}
+                      className="btn-outline-dim !px-3 !py-2 !text-xs !bg-emerald-500/10 !text-emerald-400 !border-emerald-500/30 hover:!bg-emerald-500/20"
+                    >
+                      Release to Seller
+                    </button>
                   </div>
                 )}
 
