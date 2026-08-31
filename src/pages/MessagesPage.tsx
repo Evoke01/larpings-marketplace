@@ -558,7 +558,7 @@ export default function MessagesPage() {
         .from("messages")
         .select("*")
         .or(
-          `and(sender_id.eq.${session.user.id},receiver_id.eq.${c.partnerId}),and(sender_id.eq.${c.partnerId},receiver_id.eq.${session.user.id})`,
+          `and(sender_id.eq.${session!.user.id},receiver_id.eq.${c.partnerId}),and(sender_id.eq.${c.partnerId},receiver_id.eq.${session!.user.id})`,
         )
         .order("created_at", { ascending: true });
       setMessages(thread ?? []);
@@ -567,7 +567,7 @@ export default function MessagesPage() {
           .from("messages")
           .update({ read: true })
           .eq("sender_id", c.partnerId)
-          .eq("receiver_id", session.user.id)
+          .eq("receiver_id", session!.user.id)
           .eq("read", false);
         setConversations((prev) =>
           prev.map((conv) =>

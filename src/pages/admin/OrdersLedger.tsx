@@ -54,7 +54,7 @@ export default function OrdersLedger() {
           { label: "Total Orders", value: orders.length.toLocaleString(), sub: "all time" },
           { label: "Gross GMV", value: `$${gmv.toLocaleString()}`, sub: "confirmed sales" },
 
-        ].map(c => (
+        ].map((c: any) => (
           <div key={c.label} className={`rounded-[14px] border p-5 ${c.accent ? "border-[#ff0000]/30 bg-[#ff0000]/5" : "border-white/[0.07] bg-[#0e0e11]"}`}>
             <p className="font-mono text-[10px] tracking-widest uppercase text-[#93939f] mb-2">{c.label}</p>
             <p className={`font-mono text-3xl font-semibold ${c.accent ? "text-[#ff0000]" : "text-[#f9f9fb]"}`}>{c.value}</p>
