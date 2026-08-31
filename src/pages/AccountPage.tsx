@@ -118,8 +118,8 @@ export default function AccountPage() {
               <div><p className="text-xl font-medium">@{username}</p><p className="mt-1 text-sm text-[#93939f]">{user?.email}</p></div>
             </div>
             
-            {error && <p className="mt-5 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}
-            {message && <p className="mt-5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">{message}</p>}
+            {error && <p className="mt-5 text-[13px] font-medium p-3.5 rounded-[10px] border bg-[rgba(255,0,0,0.08)] border-[rgba(255,0,0,0.2)] text-[#ff0000]">{error}</p>}
+            {message && <p className="mt-5 text-[13px] font-medium p-3.5 rounded-[10px] border bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400">{message}</p>}
             
             <div className="grid gap-4 pt-6 sm:grid-cols-2">
               <label className="text-sm">Username<input value={form.username} onChange={update("username")} className="mt-2 w-full rounded-lg border border-[#222226] bg-[#09090b] px-3 py-3 text-sm outline-none focus:border-[#ff0000]" /></label>

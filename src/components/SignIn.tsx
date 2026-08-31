@@ -283,7 +283,7 @@ export default function SignIn() {
               {/* Form fields */}
               <form onSubmit={handleSubmit}>
                 {error && (
-                  <div className={`text-sm p-3 rounded-md mb-4 border ${error.startsWith('✅') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-red-500/10 border-red-500/20 text-red-400'}`}>
+                  <div className={`text-[13px] font-medium p-3.5 rounded-[10px] mb-5 border ${error.startsWith('✅') ? 'bg-[rgba(52,211,153,0.08)] border-[rgba(52,211,153,0.2)] text-emerald-400' : 'bg-[rgba(255,0,0,0.08)] border-[rgba(255,0,0,0.2)] text-[#ff0000]'}`}>
                     {error}
                   </div>
                 )}
