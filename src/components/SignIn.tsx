@@ -463,10 +463,10 @@ export default function SignIn() {
             </span>
             <h2 className="leading-none font-medium text-[28px] tracking-[-0.84px] caret-[#f9f9fb] mt-5 mb-0">
               The safest place to{" "}
-              <span className="text-[#ff0000] caret-[#ff0000]">buy & sell handles.</span>
+              <span className="text-[#ff0000] caret-[#ff0000]">buy & sell grails.</span>
             </h2>
             <p className="text-[#93939f] leading-relaxed text-[14px] caret-[#93939f] mt-3 mb-0">
-              Transfers are fully escrow-protected. Sellers can't touch your payment until you confirm the handle is yours.
+              Transfers are fully escrow-protected. Sellers can't touch your payment until you confirm the goods are yours.
             </p>
             <div className="flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] mt-7">
               <Icon7 width="24" height="24" />
