@@ -280,7 +280,6 @@ export default function SignIn() {
             <div className="flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] ml-auto">
               <a href="/messages" aria-label="Messages" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] relative rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
                 <Icon12 className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-[#ff0000] rounded-br-full rounded-t-full rounded-bl-full border-[1.5px] border-[#111113]" />
               </a>
               <a href="/account" aria-label="Account" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
                 <Icon2 />
