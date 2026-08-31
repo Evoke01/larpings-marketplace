@@ -41,7 +41,11 @@ export default function UpdatePasswordPage() {
     });
 
     if (updateError) {
-      setError(updateError.message);
+      if (updateError.message.includes("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
+        setError("Password must contain at least one letter and one number.");
+      } else {
+        setError(updateError.message);
+      }
       setLoading(false);
     } else {
       setMessage("Password updated successfully! Redirecting...");

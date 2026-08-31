@@ -218,7 +218,11 @@ export default function SignIn() {
       });
 
       if (signUpError) {
-        setError(signUpError.message);
+        if (signUpError.message.includes("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")) {
+          setError("Password must contain at least one letter and one number.");
+        } else {
+          setError(signUpError.message);
+        }
       } else {
         if (data.session) {
            redirectAfterAuth();
