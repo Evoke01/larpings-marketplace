@@ -18,6 +18,7 @@ export default function SellPage() {
   const [serviceOption, setServiceOption] = useState<string>(serviceOptions(SERVICE_TYPES[0], serviceGroups(SERVICE_TYPES[0])[0])[0]);
   const [price, setPrice] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [submittedListingId, setSubmittedListingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -52,19 +53,25 @@ export default function SellPage() {
         : normalizedCategory === "service"
           ? { service_type: serviceType, service_group: serviceGroup, service_option: serviceOption, service_name: serviceOption }
           : {};
-      const { error: insertError } = await supabase.from('listings').insert({
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
+        throw new Error("Price must be greater than 0");
+      }
+
+      const { data: insertedData, error: insertError } = await supabase.from('listings').insert({
         seller_id: session.user.id,
         handle: title.trim(),
         description: description.trim(),
         category: category.toLowerCase(),
         platform: platform.toLowerCase().replace(' / x', '').replace('youtube', 'youtube'), // normalize
-        price: parseFloat(price),
+        price: parsedPrice,
         status: 'active',
         details,
-      });
+      }).select().single();
 
       if (insertError) throw insertError;
 
+      setSubmittedListingId(insertedData.id);
       setSubmitted(true);
     } catch (err: any) {
       setError(err.message || "Failed to create listing.");
@@ -86,12 +93,20 @@ export default function SellPage() {
           <p className="text-[#93939f] text-sm mt-2">
             @{title} is now live on the marketplace. You'll be notified when a buyer makes an offer.
           </p>
-          <button
-            onClick={() => { setTitle(""); setDescription(""); setPrice(""); setSubmitted(false); }}
-            className="mt-6 bg-white text-[#0e0e11] text-sm font-medium px-6 py-3 rounded-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] hover:-translate-y-px active:translate-y-0 transition-all"
-          >
-            Create another listing
-          </button>
+          <div className="flex flex-col gap-3 mt-6">
+            <button
+              onClick={() => navigate(`/listing/${submittedListingId}`)}
+              className="bg-[#ff0000] text-white text-sm font-medium px-6 py-3 rounded-[10px] hover:bg-[#cc0000] transition-colors"
+            >
+              View listing
+            </button>
+            <button
+              onClick={() => { setTitle(""); setDescription(""); setPrice(""); setSubmitted(false); setSubmittedListingId(null); }}
+              className="bg-zinc-800 text-white text-sm font-medium px-6 py-3 rounded-[10px] hover:bg-zinc-700 transition-colors"
+            >
+              Create another listing
+            </button>
+          </div>
         </div>
       </div>
     );

@@ -15,10 +15,11 @@ export default function MMDashboardPage() {
   const [feeFlat, setFeeFlat] = useState("");
   const [bio, setBio] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
     async function loadData() {
-      if (!user) return navigate("/login");
+      if (!user) return navigate("/signin?returnTo=/mm/dashboard");
       
       const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
       if (!p || !p.is_middleman) {
@@ -28,6 +29,7 @@ export default function MMDashboardPage() {
       setFeePercent(p.mm_fee_percent || "0");
       setFeeFlat(p.mm_fee_flat || "0");
       setBio(p.mm_bio || "");
+      setIsOnline(p.mm_is_online || false);
 
       const { data: deals } = await supabase
         .from('orders')
@@ -39,7 +41,7 @@ export default function MMDashboardPage() {
       setLoading(false);
     }
     loadData();
-  }, [user]);
+  }, [user, navigate]);
 
   const saveSettings = async () => {
     if (!user) return;
@@ -55,118 +57,143 @@ export default function MMDashboardPage() {
     setSaving(false);
   };
 
-  if (loading) return <div className="pt-24 text-center">Loading...</div>;
+  const toggleOnlineStatus = async () => {
+    if (!user) return;
+    const newStatus = !isOnline;
+    setIsOnline(newStatus);
+    await supabase.from('profiles').update({ mm_is_online: newStatus }).eq('id', user.id);
+  };
+
+  if (loading) return <div className="pt-24 min-h-[60vh] flex items-center justify-center"><div className="w-6 h-6 border-2 border-accent border-t-transparent rounded-full animate-spin" /></div>;
 
   const totalDeals = activeDeals.filter(d => d.status === 'closed').length;
   const ongoingDeals = activeDeals.filter(d => d.status !== 'closed' && d.status !== 'cancelled');
 
   return (
-    <div className="pt-24 pb-12 px-4 max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
+    <div className="pt-24 pb-12 px-4 max-w-6xl mx-auto min-h-screen">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 mkt-enter">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Middleman Dashboard</h1>
-          <p className="text-[#93939f] mt-2">Manage your escrow deals and fees.</p>
+          <span className="mono-label text-muted-foreground">Admin tools</span>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2">Middleman Dashboard</h1>
+          <p className="text-muted-foreground mt-2 max-w-lg">Manage your escrow deals, update your rates, and toggle your availability.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={toggleOnlineStatus}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-medium transition-all ${isOnline ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-background border-border text-muted-foreground'}`}
+          >
+            <div className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-muted-foreground'}`} />
+            {isOnline ? 'Accepting deals' : 'Currently offline'}
+          </button>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr] mkt-enter" style={{ animationDelay: '100ms' }}>
         <div className="space-y-6">
           {/* Stats & Settings */}
-          <div className="bg-[#111113] border border-[#222226] rounded-xl p-5">
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-widest text-[#93939f]">Your Rates</h2>
+          <div className="card-lined rounded-xl p-6 bg-section-background">
+            <h2 className="mono-label mb-5 text-muted-foreground">Your Rates</h2>
             {editingSettings ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs text-[#93939f]">Fee Percentage (%)</label>
-                  <input type="number" step="0.1" value={feePercent} onChange={e => setFeePercent(e.target.value)} className="w-full mt-1 bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-sm" />
+                  <label className="text-xs text-muted-foreground block mb-1">Fee Percentage (%)</label>
+                  <input type="number" step="0.1" value={feePercent} onChange={e => setFeePercent(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#93939f]">Flat Fee ($)</label>
-                  <input type="number" value={feeFlat} onChange={e => setFeeFlat(e.target.value)} className="w-full mt-1 bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-sm" />
+                  <label className="text-xs text-muted-foreground block mb-1">Flat Fee ($)</label>
+                  <input type="number" value={feeFlat} onChange={e => setFeeFlat(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:border-accent outline-none" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#93939f]">Short Bio</label>
-                  <textarea value={bio} onChange={e => setBio(e.target.value)} className="w-full mt-1 bg-[#09090b] border border-[#222226] rounded-lg px-3 py-2 text-sm h-20" />
+                  <label className="text-xs text-muted-foreground block mb-1">Short Bio</label>
+                  <textarea value={bio} onChange={e => setBio(e.target.value)} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm h-24 focus:border-accent outline-none resize-none" placeholder="Experience, timezone, typical hours..." />
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={saveSettings} disabled={saving} className="flex-1 bg-white text-black py-2 rounded-lg text-sm font-medium">{saving ? 'Saving...' : 'Save'}</button>
-                  <button onClick={() => setEditingSettings(false)} className="flex-1 border border-[#222226] py-2 rounded-lg text-sm font-medium">Cancel</button>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={saveSettings} disabled={saving} className="flex-1 btn-white py-2 rounded-lg text-sm">{saving ? 'Saving...' : 'Save'}</button>
+                  <button onClick={() => setEditingSettings(false)} className="flex-1 btn-outline-dim py-2 rounded-lg text-sm">Cancel</button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between">
-                  <span className="text-sm text-[#93939f]">Percentage:</span>
-                  <span className="text-sm font-medium">{profile.mm_fee_percent}%</span>
+              <div className="space-y-5">
+                <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Percentage:</span>
+                  <span className="text-base font-semibold">{profile.mm_fee_percent}%</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-[#93939f]">Flat Rate:</span>
-                  <span className="text-sm font-medium">${profile.mm_fee_flat}</span>
+                <div className="flex justify-between items-center pb-3 border-b border-border/50">
+                  <span className="text-sm text-muted-foreground">Flat Rate:</span>
+                  <span className="text-base font-semibold">${profile.mm_fee_flat}</span>
                 </div>
                 <div>
-                  <span className="text-xs text-[#93939f] block mb-1">Bio:</span>
-                  <p className="text-xs text-white/80">{profile.mm_bio || 'No bio set.'}</p>
+                  <span className="text-xs uppercase tracking-wider font-semibold text-muted-foreground block mb-2">Bio</span>
+                  <p className="text-sm text-foreground/80 leading-relaxed bg-background/50 p-3 rounded-lg border border-border/50 min-h-[60px]">
+                    {profile.mm_bio || 'No bio set.'}
+                  </p>
                 </div>
-                <button onClick={() => setEditingSettings(true)} className="w-full mt-2 border border-[#222226] py-2 rounded-lg text-xs font-medium hover:bg-white/5 transition-colors">Edit Settings</button>
+                <button onClick={() => setEditingSettings(true)} className="w-full btn-outline-dim py-2.5 rounded-lg text-sm mt-2">Edit Settings</button>
               </div>
             )}
           </div>
 
-          <div className="bg-[#111113] border border-[#222226] rounded-xl p-5">
-            <h2 className="text-sm font-semibold mb-4 uppercase tracking-widest text-[#93939f]">Stats</h2>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-sm text-[#93939f]">Closed Deals:</span>
-                <span className="text-sm font-medium">{totalDeals}</span>
+          <div className="card-lined rounded-xl p-6 bg-section-background">
+            <h2 className="mono-label mb-5 text-muted-foreground">Performance</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-background rounded-lg border border-border p-4 text-center">
+                <p className="text-3xl font-mono font-bold text-foreground">{totalDeals}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Closed Deals</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-[#93939f]">Ongoing:</span>
-                <span className="text-sm font-medium">{ongoingDeals.length}</span>
+              <div className="bg-background rounded-lg border border-border p-4 text-center">
+                <p className="text-3xl font-mono font-bold text-accent">{ongoingDeals.length}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Active</p>
               </div>
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Deal Ledger</h2>
+          <h2 className="text-xl font-semibold tracking-tight">Deal Ledger</h2>
           {activeDeals.length === 0 ? (
-            <div className="text-center py-12 text-[#93939f] border border-[#222226] rounded-xl bg-[#111113]">
-              You have no assigned deals yet.
+            <div className="flex flex-col items-center justify-center py-20 text-center border border-border border-dashed rounded-xl bg-section-background/50">
+              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent mb-4">
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22V12"></path><path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7"></path><path d="m7.5 4.27 9 5.15"></path></svg>
+              </div>
+              <p className="text-foreground font-medium">No assigned deals yet</p>
+              <p className="text-sm text-muted-foreground mt-1">When buyers select you, deals will appear here.</p>
             </div>
           ) : (
-            <div className="bg-[#111113] border border-[#222226] rounded-xl overflow-hidden">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#09090b] border-b border-[#222226] text-[#93939f] uppercase tracking-wider text-[10px]">
-                  <tr>
-                    <th className="px-4 py-3 font-medium">Handle</th>
-                    <th className="px-4 py-3 font-medium">Status</th>
-                    <th className="px-4 py-3 font-medium">Date</th>
-                    <th className="px-4 py-3 font-medium text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#222226]">
-                  {activeDeals.map(d => (
-                    <tr key={d.id} className="hover:bg-white/[0.02]">
-                      <td className="px-4 py-4 font-mono font-medium">@{d.listings?.handle}</td>
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex px-2 py-1 rounded text-[10px] uppercase font-bold tracking-widest ${
-                          d.status === 'closed' ? 'bg-emerald-500/10 text-emerald-400' :
-                          d.status === 'disputed' ? 'bg-red-500/10 text-red-400' :
-                          'bg-amber-500/10 text-amber-400'
-                        }`}>
-                          {d.status}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-[#93939f]">{new Date(d.created_at).toLocaleDateString()}</td>
-                      <td className="px-4 py-4 text-right">
-                        <Link to={`/messages?order=${d.id}`} className="text-xs bg-white text-black px-3 py-1.5 rounded-md font-medium hover:bg-gray-200">
-                          View Room
-                        </Link>
-                      </td>
+            <div className="bg-section-background border border-border rounded-xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead className="bg-background/80 border-b border-border text-muted-foreground uppercase tracking-wider text-[10px]">
+                    <tr>
+                      <th className="px-5 py-4 font-semibold">Listing</th>
+                      <th className="px-5 py-4 font-semibold">Status</th>
+                      <th className="px-5 py-4 font-semibold">Date</th>
+                      <th className="px-5 py-4 font-semibold text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {activeDeals.map(d => (
+                      <tr key={d.id} className="hover:bg-background/50 transition-colors">
+                        <td className="px-5 py-4 font-mono font-medium">@{d.listings?.handle || 'unknown'}</td>
+                        <td className="px-5 py-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-md text-[10px] uppercase font-bold tracking-widest ${
+                            d.status === 'closed' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                            d.status === 'disputed' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                            'bg-accent/10 text-accent border border-accent/20'
+                          }`}>
+                            {d.status}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 text-muted-foreground">{new Date(d.created_at).toLocaleDateString()}</td>
+                        <td className="px-5 py-4 text-right">
+                          <Link to={`/messages?order=${d.id}`} className="btn-white px-4 py-1.5 rounded-lg text-xs">
+                            View Room
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>

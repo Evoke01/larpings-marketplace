@@ -144,7 +144,16 @@ export default function AccountPage() {
               <div className="flex h-16 w-16 overflow-hidden items-center justify-center rounded-full bg-[#ff0000]/10 text-xl font-semibold text-[#ff0000]">
                 {form.avatar_url ? <img src={form.avatar_url} alt="" className="h-full w-full object-cover" /> : username.slice(0, 2).toUpperCase()}
               </div>
-              <div><p className="text-xl font-medium">@{username}</p><p className="mt-1 text-sm text-[#93939f]">{user?.email}</p></div>
+              <div>
+                <p className="text-xl font-medium">@{username}</p>
+                <p className="mt-1 text-sm text-[#93939f]">{user?.email}</p>
+                <div className="mt-3 text-xs text-[#93939f] flex items-center gap-2 bg-[#09090b] px-3 py-1.5 rounded-lg border border-[#222226] w-fit">
+                  <span className="font-mono">larpings.com/{username}</span>
+                  <button type="button" onClick={() => navigator.clipboard.writeText(`larpings.com/${username}`)} className="text-[#ff0000] hover:text-[#ff0000]/80 transition-colors">
+                    Copy
+                  </button>
+                </div>
+              </div>
             </div>
             
             {error && <p className="mt-5 text-[13px] font-medium p-3.5 rounded-[10px] border bg-[rgba(255,0,0,0.08)] border-[rgba(255,0,0,0.2)] text-[#ff0000]">{error}</p>}

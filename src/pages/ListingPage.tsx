@@ -80,7 +80,7 @@ const CryptoMark = ({ coin }: { coin: string }) => {
 };
 
 export default function ListingPage() {
-  const { handle } = useParams();
+  const { id } = useParams();
   const navigate = useNavigate();
   const [listing, setListing] = useState<any>(null);
   const { user } = useAuth();
@@ -104,11 +104,11 @@ export default function ListingPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!handle) return;
+      if (!id) return;
       const { data: listingData } = await supabase
         .from('listings')
         .select('*')
-        .eq('handle', handle)
+        .eq('id', id)
         .single();
       
       if (listingData) {
@@ -129,7 +129,7 @@ export default function ListingPage() {
       setLoading(false);
     }
     loadData();
-  }, [handle]);
+  }, [id]);
 
   useEffect(() => {
     if (!user || !listing) return;
@@ -169,7 +169,7 @@ export default function ListingPage() {
   }, [user, listing]);
 
   const handleLike = async () => {
-    if (!user) return navigate(`/signin?returnTo=/listing/${handle}`);
+    if (!user) return navigate(`/signin?returnTo=/listing/${id}`);
     
     if (isLiked) {
       setIsLiked(false);

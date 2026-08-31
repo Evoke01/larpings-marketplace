@@ -188,7 +188,7 @@ export default function MessagesPage() {
           supabase.from("orders").select("*, listings(handle)").eq("buyer_id", user.id),
           supabase.from("listings").select("id, handle").eq("seller_id", user.id),
           supabase.from("orders").select("*, listings(handle)").eq("mm_id", user.id),
-          supabase.from("profiles").select("id, username, display_name, mm_fee_percent, mm_fee_flat").eq("is_middleman", true),
+          supabase.from("profiles").select("id, username, display_name, mm_fee_percent, mm_fee_flat, mm_is_online").eq("is_middleman", true),
           supabase.from("profiles").select("role").eq("id", user.id).single()
         ]);
       if (myProfile) setIsAdmin(myProfile.role === 'admin');
@@ -878,33 +878,47 @@ export default function MessagesPage() {
                     </h3>
                     <p className="text-xs text-[#93939f] mb-4">Select a trusted third-party to mediate this deal. They will verify delivery and release funds.</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {mms.map(mm => (
-                        <button
-                          key={mm.id}
-                          onClick={() => {
-                            setConfirmModal({
-                              isOpen: true,
-                              title: "Assign Middleman",
-                              description: `Are you sure you want to assign ${mm.username || mm.display_name} as Middleman for this deal?`,
-                              onConfirm: async () => {
-                                const { error } = await supabase.from('orders').update({ mm_id: mm.id, mm_fee: mm.mm_fee_flat }).eq('id', selected.orderId);
-                                if (error) return console.error(error);
-                                
-                                await supabase.from('order_messages').insert({
-                                  order_id: selected.orderId, sender_id: session.user.id,
-                                  content: `✅ Escrow Middleman @${mm.username || mm.display_name} has been assigned to mediate this deal.`
-                                });
-                                setSelected({ ...selected, mmId: mm.id });
-                                setConfirmModal(null);
-                              }
-                            });
-                          }}
-                          className="flex flex-col text-left bg-[#09090b] border border-[#222226] p-3 rounded-lg hover:border-[#cc00ff]/50 transition-colors"
-                        >
-                          <span className="font-bold text-sm text-white">@{mm.username || mm.display_name}</span>
-                          <span className="text-xs text-[#93939f] mt-1">Fee: {mm.mm_fee_percent}% + ${mm.mm_fee_flat} flat</span>
-                        </button>
-                      ))}
+                      {mms.map(mm => {
+                        const isOnline = mm.mm_is_online;
+                        return (
+                          <button
+                            key={mm.id}
+                            disabled={!isOnline}
+                            onClick={() => {
+                              setConfirmModal({
+                                isOpen: true,
+                                title: "Assign Middleman",
+                                description: `Are you sure you want to assign ${mm.username || mm.display_name} as Middleman for this deal?`,
+                                onConfirm: async () => {
+                                  const { error } = await supabase.from('orders').update({ mm_id: mm.id, mm_fee: mm.mm_fee_flat }).eq('id', selected.orderId);
+                                  if (error) return console.error(error);
+                                  
+                                  await supabase.from('order_messages').insert({
+                                    order_id: selected.orderId, sender_id: session.user.id,
+                                    content: `✅ Escrow Middleman @${mm.username || mm.display_name} has been assigned to mediate this deal.`
+                                  });
+                                  setSelected({ ...selected, mmId: mm.id });
+                                  setConfirmModal(null);
+                                }
+                              });
+                            }}
+                            className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors relative ${
+                              isOnline 
+                                ? 'bg-background border-border hover:border-[#e57dff]/50' 
+                                : 'bg-background/50 border-border/50 opacity-50 cursor-not-allowed'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-semibold text-[#f9f9fb]">@{mm.username || mm.display_name}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-muted-foreground'}`}></span>
+                                <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{isOnline ? 'Online' : 'Offline'}</span>
+                              </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground">Fee: {mm.mm_fee_percent}% + ${mm.mm_fee_flat}</span>
+                          </button>
+                        );
+                      })}
                       {mms.length === 0 && <span className="text-xs text-muted-foreground">No middlemen available.</span>}
                     </div>
                   </div>

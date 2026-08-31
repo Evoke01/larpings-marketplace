@@ -129,7 +129,7 @@ export default function App() {
               <Route path="/" element={<HomePage />} />
               <Route path="/marketplace" element={<MarketplacePage />} />
               <Route path="/fansigns" element={<FansignsPage />} />
-              <Route path="/listing/:handle" element={<ListingPage />} />
+              <Route path="/listing/:id" element={<ListingPage />} />
               <Route path="/mm/dashboard" element={<ProtectedRoute><MMDashboardPage /></ProtectedRoute>} />
               <Route path="/:handle" element={<SellerProfilePage />} />
               <Route path="/profile/:id" element={<UserProfilePage />} />

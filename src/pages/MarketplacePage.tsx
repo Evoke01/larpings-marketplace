@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { displayOffer } from "../lib/offerCatalog";
+import { formatTimeAgo } from "../lib/format";
 
 // ── Inline icons ──────────────────────────────────────────────────────────
 const SearchIcon = () => (
@@ -135,7 +136,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
   const dot = platformDot(item.platform);
   if (grid) {
     return (
-      <Link to={`/listing/${item.handle}`} className="bg-[#111113] border border-[#222226] rounded-[14px] p-5 flex flex-col gap-3 hover:border-[#333338] hover:-translate-y-0.5 transition-all group">
+      <Link to={`/listing/${item.id}`} className="bg-[#111113] border border-[#222226] rounded-[14px] p-5 flex flex-col gap-3 hover:border-[#333338] hover:-translate-y-0.5 transition-all group">
         {/* Platform + hot badge */}
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-[1.4px] text-[#93939f]">
@@ -181,7 +182,7 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
 
   // List view
   return (
-    <Link to={`/listing/${item.handle}`} className="bg-[#111113] border border-[#222226] rounded-[12px] px-5 py-4 flex items-center gap-4 hover:border-[#333338] transition-colors group">
+    <Link to={`/listing/${item.id}`} className="bg-[#111113] border border-[#222226] rounded-[12px] px-5 py-4 flex items-center gap-4 hover:border-[#333338] transition-colors group">
       <div className="flex flex-col gap-0.5 min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="font-semibold tracking-tight">{['username', 'account'].includes(item.category) ? '@' : ''}{displayOffer(item)}</span>
@@ -264,7 +265,8 @@ export default function MarketplacePage() {
     if (sort === "price-asc") list = [...list].sort((a, b) => a.price - b.price);
     if (sort === "price-desc") list = [...list].sort((a, b) => b.price - a.price);
     if (sort === "name-asc") list = [...list].sort((a, b) => a.handle.localeCompare(b.handle));
-    return list;
+    
+    return list.map(item => ({ ...item, timeAgo: formatTimeAgo(item.created_at) }));
   }, [allListings, platform, categoryFilter, search, sort, quickView]);
 
   return (
