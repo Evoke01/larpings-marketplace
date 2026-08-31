@@ -71,6 +71,18 @@ export default function HomePage() {
       .then(({ count }) => setLiveDropsCount(count ?? 0));
   }, []);
 
+  const getPlatformDot = (platform: string) => {
+    const p = platform?.toLowerCase() || '';
+    if (p.includes('instagram')) return '#ed459c';
+    if (p.includes('tiktok')) return '#1fe0f9';
+    if (p.includes('twitter') || p.includes('x')) return '#d3d9de';
+    if (p.includes('snapchat')) return '#fbcf23';
+    if (p.includes('telegram')) return '#26a5e4';
+    if (p.includes('youtube')) return '#ff0000';
+    if (p.includes('discord')) return '#5865F2';
+    return '#ff0000';
+  };
+
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
       {/* Hero */}
@@ -168,7 +180,7 @@ export default function HomePage() {
           <div className="flex gap-3 overflow-x-hidden select-none" aria-hidden="true">
             {[...listings, ...listings].map((l, i) => (
               <span key={i} className="bg-[#111113] flex-none flex items-center gap-2.5 px-3.5 py-2 rounded-[8px] border border-[#222226]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ed459c] flex-none" />
+                <span className="w-1.5 h-1.5 rounded-full flex-none" style={{ backgroundColor: getPlatformDot(l.platform) }} />
                 <span className="font-medium text-sm whitespace-nowrap">@{l.handle}</span>
                 <span className="text-[#93939f] font-mono text-[12px] whitespace-nowrap">${Number(l.price).toLocaleString()}</span>
               </span>
@@ -255,7 +267,7 @@ export default function HomePage() {
               <Link key={l.id} to={`/listing/${l.handle}`} className="bg-[#111113] p-5 rounded-[14px] border border-[#222226] group hover:border-[#333338] transition-colors block">
                 <div className="flex justify-between items-center mb-6">
                   <span className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">{l.platform}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#ed459c]" />
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: getPlatformDot(l.platform) }} />
                 </div>
                 <p className="text-2xl font-medium mb-4 truncate">@{l.handle}</p>
                 <div className="flex justify-between items-center">
