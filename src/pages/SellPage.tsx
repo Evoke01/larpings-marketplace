@@ -31,7 +31,7 @@ export default function SellPage() {
     });
   }, [navigate]);
 
-  const payout = price ? parseFloat(price).toFixed(2) : null;
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -232,14 +232,6 @@ export default function SellPage() {
               Buyers pay in USD at checkout. No platform fees apply.
             </p>
           </div>
-
-          {/* Live payout preview */}
-          {price && parseFloat(price) > 0 && (
-            <div className="bg-[rgba(255,0,0,0.06)] border border-[rgba(255,0,0,0.15)] rounded-[10px] px-4 py-3 flex justify-between text-sm">
-              <span className="text-[#93939f]">Your payout</span>
-              <span className="font-mono font-semibold">${payout}</span>
-            </div>
-          )}
 
           {error && (
             <div className="bg-[rgba(255,0,0,0.1)] text-[#ff0000] p-3 rounded-[8px] text-sm text-center">
