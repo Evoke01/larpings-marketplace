@@ -32,6 +32,7 @@ const FansignsPage = lazy(() => import("./pages/FansignsPage"));
 const BlogPage = lazy(() => import("./pages/BlogPage"));
 const LegalPage = lazy(() => import("./pages/LegalPage"));
 const LegalAcceptancePage = lazy(() => import("./pages/LegalAcceptancePage"));
+const UpdatePasswordPage = lazy(() => import("./pages/UpdatePasswordPage"));
 function NotFound() {
   return (
     <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
@@ -118,6 +119,7 @@ export default function App() {
 
         {/* Full-screen pages without Layout */}
         <Route path="/signin" element={<SignInPage />} />
+        <Route path="/update-password" element={<UpdatePasswordPage />} />
         <Route path="/account" element={<ProtectedRoute><><AccountPage /><SectionTour pathname="/account" /></></ProtectedRoute>} />
         
         {/* Pages with standard Layout */}

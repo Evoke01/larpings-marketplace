@@ -90,7 +90,7 @@ const Icon12 = (props: any) => (
 );
 
 export default function SignIn() {
-  const [tab, setTab] = useState<"signin" | "signup">("signin");
+  const [tab, setTab] = useState<"signin" | "signup" | "forgot">("signin");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
@@ -112,6 +112,26 @@ export default function SignIn() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+
+    if (tab === "forgot") {
+      if (!identifier.includes("@")) {
+        setError("Please enter your email address.");
+        setLoading(false);
+        return;
+      }
+      
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(identifier, {
+        redirectTo: `${window.location.origin}/update-password`,
+      });
+
+      if (resetError) {
+        setError(resetError.message);
+      } else {
+        setError("✅ Password reset link sent! Check your inbox.");
+      }
+      setLoading(false);
+      return;
+    }
 
     if (isSignup) {
       if (password !== confirmPassword) {
@@ -247,38 +267,44 @@ export default function SignIn() {
           <div className="w-full max-w-96 flex flex-col grow basis-[0%] justify-center caret-[#f9f9fb] mx-auto py-8">
             <span className="bg-[#111113] text-[#93939f] [font-family:'JetBrains_Mono',ui-monospace,monospace,system-ui,sans-serif] font-medium text-[11px] tracking-[1.76px] uppercase w-fit flex items-center gap-y-2 gap-x-2 caret-[#93939f] px-3 py-1.5 rounded-br-[8px] rounded-t-[8px] rounded-bl-[8px] border-[#222226] border">
               <span className="bg-[#ff0000] w-1.5 h-1.5 block caret-[#93939f] rounded-br-full rounded-t-full rounded-bl-full"></span>
-              {isSignup ? "Join larpings" : "Welcome back"}
+              {tab === "signup" ? "Join larpings" : tab === "forgot" ? "Reset password" : "Welcome back"}
             </span>
             <h1 className="leading-[1.05] font-medium text-[36px] tracking-[-1.08px] caret-[#f9f9fb] mt-5 mb-0">
-              {isSignup ? (
+              {tab === "signup" ? (
                 <>Create your <span className="text-[#ff0000] caret-[#ff0000]">account</span></>
+              ) : tab === "forgot" ? (
+                <>Forgot your <span className="text-[#ff0000] caret-[#ff0000]">password?</span></>
               ) : (
                 <>Sign in to{" "}<span className="text-[#ff0000] caret-[#ff0000]">larpings.com</span></>
               )}
             </h1>
             <p className="text-[#93939f] leading-relaxed text-[14px] caret-[#93939f] mt-3 mb-0">
-              {isSignup
+              {tab === "signup"
                 ? "Free to join. Start buying or selling in minutes."
+                : tab === "forgot"
+                ? "Enter your email address and we'll send you a link to reset your password."
                 : "Your email and password. Buying, selling and payouts — one account."}
             </p>
             <div className="caret-[#f9f9fb] mt-8">
               {/* Tab toggle */}
-              <div className="bg-[#111113] grid gap-y-1 gap-x-1 grid-cols-[repeat(2,minmax(0px,1fr))] caret-[#f9f9fb] p-1 rounded-br-[12px] rounded-t-[12px] rounded-bl-[12px] border-[#222226] border">
-                <button
-                  type="button"
-                  onClick={() => setTab("signin")}
-                  className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${!isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
-                >
-                  Sign in
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTab("signup")}
-                  className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
-                >
-                  Create account
-                </button>
-              </div>
+              {tab !== "forgot" && (
+                <div className="bg-[#111113] grid gap-y-1 gap-x-1 grid-cols-[repeat(2,minmax(0px,1fr))] caret-[#f9f9fb] p-1 rounded-br-[12px] rounded-t-[12px] rounded-bl-[12px] border-[#222226] border">
+                  <button
+                    type="button"
+                    onClick={() => setTab("signin")}
+                    className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${!isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTab("signup")}
+                    className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
+                  >
+                    Create account
+                  </button>
+                </div>
+              )}
 
               {/* Form fields */}
               <form onSubmit={handleSubmit}>
@@ -306,35 +332,37 @@ export default function SignIn() {
                 )}
 
                 <div className="caret-[#f9f9fb] mt-4">
-                  <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">{isSignup ? "Email" : "Email or Username"}</label>
+                  <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">{tab === "forgot" ? "Email" : isSignup ? "Email" : "Email or Username"}</label>
                   <input
-                    type={isSignup ? "email" : "text"}
+                    type={tab === "forgot" || isSignup ? "email" : "text"}
                     id="identifier"
                     value={identifier}
                     onChange={e => setIdentifier(e.target.value)}
-                    autoComplete={isSignup ? "email" : "username"}
-                    placeholder={isSignup ? "you@example.com" : "you@example.com or yourhandle"}
+                    autoComplete={tab === "forgot" || isSignup ? "email" : "username"}
+                    placeholder={tab === "forgot" ? "you@example.com" : isSignup ? "you@example.com" : "you@example.com or yourhandle"}
                     className="bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] mt-2 px-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border outline-none focus:border-[#ff0000] transition-colors"
                   />
                 </div>
 
-                <div className="caret-[#f9f9fb] mt-4">
-                  <div className="flex items-center justify-between caret-[#f9f9fb]">
-                    <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">Password</label>
-                    {!isSignup && (
-                      <a href="#" className="text-[#ff0000] text-[13px] font-medium caret-[#ff0000]">Forgot password?</a>
-                    )}
+                {tab !== "forgot" && (
+                  <div className="caret-[#f9f9fb] mt-4">
+                    <div className="flex items-center justify-between caret-[#f9f9fb]">
+                      <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">Password</label>
+                      {!isSignup && (
+                        <button type="button" onClick={() => setTab("forgot")} className="text-[#ff0000] text-[13px] font-medium caret-[#ff0000]">Forgot password?</button>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      id="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      autoComplete={isSignup ? "new-password" : "current-password"}
+                      placeholder="••••••••••••"
+                      className="bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] mt-2 px-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border outline-none focus:border-[#ff0000] transition-colors"
+                    />
                   </div>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    autoComplete={isSignup ? "new-password" : "current-password"}
-                    placeholder="••••••••••••"
-                    className="bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] mt-2 px-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border outline-none focus:border-[#ff0000] transition-colors"
-                  />
-                </div>
+                )}
 
                 {isSignup && (
                   <div className="caret-[#f9f9fb] mt-4">
@@ -356,12 +384,16 @@ export default function SignIn() {
                   disabled={loading}
                   className="bg-[#ff0000] text-white font-medium text-[14px] w-full h-12 flex justify-center items-center gap-y-2 gap-x-2 caret-white [appearance:button] mt-5 px-4 py-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] shadow-[rgba(255,0,0,0.25)_0px_8px_24px_-8px] hover:-translate-y-px active:translate-y-0 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Processing..." : (isSignup ? "Create account" : "Sign in")} <Icon5 />
+                  {loading ? "Processing..." : tab === "forgot" ? "Send reset link" : isSignup ? "Create account" : "Sign in"} <Icon5 />
                 </button>
 
                 <p className="text-[#93939f] text-[13px] text-center caret-[#93939f] mt-5 mb-0">
-                  {isSignup ? (
+                  {tab === "signup" ? (
                     <>Already have an account?{" "}
+                      <button type="button" onClick={() => setTab("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
+                    </>
+                  ) : tab === "forgot" ? (
+                    <>Remembered your password?{" "}
                       <button type="button" onClick={() => setTab("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
                     </>
                   ) : (
