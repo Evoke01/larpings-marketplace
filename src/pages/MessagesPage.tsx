@@ -841,7 +841,7 @@ export default function MessagesPage() {
                 )}
                 
                 {!selected.isDeal && !selected.isLounge && (
-                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={/profile/}>View profile</Link>
+                   <Link className="btn-outline-dim !px-3 !py-2 !text-xs hidden sm:inline-flex" to={`/profile/${encodeURIComponent(selected.partnerId)}`}>View profile</Link>
                 )}
               </div>
               
@@ -863,30 +863,34 @@ export default function MessagesPage() {
                               setConfirmModal({
                                 isOpen: true,
                                 title: "Assign Middleman",
-                                description: Are you sure you want to assign  as Middleman for this deal?,
+                                description: `Are you sure you want to assign ${mm.username || mm.display_name} as Middleman for this deal?`,
                                 onConfirm: async () => {
                                   const { error } = await supabase.from('orders').update({ mm_id: mm.id, mm_fee: mm.mm_fee_flat }).eq('id', selected.orderId);
                                   if (error) return console.error(error);
                                   
                                   await supabase.from('order_messages').insert({
                                     order_id: selected.orderId, sender_id: session.user.id,
-                                    content: ✅ Escrow Middleman @ has been assigned to mediate this deal.
+                                    content: `✅ Escrow Middleman @${mm.username || mm.display_name} has been assigned to mediate this deal.`
                                   });
                                   setSelected({ ...selected, mmId: mm.id });
                                   setConfirmModal(null);
                                 }
                               });
                             }}
-                            className={lex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors relative }
+                            className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-left transition-colors relative ${
+                              isOnline 
+                                ? 'bg-background border-border hover:border-[#e57dff]/50' 
+                                : 'bg-background/50 border-border/50 opacity-50 cursor-not-allowed'
+                            }`}
                           >
                             <div className="flex items-center justify-between w-full">
                               <span className="font-semibold text-[#f9f9fb]">@{mm.username || mm.display_name}</span>
                               <div className="flex items-center gap-1.5">
-                                <span className={w-1.5 h-1.5 rounded-full }></span>
+                                <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-emerald-400' : 'bg-muted-foreground'}`}></span>
                                 <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-medium">{isOnline ? 'Online' : 'Offline'}</span>
                               </div>
                             </div>
-                            <span className="text-xs text-muted-foreground">Fee: {mm.mm_fee_percent}% + </span>
+                            <span className="text-xs text-muted-foreground">Fee: {mm.mm_fee_percent}% + ${mm.mm_fee_flat}</span>
                           </button>
                         );
                       })}
@@ -1003,7 +1007,8 @@ export default function MessagesPage() {
                                 </div>
                               </div>
                             </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       );
                     })
