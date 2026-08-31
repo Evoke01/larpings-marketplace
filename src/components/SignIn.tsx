@@ -101,6 +101,11 @@ export default function SignIn() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const handleTabChange = (newTab: "signin" | "signup" | "forgot") => {
+    setTab(newTab);
+    setError(null);
+  };
+
   const redirectAfterAuth = () => {
     const returnTo = new URLSearchParams(location.search).get("returnTo");
     navigate(returnTo?.startsWith("/") ? returnTo : "/dashboard", { replace: true });
@@ -286,19 +291,18 @@ export default function SignIn() {
                 : "Your email and password. Buying, selling and payouts — one account."}
             </p>
             <div className="caret-[#f9f9fb] mt-8">
-              {/* Tab toggle */}
               {tab !== "forgot" && (
                 <div className="bg-[#111113] grid gap-y-1 gap-x-1 grid-cols-[repeat(2,minmax(0px,1fr))] caret-[#f9f9fb] p-1 rounded-br-[12px] rounded-t-[12px] rounded-bl-[12px] border-[#222226] border">
                   <button
                     type="button"
-                    onClick={() => setTab("signin")}
+                    onClick={() => handleTabChange("signin")}
                     className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${!isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
                   >
                     Sign in
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTab("signup")}
+                    onClick={() => handleTabChange("signup")}
                     className={`font-medium text-[13px] h-10 flex justify-center items-center [appearance:button] p-0 rounded-br-[9px] rounded-t-[9px] rounded-bl-[9px] transition-all ${isSignup ? "bg-[#ff0000] text-white caret-white" : "bg-transparent text-[#93939f] caret-[#93939f] hover:text-white"}`}
                   >
                     Create account
@@ -349,7 +353,7 @@ export default function SignIn() {
                     <div className="flex items-center justify-between caret-[#f9f9fb]">
                       <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">Password</label>
                       {!isSignup && (
-                        <button type="button" onClick={() => setTab("forgot")} className="text-[#ff0000] text-[13px] font-medium caret-[#ff0000]">Forgot password?</button>
+                        <button type="button" onClick={() => handleTabChange("forgot")} className="text-[#ff0000] text-[13px] font-medium caret-[#ff0000]">Forgot password?</button>
                       )}
                     </div>
                     <input
@@ -390,15 +394,15 @@ export default function SignIn() {
                 <p className="text-[#93939f] text-[13px] text-center caret-[#93939f] mt-5 mb-0">
                   {tab === "signup" ? (
                     <>Already have an account?{" "}
-                      <button type="button" onClick={() => setTab("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
+                      <button type="button" onClick={() => handleTabChange("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
                     </>
                   ) : tab === "forgot" ? (
                     <>Remembered your password?{" "}
-                      <button type="button" onClick={() => setTab("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
+                      <button type="button" onClick={() => handleTabChange("signin")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign in</button>
                     </>
                   ) : (
                     <>No account?{" "}
-                      <button type="button" onClick={() => setTab("signup")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign up free</button>
+                      <button type="button" onClick={() => handleTabChange("signup")} className="text-[#ff0000] font-medium caret-[#ff0000] [appearance:button] p-0">Sign up free</button>
                     </>
                   )}
                 </p>
