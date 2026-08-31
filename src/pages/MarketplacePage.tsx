@@ -228,11 +228,12 @@ export default function MarketplacePage() {
   useEffect(() => {
     const fetchListings = async () => {
       setLoadingListings(true);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('listings')
-        .select('*, profiles(username)')
+        .select('*, profiles!listings_seller_id_fkey(username)')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
+      if (error) console.error("Marketplace fetch error:", error);
       setAllListings(data ?? []);
       setLoadingListings(false);
     };
