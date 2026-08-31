@@ -12,6 +12,7 @@ alter table order_messages enable row level security;
 drop policy if exists "Users can view messages for their orders"
 on order_messages;
 
+drop policy if exists "Users can view messages for their orders" on order_messages;
 create policy "Users can view messages for their orders"
   on order_messages for select
   using (
@@ -29,6 +30,7 @@ create policy "Users can view messages for their orders"
 drop policy if exists "Users can insert messages for their orders"
 on order_messages;
 
+drop policy if exists "Users can insert messages for their orders" on order_messages;
 create policy "Users can insert messages for their orders"
   on order_messages for insert
   with check (
@@ -47,6 +49,7 @@ create policy "Users can insert messages for their orders"
 drop policy if exists "Admins can view all order messages"
 on order_messages;
 
+drop policy if exists "Admins can view all order messages" on order_messages;
 create policy "Admins can view all order messages"
   on order_messages for select
   using (
@@ -57,4 +60,12 @@ create policy "Admins can view all order messages"
   );
 
 -- Publish realtime
-alter publication supabase_realtime add table order_messages;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables 
+    WHERE pubname = 'supabase_realtime' AND tablename = 'order_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE order_messages;
+  END IF;
+END $$;

@@ -41,8 +41,10 @@ begin
   if to_regclass('public.profiles') is not null then
     execute 'drop policy if exists "public profiles are readable" on public.profiles';
     execute 'drop policy if exists "users can update their profile" on public.profiles';
-    execute 'create policy "public profiles are readable" on public.profiles for select to anon, authenticated using (true)';
-    execute 'create policy "users can update their profile" on public.profiles for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id)';
+    execute 'drop policy if exists "public profiles are readable" on public.profiles;
+create policy "public profiles are readable" on public.profiles for select to anon, authenticated using (true)';
+    execute 'drop policy if exists "users can update their profile" on public.profiles;
+create policy "users can update their profile" on public.profiles for update to authenticated using ((select auth.uid()) = id) with check ((select auth.uid()) = id)';
   end if;
 
   if to_regclass('public.listings') is not null then
@@ -50,26 +52,35 @@ begin
     execute 'drop policy if exists "sellers can create listings" on public.listings';
     execute 'drop policy if exists "sellers can update their listings" on public.listings';
     execute 'drop policy if exists "sellers can delete their listings" on public.listings';
-    execute 'create policy "active listings are public" on public.listings for select to anon, authenticated using (status = ''active'' or (select auth.uid()) = seller_id)';
-    execute 'create policy "sellers can create listings" on public.listings for insert to authenticated with check ((select auth.uid()) = seller_id)';
-    execute 'create policy "sellers can update their listings" on public.listings for update to authenticated using ((select auth.uid()) = seller_id) with check ((select auth.uid()) = seller_id)';
-    execute 'create policy "sellers can delete their listings" on public.listings for delete to authenticated using ((select auth.uid()) = seller_id)';
+    execute 'drop policy if exists "active listings are public" on public.listings;
+create policy "active listings are public" on public.listings for select to anon, authenticated using (status = ''active'' or (select auth.uid()) = seller_id)';
+    execute 'drop policy if exists "sellers can create listings" on public.listings;
+create policy "sellers can create listings" on public.listings for insert to authenticated with check ((select auth.uid()) = seller_id)';
+    execute 'drop policy if exists "sellers can update their listings" on public.listings;
+create policy "sellers can update their listings" on public.listings for update to authenticated using ((select auth.uid()) = seller_id) with check ((select auth.uid()) = seller_id)';
+    execute 'drop policy if exists "sellers can delete their listings" on public.listings;
+create policy "sellers can delete their listings" on public.listings for delete to authenticated using ((select auth.uid()) = seller_id)';
   end if;
 
   if to_regclass('public.orders') is not null then
     execute 'drop policy if exists "buyers can read their orders" on public.orders';
     execute 'drop policy if exists "buyers can confirm their orders" on public.orders';
-    execute 'create policy "buyers can read their orders" on public.orders for select to authenticated using ((select auth.uid()) = buyer_id' || case when exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'orders' and column_name = 'seller_id') then ' or (select auth.uid()) = seller_id' else '' end || ')';
-    execute 'create policy "buyers can confirm their orders" on public.orders for update to authenticated using ((select auth.uid()) = buyer_id) with check ((select auth.uid()) = buyer_id)';
+    execute 'drop policy if exists "buyers can read their orders" on public.orders;
+create policy "buyers can read their orders" on public.orders for select to authenticated using ((select auth.uid()) = buyer_id' || case when exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'orders' and column_name = 'seller_id') then ' or (select auth.uid()) = seller_id' else '' end || ')';
+    execute 'drop policy if exists "buyers can confirm their orders" on public.orders;
+create policy "buyers can confirm their orders" on public.orders for update to authenticated using ((select auth.uid()) = buyer_id) with check ((select auth.uid()) = buyer_id)';
   end if;
 
   if to_regclass('public.messages') is not null then
     execute 'drop policy if exists "participants can read messages" on public.messages';
     execute 'drop policy if exists "users can send their own messages" on public.messages';
     execute 'drop policy if exists "recipients can update messages" on public.messages';
-    execute 'create policy "participants can read messages" on public.messages for select to authenticated using ((select auth.uid()) = sender_id or (select auth.uid()) = receiver_id)';
-    execute 'create policy "users can send their own messages" on public.messages for insert to authenticated with check ((select auth.uid()) = sender_id)';
-    execute 'create policy "recipients can update messages" on public.messages for update to authenticated using ((select auth.uid()) = receiver_id) with check ((select auth.uid()) = receiver_id)';
+    execute 'drop policy if exists "participants can read messages" on public.messages;
+create policy "participants can read messages" on public.messages for select to authenticated using ((select auth.uid()) = sender_id or (select auth.uid()) = receiver_id)';
+    execute 'drop policy if exists "users can send their own messages" on public.messages;
+create policy "users can send their own messages" on public.messages for insert to authenticated with check ((select auth.uid()) = sender_id)';
+    execute 'drop policy if exists "recipients can update messages" on public.messages;
+create policy "recipients can update messages" on public.messages for update to authenticated using ((select auth.uid()) = receiver_id) with check ((select auth.uid()) = receiver_id)';
   end if;
 end $$;
 
@@ -95,6 +106,7 @@ begin
     $fn$;
     execute 'revoke all on function public.handle_new_user() from public';
     execute 'drop trigger if exists on_auth_user_created on auth.users';
-    execute 'create trigger on_auth_user_created after insert on auth.users for each row execute procedure public.handle_new_user()';
+    execute 'drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users for each row execute procedure public.handle_new_user()';
   end if;
 end $$;

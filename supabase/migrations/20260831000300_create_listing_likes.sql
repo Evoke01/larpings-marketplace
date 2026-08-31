@@ -7,14 +7,17 @@ CREATE TABLE IF NOT EXISTS public.listing_likes (
 
 ALTER TABLE public.listing_likes ENABLE ROW LEVEL SECURITY;
 
+drop policy if exists "Users can insert their own likes" on public.listing_likes;
 CREATE POLICY "Users can insert their own likes" 
 ON public.listing_likes FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
 
+drop policy if exists "Users can delete their own likes" on public.listing_likes;
 CREATE POLICY "Users can delete their own likes" 
 ON public.listing_likes FOR DELETE 
 USING (auth.uid() = user_id);
 
+drop policy if exists "Anyone can view likes" on public.listing_likes;
 CREATE POLICY "Anyone can view likes" 
 ON public.listing_likes FOR SELECT 
 USING (true);
@@ -35,10 +38,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+drop trigger if exists on_like_inserted on public.listing_likes;
 CREATE TRIGGER on_like_inserted
 AFTER INSERT ON public.listing_likes
 FOR EACH ROW EXECUTE FUNCTION update_listing_likes_count();
 
+drop trigger if exists on_like_deleted on public.listing_likes;
 CREATE TRIGGER on_like_deleted
 AFTER DELETE ON public.listing_likes
 FOR EACH ROW EXECUTE FUNCTION update_listing_likes_count();

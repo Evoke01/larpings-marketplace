@@ -16,11 +16,13 @@ end $$;
 
 alter table public.profiles enable row level security;
 
+drop policy if exists "public profiles are readable" on public.profiles;
 create policy "public profiles are readable"
   on public.profiles for select
   to anon, authenticated
   using (true);
 
+drop policy if exists "users can update their profile" on public.profiles;
 create policy "users can update their profile"
   on public.profiles for update
   to authenticated

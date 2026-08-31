@@ -12,11 +12,13 @@ alter table public.larping_lounge_messages enable row level security;
 
 drop policy if exists "Authenticated users can read lounge messages"
   on public.larping_lounge_messages;
+drop policy if exists "Authenticated users can read lounge messages" on public.larping_lounge_messages;
 create policy "Authenticated users can read lounge messages"
   on public.larping_lounge_messages for select to authenticated using (true);
 
 drop policy if exists "Users can send lounge messages as themselves"
   on public.larping_lounge_messages;
+drop policy if exists "Users can send lounge messages as themselves" on public.larping_lounge_messages;
 create policy "Users can send lounge messages as themselves"
   on public.larping_lounge_messages for insert to authenticated
   with check (auth.uid() = sender_id);

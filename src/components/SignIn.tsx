@@ -91,7 +91,7 @@ const Icon12 = (props: any) => (
 
 export default function SignIn() {
   const [tab, setTab] = useState<"signin" | "signup">("signin");
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -150,7 +150,7 @@ export default function SignIn() {
       }
 
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email,
+        email: identifier,
         password,
         options: {
           data: {
@@ -170,18 +170,37 @@ export default function SignIn() {
         }
       }
     } else {
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      if (!identifier.includes("@")) {
+        // Attempt username login via edge function
+        const { data, error: functionError } = await supabase.functions.invoke("login-with-username", {
+          body: { username: identifier, password },
+        });
 
-      if (signInError) {
-        setError(signInError.message === "Email not confirmed"
-          ? "Please confirm your email first. Check your inbox for the confirmation link."
-          : signInError.message
-        );
+        if (functionError || data?.error) {
+          setError(data?.error || "Invalid login credentials");
+        } else if (data?.session) {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+          redirectAfterAuth();
+        } else {
+          setError("An unexpected error occurred.");
+        }
       } else {
-        redirectAfterAuth();
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: identifier,
+          password,
+        });
+
+        if (signInError) {
+          setError(signInError.message === "Email not confirmed"
+            ? "Please confirm your email first. Check your inbox for the confirmation link."
+            : signInError.message
+          );
+        } else {
+          redirectAfterAuth();
+        }
       }
     }
     setLoading(false);
@@ -287,14 +306,14 @@ export default function SignIn() {
                 )}
 
                 <div className="caret-[#f9f9fb] mt-4">
-                  <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">Email</label>
+                  <label className="leading-none font-medium text-[14px] caret-[#f9f9fb]">{isSignup ? "Email" : "Email or Username"}</label>
                   <input
-                    type="email"
-                    id="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    autoComplete="email"
-                    placeholder="you@example.com"
+                    type={isSignup ? "email" : "text"}
+                    id="identifier"
+                    value={identifier}
+                    onChange={e => setIdentifier(e.target.value)}
+                    autoComplete={isSignup ? "email" : "username"}
+                    placeholder={isSignup ? "you@example.com" : "you@example.com or yourhandle"}
                     className="bg-[#111113] leading-[20px] text-[14px] w-full h-12 flex caret-[#f9f9fb] mt-2 px-3 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border outline-none focus:border-[#ff0000] transition-colors"
                   />
                 </div>

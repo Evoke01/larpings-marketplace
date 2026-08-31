@@ -11,10 +11,12 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 
 ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
 
+drop policy if exists "Users can view their own notifications" on public.notifications;
 CREATE POLICY "Users can view their own notifications" 
 ON public.notifications FOR SELECT 
 USING (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own notifications" on public.notifications;
 CREATE POLICY "Users can update their own notifications" 
 ON public.notifications FOR UPDATE 
 USING (auth.uid() = user_id);
@@ -29,6 +31,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+drop trigger if exists on_new_order on public.orders;
 CREATE TRIGGER on_new_order
 AFTER INSERT ON public.orders
 FOR EACH ROW EXECUTE FUNCTION notify_seller_on_order();
@@ -42,6 +45,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+drop trigger if exists on_new_message on public.messages;
 CREATE TRIGGER on_new_message
 AFTER INSERT ON public.messages
 FOR EACH ROW EXECUTE FUNCTION notify_on_message();
@@ -71,6 +75,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+drop trigger if exists on_new_order_message on public.order_messages;
 CREATE TRIGGER on_new_order_message
 AFTER INSERT ON public.order_messages
 FOR EACH ROW EXECUTE FUNCTION notify_on_order_message();

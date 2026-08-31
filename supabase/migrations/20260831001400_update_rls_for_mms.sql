@@ -1,9 +1,11 @@
 -- Update Orders RLS for Middlemen
+drop policy if exists "Middlemen can view their assigned orders" on public.orders;
 CREATE POLICY "Middlemen can view their assigned orders"
   ON public.orders FOR SELECT
   TO authenticated
   USING ((SELECT auth.uid()) = mm_id);
 
+drop policy if exists "Middlemen can update their assigned orders" on public.orders;
 CREATE POLICY "Middlemen can update their assigned orders"
   ON public.orders FOR UPDATE
   TO authenticated
@@ -11,6 +13,7 @@ CREATE POLICY "Middlemen can update their assigned orders"
   WITH CHECK ((SELECT auth.uid()) = mm_id);
 
 -- Update Order Messages RLS for Middlemen
+drop policy if exists "Middlemen can view messages for their orders" on public.order_messages;
 CREATE POLICY "Middlemen can view messages for their orders"
   ON public.order_messages FOR SELECT
   TO authenticated
@@ -22,6 +25,7 @@ CREATE POLICY "Middlemen can view messages for their orders"
     )
   );
 
+drop policy if exists "Middlemen can insert messages for their orders" on public.order_messages;
 CREATE POLICY "Middlemen can insert messages for their orders"
   ON public.order_messages FOR INSERT
   TO authenticated
@@ -38,6 +42,7 @@ CREATE POLICY "Middlemen can insert messages for their orders"
 GRANT UPDATE (mm_fee_percent, mm_fee_flat, mm_bio) ON TABLE public.profiles TO authenticated;
 
 -- Allow buyers to assign an MM to an order if it's currently NULL
+drop policy if exists "Buyers can assign an MM to their pending orders" on public.orders;
 CREATE POLICY "Buyers can assign an MM to their pending orders"
   ON public.orders FOR UPDATE
   TO authenticated

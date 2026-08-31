@@ -1,4 +1,5 @@
 -- Change the profile rep length requirement to 5-20 characters
+drop function if exists public.submit_profile_rep(uuid, text);
 create or replace function public.submit_profile_rep(p_target_id uuid, p_note text)
 returns table(id uuid, next_available timestamptz)
 language plpgsql
