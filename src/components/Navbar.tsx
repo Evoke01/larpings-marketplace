@@ -63,11 +63,11 @@ export default function Navbar() {
               <Link to="/sell" className="hidden md:inline-flex items-center rounded-[10px] bg-[#ff0000] px-3.5 py-2 text-sm font-medium text-white transition-all hover:-translate-y-px hover:bg-[#cc0000]">Sell</Link>
               
               {/* Notifications */}
-              <div className="relative hidden md:block">
+              <div className="relative">
                 <button 
                   aria-label="Notifications" 
                   onClick={() => setNotifsOpen(v => !v)}
-                  className="flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors relative"
+                  className="flex text-[#93939f] w-11 h-11 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors relative"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
@@ -80,14 +80,14 @@ export default function Navbar() {
                 )}
               </div>
 
-              <Link to="/messages" aria-label="Messages" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors relative">
+              <Link to="/messages" aria-label="Messages" className="flex text-[#93939f] w-11 h-11 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors relative">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
                 </svg>
                 {/* Notification dot */}
                 {unreadMessages > 0 && <span aria-label={`${unreadMessages} unread messages`} className="absolute top-1 right-1 w-2 h-2 bg-[#ff0000] rounded-full border-[1.5px] border-[#111113]" />}
               </Link>
-              <Link to="/account" aria-label="Profile" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors">
+              <Link to="/account" aria-label="Profile" className="flex text-[#93939f] w-11 h-11 justify-center items-center rounded-[10px] border border-[#222226] hover:text-white hover:border-[#444] transition-colors">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                   <circle cx="12" cy="7" r="4" />
@@ -95,7 +95,7 @@ export default function Navbar() {
               </Link>
               <Link
                 to="/marketplace"
-                className="bg-white text-[#0e0e11] text-sm font-medium flex items-center gap-2 px-4 py-2 rounded-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] hover:-translate-y-px active:translate-y-0 transition-all"
+                className="hidden sm:flex bg-white text-[#0e0e11] text-sm font-medium items-center gap-2 px-4 py-2 rounded-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] hover:-translate-y-px active:translate-y-0 transition-all"
               >
                 Shop
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="#0e0e11" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -105,7 +105,7 @@ export default function Navbar() {
               {/* Mobile hamburger */}
               <button
                 aria-label="Open menu"
-                className="md:hidden w-9 h-9 flex justify-center items-center rounded-[10px] border border-[#222226] text-white"
+                className="md:hidden w-11 h-11 flex justify-center items-center rounded-[10px] border border-[#222226] text-white"
                 onClick={() => setMenuOpen((v) => !v)}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

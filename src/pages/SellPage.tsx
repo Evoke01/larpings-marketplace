@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Seo from "../components/Seo";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { OFFER_CATEGORIES, SERVICE_TYPES, serviceGroups, serviceOptions } from "../lib/offerCatalog";
@@ -113,8 +114,10 @@ export default function SellPage() {
   }
 
   return (
-    <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
-      <main className="w-full max-w-[672px] mx-auto px-4 pt-8 pb-24">
+    <>
+      <Seo title="Sell Your Account | larpings.com" description="List your Instagram, TikTok, or Twitter account for sale securely on larpings.com." />
+      <div className="bg-zinc-950 text-[#f9f9fb] min-h-screen font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
+        <main className="w-full max-w-[672px] mx-auto px-4 pt-8 pb-24">
 
         {/* Page header */}
         <header className="mb-8">
@@ -267,18 +270,19 @@ export default function SellPage() {
         {/* Info cards below form */}
         <div className="mt-6 grid grid-cols-3 gap-3">
           {[
-            { icon: "🔒", title: "Protected checkout", desc: "Buyers pay into escrow. You get paid after delivery is confirmed." },
-            { icon: "💸", title: "No platform fees", desc: "Keep 100% of your sale. We only make money if you hire a middleman." },
-            { icon: "⚡", title: "Fast payouts", desc: "Crypto or bank transfer within 24h of confirmed delivery." },
+            { icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>, title: "Protected checkout", desc: "Buyers pay into escrow. You get paid after delivery is confirmed." },
+            { icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>, title: "No platform fees", desc: "Keep 100% of your sale. We only make money if you hire a middleman." },
+            { icon: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>, title: "Fast payouts", desc: "Crypto or bank transfer within 24h of confirmed delivery." },
           ].map(({ icon, title: t, desc }) => (
             <div key={t} className="bg-[#111113] border border-[#222226] rounded-[12px] p-4 flex flex-col gap-2">
-              <span className="text-xl">{icon}</span>
+              <span className="text-xl flex h-7 w-7 items-center justify-center text-foreground">{icon}</span>
               <p className="text-xs font-semibold">{t}</p>
               <p className="text-[11px] text-[#93939f] leading-relaxed">{desc}</p>
             </div>
           ))}
         </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 }

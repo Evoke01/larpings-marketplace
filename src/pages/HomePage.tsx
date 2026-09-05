@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Seo from "../components/Seo";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
@@ -85,6 +86,16 @@ export default function HomePage() {
 
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
+      <Seo 
+        title="larpings.com | Buy & Sell Social Media Accounts" 
+        description="The premier marketplace to buy, sell, and trade Instagram, TikTok, Twitter, Snapchat, and Telegram usernames securely with escrow." 
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          'name': 'larpings.com',
+          'url': 'https://larpings.com'
+        }}
+      />
       {/* Hero */}
       <section className="relative min-h-[90vh] flex flex-col items-center overflow-hidden">
         {/* Background image and gradient layers */}

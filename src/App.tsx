@@ -1,3 +1,4 @@
+import { HelmetProvider } from 'react-helmet-async';
 import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -113,7 +114,8 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HelmetProvider>
+      <BrowserRouter>
       <Routes>
         {/* Admin panel — secret route, own layout shell */}
         <Route path="/pancake/*" element={<Suspense fallback={<PageLoader />}><PancakeLayout /></Suspense>} />
@@ -160,5 +162,6 @@ export default function App() {
         } />
       </Routes>
     </BrowserRouter>
+    </HelmetProvider>
   );
 }

@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+import Seo from "../components/Seo";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { displayOffer } from "../lib/offerCatalog";
@@ -271,6 +272,7 @@ export default function MarketplacePage() {
 
   return (
     <div className="bg-zinc-950 text-[#f9f9fb] font-[Poppins,ui-sans-serif,system-ui,sans-serif]">
+      <Seo title="Marketplace | larpings.com" description="Browse and buy premium Instagram, TikTok, Twitter, Snapchat, and Telegram accounts and usernames." />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden pt-10 pb-0">

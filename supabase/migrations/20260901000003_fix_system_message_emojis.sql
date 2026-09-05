@@ -1,10 +1,10 @@
-﻿-- Cancel P2P Deal (Buyer Only)
+-- Cancel P2P Deal (Buyer Only)
 create or replace function public.cancel_p2p_deal(p_order_id uuid)
 returns json
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $body
+as $body$
 declare
   v_order public.orders;
   v_auth_uid uuid;
@@ -35,7 +35,7 @@ begin
 
   return json_build_object('status', 'cancelled');
 end;
-$body;
+$body$;
 
 -- Confirm P2P Deal (Buyer or Seller)
 create or replace function public.confirm_p2p_deal(p_order_id uuid, p_is_buyer boolean)
@@ -43,7 +43,7 @@ returns json
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $body
+as $body$
 declare
   v_order public.orders;
 begin
@@ -89,7 +89,7 @@ begin
   
   return json_build_object('status', 'pending', 'buyer_closed', p_is_buyer or v_order.buyer_closed, 'seller_closed', not p_is_buyer or v_order.seller_closed);
 end;
-$body;
+$body$;
 
 -- Resolve P2P Dispute (MM or Admin Only)
 create or replace function public.resolve_p2p_dispute(p_order_id uuid, p_resolution text)
@@ -97,7 +97,7 @@ returns json
 language plpgsql
 security definer
 set search_path = public, pg_temp
-as $body
+as $body$
 declare
   v_order public.orders;
   v_auth_uid uuid;
@@ -145,4 +145,4 @@ begin
     raise exception 'Invalid resolution type. Must be refund_buyer or release_to_seller' using errcode = 'P0001';
   end if;
 end;
-$body;
+$body$;

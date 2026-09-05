@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
-import { useLocation, useNavigate } from "react-router-dom";
+import {  useLocation, useNavigate , Link } from "react-router-dom";
 
 const Icon1 = (props: any) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(147, 147, 159)" strokeWidth="2px" strokeLinecap="round" strokeLinejoin="round" className="text-center align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]" {...props}>
@@ -273,27 +273,27 @@ export default function SignIn() {
       <div className="fixed z-50 caret-[#f9f9fb] top-3 bottom-auto inset-x-3">
         <div className="bg-[rgba(17,17,19,0.72)] max-w-[1152px] shadow-[rgba(0,0,0,0.9)_0px_12px_40px_-18px,rgba(255,255,255,0.04)_0px_1px_0px_0px_inset] backdrop-blur-[18px] backdrop-saturate-150 caret-[#f9f9fb] mx-auto rounded-br-[14px] rounded-t-[14px] rounded-bl-[14px] border-[rgba(34,34,38,0.9)] border">
           <div className="h-12 flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] px-4">
-            <a href="/" aria-label="larpings.com home" className="flex shrink-0 items-center caret-[#f9f9fb] mr-1">
+            <Link to="/" aria-label="larpings.com home" className="flex shrink-0 items-center caret-[#f9f9fb] mr-1">
               <span className="font-bold text-base tracking-tight text-white caret-white">larpings<span className="text-[#ff0000] text-[10px] align-middle relative -top-px caret-[#ff0000]">@</span>com</span>
-            </a>
+            </Link>
             <div className="hidden md:flex grow items-center gap-y-2 gap-x-1 caret-[#f9f9fb] pl-4">
               <button className="text-[#93939f] text-[14px] font-medium flex items-center gap-y-2 gap-x-1 caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">
                 Shop <Icon1 />
               </button>
-              <a href="/sold" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">Sold</a>
-              <a href="/blog" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">Blog</a>
-              <a href="/about" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">About</a>
+              <Link to="/sold" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">Sold</Link>
+              <Link to="/blog" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">Blog</Link>
+              <Link to="/about" className="text-[#93939f] text-[14px] font-medium caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">About</Link>
             </div>
             <div className="flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] ml-auto">
-              <a href="/messages" aria-label="Messages" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] relative rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
+              <Link to="/messages" aria-label="Messages" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] relative rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
                 <Icon12 className="w-4 h-4" />
-              </a>
-              <a href="/account" aria-label="Account" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
+              </Link>
+              <Link to="/account" aria-label="Account" className="hidden md:flex text-[#93939f] w-9 h-9 justify-center items-center caret-[#93939f] rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
                 <Icon2 />
-              </a>
-              <a href="/marketplace" className="bg-white text-[#0e0e11] text-[14px] font-medium flex items-center gap-y-2 gap-x-2 caret-[#0e0e11] px-4 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px]">
+              </Link>
+              <Link to="/marketplace" className="bg-white text-[#0e0e11] text-[14px] font-medium flex items-center gap-y-2 gap-x-2 caret-[#0e0e11] px-4 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px]">
                 Shop <Icon3 />
-              </a>
+              </Link>
               <button aria-label="Open menu" className="md:hidden w-9 h-9 flex justify-center items-center caret-[#f9f9fb] rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border">
                 <Icon4 />
               </button>

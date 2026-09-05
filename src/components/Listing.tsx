@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import React, { useState } from "react";
 import { supabase } from "../lib/supabase";
 
@@ -649,13 +650,13 @@ export default function Listing() {
         <div className="fixed z-50 caret-[#f9f9fb] top-3 bottom-auto inset-x-3">
           <div className="bg-[rgba(17,17,19,0.72)] max-w-[1152px] shadow-[rgba(0,0,0,0.9)_0px_12px_40px_-18px,rgba(255,255,255,0.04)_0px_1px_0px_0px_inset] backdrop-blur-[18px] backdrop-saturate-150 caret-[#f9f9fb] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] mx-auto rounded-br-[14px] rounded-t-[14px] rounded-bl-[14px] border-[rgba(34,34,38,0.9)] border">
             <div className="h-12 flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] px-4">
-              <a
+              <Link
                 aria-label="larpings.com home"
-                href="/"
+                to="/"
                 className="flex shrink-0 items-center caret-[#f9f9fb] mr-1"
               >
                 <span className="font-bold text-xl tracking-tight text-white">larpings<span className="text-[#ff0000] text-[14px] align-middle relative -top-[1px]">@</span>com</span>
-              </a>
+              </Link>
               <nav className="flex grow basis-[0%] items-center gap-y-1 gap-x-1 caret-[#f9f9fb] pl-4">
                 <button className="bg-[rgba(0,0,0,0)] text-[#93939f] leading-[20px] font-medium text-[14px] flex items-center gap-y-1 gap-x-1 caret-[#93939f] [appearance:button] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]">
                   Shop
@@ -665,29 +666,29 @@ export default function Listing() {
                     className="text-center align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
                   />
                 </button>
-                <a
-                  href="/sold"
+                <Link
+                  to="/sold"
                   className="text-[#93939f] leading-[20px] font-medium text-[14px] block caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]"
                 >
                   Sold
-                </a>
-                <a
-                  href="/blog"
+                </Link>
+                <Link
+                  to="/blog"
                   className="text-[#93939f] leading-[20px] font-medium text-[14px] block caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]"
                 >
                   Blog
-                </a>
-                <a
-                  href="/about"
+                </Link>
+                <Link
+                  to="/about"
                   className="text-[#93939f] leading-[20px] font-medium text-[14px] block caret-[#93939f] px-3.5 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px]"
                 >
                   About
-                </a>
+                </Link>
               </nav>
               <div className="flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] ml-auto">
-                <a
+                <Link
                   aria-label="Account"
-                  href="/account"
+                  to="/account"
                   className="text-[#93939f] w-9 h-9 flex justify-center items-center caret-[#93939f] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border"
                 >
                   <Icon2
@@ -695,9 +696,9 @@ export default function Listing() {
                     height="24"
                     className="align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
                   />
-                </a>
-                <a
-                  href="/marketplace"
+                </Link>
+                <Link
+                  to="/marketplace"
                   className="bg-white text-[#0e0e11] leading-none font-medium text-[14px] flex justify-center items-center gap-y-2 gap-x-2 shadow-[rgba(255,255,255,0.4)_0px_1px_0px_0px_inset,rgba(0,0,0,0.8)_0px_8px_24px_-12px] caret-[#0e0e11] px-4 py-2 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] hover:shadow-[0_1px_#fff6_inset,0_14px_34px_-12px_hsl(var(--accent)_/_0.45)] hover:-translate-y-px active:translate-y-0 group"
                 >
                   Shop{" "}
@@ -706,7 +707,7 @@ export default function Listing() {
                     height="24"
                     className="align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#0e0e11] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#0e0e11]"
                   />
-                </a>
+                </Link>
                 <button
                   aria-label="Open menu"
                   className="bg-[rgba(0,0,0,0)] text-[16px] w-9 h-9 hidden justify-center items-center caret-[#f9f9fb] [appearance:button] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] p-0 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] border-[#222226] border"
@@ -728,16 +729,16 @@ export default function Listing() {
               aria-label="Breadcrumb"
               className="text-[#93939f] [font-family:'JetBrains_Mono',ui-monospace,monospace,system-ui,sans-serif] font-medium text-[11px] tracking-[1.76px] uppercase flex flex-wrap items-center gap-y-2 gap-x-2 caret-[#93939f] mb-6"
             >
-              <a href="/marketplace" className="block caret-[#93939f]">
+              <Link to="/marketplace" className="block caret-[#93939f]">
                 Usernames
-              </a>
+              </Link>
               <span className="block caret-[#93939f]">/</span>
-              <a
-                href="/marketplace?platform=telegram"
+              <Link
+                to="/marketplace?platform=telegram"
                 className="capitalize block caret-[#93939f]"
               >
                 telegram
-              </a>
+              </Link>
               <span className="block caret-[#93939f]">/</span>
               <span className="text-[#f9f9fb] block caret-[#f9f9fb]">
                 @f111fr
@@ -885,8 +886,8 @@ export default function Listing() {
                       </div>
                     </div>
                   </div>
-                  <a
-                    href="/auth?next=%2Flisting%2F74e04897-b466-4e0d-bc39-8fcbf079982b"
+                  <Link
+                    to="/auth?next=%2Flisting%2F74e04897-b466-4e0d-bc39-8fcbf079982b"
                     className="bg-[rgba(255, 0, 0, 0.06)] flex items-center gap-y-3 gap-x-3 caret-[#f9f9fb] [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] mt-6 p-4 rounded-br-[12px] rounded-t-[12px] rounded-bl-[12px] border-[rgba(255, 0, 0, 0.3)] border"
                   >
                     <span className="bg-zinc-950 w-10 h-10 flex shrink-0 justify-center items-center caret-[#f9f9fb] rounded-br-full rounded-t-full rounded-bl-full">
@@ -910,7 +911,7 @@ export default function Listing() {
                       height="24"
                       className="text-[#93939f] align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden shrink-0 fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
                     />
-                  </a>
+                  </Link>
                   <div className="caret-[#f9f9fb] mt-6">
                     <div className="text-[#93939f] [font-family:'JetBrains_Mono',ui-monospace,monospace,system-ui,sans-serif] font-medium text-[11px] tracking-[1.76px] uppercase caret-[#93939f] mb-2.5">
                       Pay with
@@ -1087,8 +1088,8 @@ export default function Listing() {
                     </div>
                   </div>
                   <div className="caret-[#f9f9fb] mt-5">
-                    <a
-                      href="/auth?next=%2Flisting%2F74e04897-b466-4e0d-bc39-8fcbf079982b"
+                    <Link
+                      to="/auth?next=%2Flisting%2F74e04897-b466-4e0d-bc39-8fcbf079982b"
                       className="bg-[#ff0000] text-white leading-none font-medium text-[14px] w-full inline-flex justify-center items-center gap-y-2 gap-x-2 shadow-[rgba(255,255,255,0.18)_0px_1px_0px_0px_inset,rgba(255, 0, 0, 0.55)_0px_10px_30px_-12px] caret-white px-[22px] py-3.5 rounded-br-[10px] rounded-t-[10px] rounded-bl-[10px] hover:bg-[#cc0000] hover:bg-[initial] hover:[background-repeat:initial] hover:[background-clip:initial] hover:[background-origin:initial] hover:[background-attachment:initial] hover:shadow-[0_1px_#ffffff2e_inset,0_16px_40px_-12px_hsl(var(--accent)_/_0.65)] hover:-translate-y-px active:translate-y-0"
                     >
                       Sign in to continue{" "}
@@ -1097,7 +1098,7 @@ export default function Listing() {
                         height="24"
                         className="align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden fill-none stroke-white stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-white"
                       />
-                    </a>
+                    </Link>
                     <p className="text-[#93939f] text-[11px] flex justify-center items-center gap-y-1.5 gap-x-1.5 caret-[#93939f] mt-3 mb-0">
                       <Icon9
                         width="24"
@@ -1325,52 +1326,52 @@ export default function Listing() {
                   </span>
                   <ul className="list-none caret-[#f9f9fb] mb-0 pl-0">
                     <li className="list-outside caret-[#f9f9fb]">
-                      <a
-                        href="/marketplace"
+                      <Link
+                        to="/marketplace"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         All handles
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?category=username"
+                      <Link
+                        to="/marketplace?category=username"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Usernames
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?category=account"
+                      <Link
+                        to="/marketplace?category=account"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Accounts
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/sold"
+                      <Link
+                        to="/sold"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Sold archive
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/ranks"
+                      <Link
+                        to="/ranks"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Top sellers
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/sell"
+                      <Link
+                        to="/sell"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Sell a handle
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </nav>
@@ -1380,44 +1381,44 @@ export default function Listing() {
                   </span>
                   <ul className="list-none caret-[#f9f9fb] mb-0 pl-0">
                     <li className="list-outside caret-[#f9f9fb]">
-                      <a
-                        href="/marketplace?platform=instagram"
+                      <Link
+                        to="/marketplace?platform=instagram"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Instagram
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?platform=tiktok"
+                      <Link
+                        to="/marketplace?platform=tiktok"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         TikTok
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?platform=twitter"
+                      <Link
+                        to="/marketplace?platform=twitter"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         X / Twitter
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?platform=snapchat"
+                      <Link
+                        to="/marketplace?platform=snapchat"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Snapchat
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/marketplace?platform=telegram"
+                      <Link
+                        to="/marketplace?platform=telegram"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Telegram
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </nav>
@@ -1427,44 +1428,44 @@ export default function Listing() {
                   </span>
                   <ul className="list-none caret-[#f9f9fb] mb-0 pl-0">
                     <li className="list-outside caret-[#f9f9fb]">
-                      <a
-                        href="/about"
+                      <Link
+                        to="/about"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         About us
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/legit"
+                      <Link
+                        to="/legit"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Are we legit?
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/blog"
+                      <Link
+                        to="/blog"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Blog
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/contact"
+                      <Link
+                        to="/contact"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Contact
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/support"
+                      <Link
+                        to="/support"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Support
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </nav>
@@ -1474,52 +1475,52 @@ export default function Listing() {
                   </span>
                   <ul className="list-none caret-[#f9f9fb] mb-0 pl-0">
                     <li className="list-outside caret-[#f9f9fb]">
-                      <a
-                        href="/guides"
+                      <Link
+                        to="/guides"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         All guides
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/guides/how-to-buy-instagram-username"
+                      <Link
+                        to="/guides/how-to-buy-instagram-username"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         How to buy a username
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/guides/3-letter-instagram-usernames"
+                      <Link
+                        to="/guides/3-letter-instagram-usernames"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         3-letter usernames
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/guides/4-letter-usernames"
+                      <Link
+                        to="/guides/4-letter-usernames"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         4-letter usernames
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/terms"
+                      <Link
+                        to="/terms"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Terms of service
-                      </a>
+                      </Link>
                     </li>
                     <li className="list-outside caret-[#f9f9fb] mt-2.5">
-                      <a
-                        href="/privacy"
+                      <Link
+                        to="/privacy"
                         className="text-[#b7b7c2] leading-[20px] text-[14px] caret-[#b7b7c2]"
                       >
                         Privacy policy
-                      </a>
+                      </Link>
                     </li>
                   </ul>
                 </nav>
@@ -1529,33 +1530,33 @@ export default function Listing() {
                   © 2026 larpings.com — All rights reserved.
                 </p>
                 <div className="flex flex-wrap items-center gap-y-2 gap-x-4 caret-[#93939f]">
-                  <a
-                    href="/it/username-instagram-in-vendita"
+                  <Link
+                    to="/it/username-instagram-in-vendita"
                     className="block caret-[#93939f]"
                   >
                     Italiano
-                  </a>
-                  <a
-                    href="/es/comprar-usuario-instagram"
+                  </Link>
+                  <Link
+                    to="/es/comprar-usuario-instagram"
                     className="block caret-[#93939f]"
                   >
                     Español
-                  </a>
-                  <a
-                    href="/de/instagram-benutzername-kaufen"
+                  </Link>
+                  <Link
+                    to="/de/instagram-benutzername-kaufen"
                     className="block caret-[#93939f]"
                   >
                     Deutsch
-                  </a>
-                  <a
-                    href="/fr/acheter-pseudo-instagram"
+                  </Link>
+                  <Link
+                    to="/fr/acheter-pseudo-instagram"
                     className="block caret-[#93939f]"
                   >
                     Français
-                  </a>
-                  <a href="/support" className="block caret-[#93939f]">
+                  </Link>
+                  <Link to="/support" className="block caret-[#93939f]">
                     Support — chat with @Guardian
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
@@ -1587,9 +1588,9 @@ export default function Listing() {
             >
               <div className="bg-[rgba(255,255,255,0.12)] h-full shadow-[rgba(255,255,255,0.25)_0px_1px_0px_0px_inset,rgba(0,0,0,0.18)_0px_-6px_14px_0px_inset,rgba(0,0,0,0.35)_0px_6px_18px_0px] backdrop-blur-xl caret-[#f9f9fb] pointer-events-none [border-image-source:none] [border-image-slice:100%] [border-image-width:1] [border-image-outset:0] [border-image-repeat:stretch] mx-1.5 rounded-br-full rounded-t-full rounded-bl-full border-[rgba(255,255,255,0.2)] border"></div>
             </div>
-            <a
+            <Link
               aria-label="Home"
-              href="/"
+              to="/"
               className="text-[#93939f] h-full relative z-10 flex justify-center items-center caret-[#93939f]"
             >
               <Icon20
@@ -1597,10 +1598,10 @@ export default function Listing() {
                 height="24"
                 className="align-middle w-6 h-6 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[1.8px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
               />
-            </a>
-            <a
+            </Link>
+            <Link
               aria-label="Marketplace"
-              href="/marketplace"
+              to="/marketplace"
               className="h-full relative z-10 flex justify-center items-center caret-[#f9f9fb]"
             >
               <Icon21
@@ -1608,10 +1609,10 @@ export default function Listing() {
                 height="24"
                 className="align-middle w-6 h-6 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#f9f9fb] stroke-[1.8px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#f9f9fb]"
               />
-            </a>
-            <a
+            </Link>
+            <Link
               aria-label="Messages"
-              href="/messages"
+              to="/messages"
               className="text-[#93939f] h-full relative z-10 flex justify-center items-center caret-[#93939f]"
             >
               <Icon22
@@ -1619,10 +1620,10 @@ export default function Listing() {
                 height="24"
                 className="align-middle w-7 h-7 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
               />
-            </a>
-            <a
+            </Link>
+            <Link
               aria-label="Orders"
-              href="/orders"
+              to="/orders"
               className="text-[#93939f] h-full relative z-10 flex justify-center items-center caret-[#93939f]"
             >
               <Icon23
@@ -1630,10 +1631,10 @@ export default function Listing() {
                 height="24"
                 className="align-middle w-6 h-6 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[1.8px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
               />
-            </a>
-            <a
+            </Link>
+            <Link
               aria-label="Account"
-              href="/account"
+              to="/account"
               className="text-[#93939f] h-full relative z-10 flex justify-center items-center caret-[#93939f]"
             >
               <Icon24
@@ -1641,7 +1642,7 @@ export default function Listing() {
                 height="24"
                 className="align-middle w-6 h-6 block overflow-x-hidden overflow-y-hidden fill-none stroke-[#93939f] stroke-[1.8px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#93939f]"
               />
-            </a>
+            </Link>
           </div>
         </nav>
         <button

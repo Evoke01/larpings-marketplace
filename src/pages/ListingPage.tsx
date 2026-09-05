@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Seo from "../components/Seo";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
@@ -239,6 +240,21 @@ export default function ListingPage() {
 
   return (
     <div className="pt-24 px-4 pb-24 md:pb-12 max-w-[1152px] mx-auto min-h-screen">
+      <Seo 
+        title={`Buy @${listing.handle} on ${platformLabel} | larpings.com`}
+        description={listing.description || `Buy ${listing.handle} securely on larpings.com with escrow protection.`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Product',
+          'name': listing.handle,
+          'description': listing.description || `Buy ${listing.handle} on ${platformLabel}`,
+          'offers': {
+            '@type': 'Offer',
+            'price': listing.price,
+            'priceCurrency': 'USD'
+          }
+        }}
+      />
       <nav aria-label="Breadcrumb" className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase flex flex-wrap items-center gap-2 mb-6">
         <Link to="/marketplace" className="hover:text-white transition-colors">Drops</Link>
         <span>/</span>
@@ -279,10 +295,10 @@ export default function ListingPage() {
               </div>
               
               <div className="flex flex-col grow justify-center items-center">
-                <div className="leading-none text-[60px] md:text-[80px] text-center whitespace-nowrap overflow-hidden px-2">
+                <h1 className="leading-none text-[60px] md:text-[80px] text-center whitespace-nowrap overflow-hidden px-2">
                   <span className="text-[#93939f]">@</span>
                   <span className="font-medium text-white">{offerTitle}</span>
-                </div>
+                </h1>
                 
                 <div className="flex flex-wrap justify-center items-center gap-2 mt-6">
                   <span className="bg-[rgba(9,9,11,0.6)] font-medium text-[12px] flex items-center gap-1.5 px-3 py-1.5 rounded-[8px] border border-[#222226]">
