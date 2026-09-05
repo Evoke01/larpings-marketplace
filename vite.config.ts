@@ -15,6 +15,8 @@ export default defineConfig({
     },
   },
   build: {
+    // No sourcemaps in production (security + bundle size)
+    sourcemap: false,
     // Target modern browsers to reduce polyfill overhead
     target: 'esnext',
     // Raise chunk warning limit (we have big pages)

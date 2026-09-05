@@ -1,0 +1,24 @@
+# larpings.com — LLM context
+
+## What this site is
+larpings.com is a peer-to-peer marketplace for buying, selling, and trading rare social media handles, usernames, accounts, fansigns, and creator services. All transactions use crypto escrow for protection.
+
+## Supported platforms
+Instagram, TikTok, X (Twitter), Snapchat, Telegram, YouTube, Discord
+
+## Key pages
+- / — Homepage, featured listings
+- /marketplace — Full inventory with filters by platform and category
+- /fansigns — Fansign orders from creators
+- /sell — List an item for sale
+- /legit — Legitimacy checks and escrow info
+- /about — About larpings.com
+- /blog — News and guides
+- /get-verified — Seller verification
+
+## Crawling guidance
+Publicly crawlable: /, /marketplace, /listing/*, /fansigns, /about, /blog, /legit, /sold, /ranks, /badges, /get-verified
+Requires auth (do not index): /dashboard, /messages, /orders, /account, /sell, /pancake/*
+
+## Contact
+support@larpings.com
