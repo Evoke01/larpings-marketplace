@@ -1,6 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useUnreadMessages } from "../hooks/useUnreadMessages";
+import { prefetch } from "../App";
 
 // Inline SVG icons — no separate files needed
 const HomeIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -86,6 +87,8 @@ export default function MobileNav() {
               key={to}
               to={to}
               aria-label={label}
+              onMouseEnter={() => prefetch(to)}
+              onTouchStart={() => prefetch(to)}
               className={`h-full relative z-10 flex justify-center items-center transition-colors ${
                 isActive ? "text-white" : "text-[#93939f]"
               }`}

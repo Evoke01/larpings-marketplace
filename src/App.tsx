@@ -1,6 +1,26 @@
 import { HelmetProvider } from 'react-helmet-async';
 import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter, Routes, Route, useLocation, useNavigate } from "react-router-dom";
+
+// ── Prefetch registry ──────────────────────────────────────────────────────
+// Call prefetch(path) on hover to start downloading the chunk before click.
+const PREFETCH_MAP: Record<string, () => Promise<unknown>> = {
+  '/': () => import('./pages/HomePage'),
+  '/marketplace': () => import('./pages/MarketplacePage'),
+  '/fansigns': () => import('./pages/FansignsPage'),
+  '/sell': () => import('./pages/SellPage'),
+  '/sold': () => import('./pages/SoldPage'),
+  '/blog': () => import('./pages/BlogPage'),
+  '/about': () => import('./pages/AboutPage'),
+  '/dashboard': () => import('./pages/DashboardPage'),
+  '/messages': () => import('./pages/MessagesPage'),
+  '/orders': () => import('./pages/OrdersPage'),
+};
+
+export function prefetch(path: string) {
+  const key = path.split('?')[0];
+  PREFETCH_MAP[key]?.();
+}
 import Navbar from "./components/Navbar";
 import MobileNav from "./components/MobileNav";
 import Footer from "./components/Footer";
@@ -48,10 +68,43 @@ function NotFound() {
   );
 }
 
+function Bone({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={`rounded-[8px] bg-[#1a1a1e] ${className}`}
+      style={{ backgroundImage: 'linear-gradient(90deg,#1a1a1e 25%,#222226 50%,#1a1a1e 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.6s ease-in-out infinite' }}
+    />
+  );
+}
+
 function PageLoader() {
   return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-[#ff0000] border-t-transparent rounded-full animate-spin" />
+    <div className="px-4 pt-24 pb-20 max-w-5xl mx-auto animate-pulse">
+      {/* Hero */}
+      <div className="flex flex-col items-center text-center py-16 gap-5">
+        <Bone className="h-5 w-40" />
+        <Bone className="h-14 w-[min(480px,90%)]" />
+        <Bone className="h-10 w-[min(320px,75%)]" />
+        <div className="flex gap-3 mt-2">
+          <Bone className="h-11 w-36 rounded-[10px]" />
+          <Bone className="h-11 w-28 rounded-[10px]" />
+        </div>
+      </div>
+      {/* Card grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="bg-[#111113] border border-[#1e1e22] rounded-[14px] p-5 flex flex-col gap-3">
+            <Bone className="h-3 w-20" />
+            <Bone className="h-6 w-full" />
+            <Bone className="h-3 w-16 mt-auto" />
+            <Bone className="h-px w-full !rounded-none" />
+            <div className="flex justify-between">
+              <Bone className="h-4 w-16" />
+              <Bone className="h-4 w-12" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

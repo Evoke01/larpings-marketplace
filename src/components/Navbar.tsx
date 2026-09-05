@@ -4,6 +4,7 @@ import ShopMenu from "./ShopMenu";
 import NotificationsMenu from "./NotificationsMenu";
 import { useUnreadMessages } from "../hooks/useUnreadMessages";
 import { useUnreadNotifications } from "../hooks/useUnreadNotifications";
+import { prefetch } from "../App";
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -52,15 +53,15 @@ export default function Navbar() {
                   <ShopMenu onClose={() => setShopOpen(false)} />
                 )}
               </div>
-              <NavLink to="/fansigns" className={navLinkClass}>Fansigns</NavLink>
-              <NavLink to="/sold" className={navLinkClass}>Sold</NavLink>
-              <NavLink to="/blog" className={navLinkClass}>Blog</NavLink>
-              <NavLink to="/about" className={navLinkClass}>About</NavLink>
+              <NavLink to="/fansigns" className={navLinkClass} onMouseEnter={() => prefetch('/fansigns')}>Fansigns</NavLink>
+              <NavLink to="/sold" className={navLinkClass} onMouseEnter={() => prefetch('/sold')}>Sold</NavLink>
+              <NavLink to="/blog" className={navLinkClass} onMouseEnter={() => prefetch('/blog')}>Blog</NavLink>
+              <NavLink to="/about" className={navLinkClass} onMouseEnter={() => prefetch('/about')}>About</NavLink>
             </div>
 
             {/* Right actions */}
             <div className="flex items-center gap-2 ml-auto">
-              <Link to="/sell" className="hidden md:inline-flex items-center rounded-[10px] bg-[#ff0000] px-3.5 py-2 text-sm font-medium text-white transition-all hover:-translate-y-px hover:bg-[#cc0000]">Sell</Link>
+              <Link to="/sell" className="hidden md:inline-flex items-center rounded-[10px] bg-[#ff0000] px-3.5 py-2 text-sm font-medium text-white transition-all hover:-translate-y-px hover:bg-[#cc0000]" onMouseEnter={() => prefetch('/sell')}>Sell</Link>
               
               {/* Notifications */}
               <div className="relative">
