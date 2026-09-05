@@ -465,44 +465,78 @@ export default function SignIn() {
               </form>
             </div>
           </div>
-        </div>
 
-        {/* Right: Trust panel */}
-        <div className="hidden lg:flex min-h-[765px] flex-col justify-center bg-[#0a0a0d] caret-[#f9f9fb] pt-24 pb-6 px-12 border-l border-[#222226]">
-          <div className="relative max-w-md caret-[#f9f9fb]">
-            <span className="bg-[#111113] text-[#93939f] [font-family:'JetBrains_Mono',ui-monospace,monospace,system-ui,sans-serif] font-medium text-[11px] tracking-[1.76px] uppercase w-fit flex items-center gap-y-2 gap-x-2 caret-[#93939f] px-3 py-1.5 rounded-br-[8px] rounded-t-[8px] rounded-bl-[8px] border-[#222226] border">
-              <Icon6 />
-              Why it's safe
+          {/* Right: Trust panel — redesigned */}
+        <div className="hidden lg:flex min-h-[765px] flex-col justify-center bg-[#080809] pt-24 pb-6 px-12 border-l border-[#1a1a1e] relative overflow-hidden">
+          {/* Background glow */}
+          <div aria-hidden="true" className="absolute -top-32 -right-32 w-72 h-72 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,0,0,0.07) 0%, transparent 70%)' }} />
+          <div aria-hidden="true" className="absolute bottom-0 left-0 w-48 h-48 rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(255,0,0,0.04) 0%, transparent 70%)' }} />
+
+          <div className="relative max-w-sm">
+            {/* Badge */}
+            <span className="inline-flex items-center gap-1.5 bg-[rgba(255,0,0,0.08)] border border-[rgba(255,0,0,0.2)] text-[#ff6060] font-mono text-[10px] tracking-[2px] uppercase px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff0000] animate-pulse" />
+              Protected by escrow
             </span>
-            <h2 className="leading-none font-medium text-[28px] tracking-[-0.84px] caret-[#f9f9fb] mt-5 mb-0">
-              The safest place to{" "}
-              <span className="text-[#ff0000] caret-[#ff0000]">buy & sell grails.</span>
+
+            {/* Headline */}
+            <h2 className="font-display mt-5 text-[36px] font-semibold leading-[1.1] tracking-[-1.2px] text-white">
+              The safest place to{' '}
+              <span className="text-[#ff0000]">buy &amp; sell</span>{' '}
+              your grails.
             </h2>
-            <p className="text-[#93939f] leading-relaxed text-[14px] caret-[#93939f] mt-3 mb-0">
-              Transfers are fully escrow-protected. Sellers can't touch your payment until you confirm the goods are yours.
+            <p className="mt-3 text-[#5a5a6a] text-sm leading-relaxed">
+              Escrow-protected transfers. Your payment is held until you confirm the goods — no exceptions.
             </p>
-            <div className="flex items-center gap-y-2 gap-x-2 caret-[#f9f9fb] mt-7">
-              <Icon7 width="24" height="24" />
-              <span className="text-[#93939f] text-[13px] caret-[#93939f]">Avg. transfer: under 2 hours</span>
-              <Icon8 width="24" height="24" className="text-[#ff0000] align-middle w-3.5 h-3.5 block overflow-x-hidden overflow-y-hidden shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#ff0000] ml-4" />
-              <span className="text-[#93939f] text-[13px] caret-[#93939f]">All sales verified</span>
+
+            {/* Stat pills */}
+            <div className="flex gap-3 mt-6 flex-wrap">
+              {[
+                { val: '< 2h', label: 'Avg. transfer' },
+                { val: '100%', label: 'Verified sellers' },
+                { val: '$0', label: 'Buyer risk' },
+              ].map(({ val, label }) => (
+                <div key={label} className="bg-[#111113] border border-[#222226] rounded-[12px] px-4 py-3 flex flex-col gap-0.5">
+                  <span className="font-mono font-bold text-white text-base">{val}</span>
+                  <span className="text-[#5a5a6a] text-[11px]">{label}</span>
+                </div>
+              ))}
             </div>
-            <ul className="flex flex-col gap-y-3 gap-x-3 caret-[#b7b7c2] mt-7">
-              <li className="flex items-start gap-y-2.5 gap-x-2.5 list-outside caret-[#b7b7c2]">
-                <Icon9 width="24" height="24" className="text-[#ff0000] align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#ff0000] mt-0.5" />
-                Payments run on a hosted crypto checkout — your money is never wired to a stranger.
-              </li>
-              <li className="flex items-start gap-y-2.5 gap-x-2.5 list-outside caret-[#b7b7c2] mt-3">
-                <Icon10 width="24" height="24" className="text-[#ff0000] align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#ff0000] mt-0.5" />
-                Sellers get paid only after you confirm the goods are yours.
-              </li>
-              <li className="flex items-start gap-y-2.5 gap-x-2.5 list-outside caret-[#b7b7c2] mt-3">
-                <Icon11 width="24" height="24" className="text-[#ff0000] align-middle w-4 h-4 block overflow-x-hidden overflow-y-hidden shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round] caret-[#ff0000] mt-0.5" />
-                Most transfers complete within minutes, tracked step by step in your orders.
-              </li>
-            </ul>
+
+            {/* Feature cards */}
+            <div className="mt-7 flex flex-col gap-3">
+              {[
+                {
+                  icon: <Icon9 width="16" height="16" className="w-4 h-4 shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]" />,
+                  title: 'Crypto checkout',
+                  desc: 'Funds held in escrow — never wired to a stranger.',
+                },
+                {
+                  icon: <Icon10 width="16" height="16" className="w-4 h-4 shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]" />,
+                  title: 'Buyer confirms first',
+                  desc: 'Sellers only get paid after you approve the transfer.',
+                },
+                {
+                  icon: <Icon11 width="16" height="16" className="w-4 h-4 shrink-0 fill-none stroke-[#ff0000] stroke-[2px] [stroke-linecap:round] [stroke-linejoin:round]" />,
+                  title: 'Tracked step-by-step',
+                  desc: 'Live order status from payment to completion.',
+                },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex items-start gap-3.5 bg-[#0f0f12] border border-[#1e1e24] rounded-[14px] p-4 hover:border-[#2e2e38] transition-colors">
+                  <span className="w-8 h-8 rounded-[10px] bg-[rgba(255,0,0,0.08)] flex items-center justify-center shrink-0">
+                    {icon}
+                  </span>
+                  <div>
+                    <p className="text-white text-sm font-medium">{title}</p>
+                    <p className="text-[#5a5a6a] text-xs mt-0.5 leading-relaxed">{desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+      </div>
+
       </div>
 
       <button aria-label="Open chat" className="bg-[#ff0000] text-white text-[16px] w-14 h-14 fixed z-[60] flex justify-center items-center shadow-[rgba(0,0,0,0)_0px_0px_0px_0px,rgba(0,0,0,0)_0px_0px_0px_0px,rgba(0,0,0,0.1)_0px_20px_25px_-5px,rgba(0,0,0,0.1)_0px_8px_10px_-6px] caret-white [appearance:button] p-0 rounded-br-full rounded-t-full rounded-bl-full left-auto right-5 top-auto bottom-24">
