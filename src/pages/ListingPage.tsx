@@ -317,7 +317,14 @@ export default function ListingPage() {
           </div>
           
           {/* Stats Grid */}
-          <div className="grid gap-6 grid-cols-3 mt-6">
+          <div className="grid gap-6 grid-cols-2 md:grid-cols-4 mt-6">
+            <div>
+              <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Views</div>
+              <div className="font-mono text-[14px] mt-1.5 flex items-center gap-1.5">
+                <svg className="w-4 h-4 text-[#93939f]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                {listing.views || 0}
+              </div>
+            </div>
             <div>
               <div className="text-[#93939f] font-mono font-medium text-[11px] tracking-[1.76px] uppercase">Platform</div>
               <div className="font-mono text-[14px] capitalize mt-1.5">{listing.platform}</div>

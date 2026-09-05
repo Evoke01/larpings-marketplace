@@ -116,6 +116,7 @@ export default function App() {
   return (
     <HelmetProvider>
       <BrowserRouter>
+        <div className="bg-noise" />
       <Routes>
         {/* Admin panel — secret route, own layout shell */}
         <Route path="/pancake/*" element={<Suspense fallback={<PageLoader />}><PancakeLayout /></Suspense>} />

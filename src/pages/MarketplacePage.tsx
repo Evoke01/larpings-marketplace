@@ -167,6 +167,10 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               {item.likes_count || 0}
             </span>
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              {item.views || 0}
+            </span>
             <span className="flex items-center gap-1"><ClockIcon /> {item.timeAgo}</span>
           </div>
         </div>
@@ -200,6 +204,10 @@ function ListingCard({ item, grid }: { item: any; grid: boolean }) {
             <span className="flex items-center gap-1">
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
               {item.likes_count || 0}
+            </span>
+            <span className="flex items-center gap-1">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              {item.views || 0}
             </span>
             <span className="flex items-center gap-1"><ClockIcon /> {item.timeAgo}</span>
           </div>
@@ -302,7 +310,7 @@ export default function MarketplacePage() {
                 Marketplace — live inventory
               </span>
 
-              <h1 className="leading-none font-medium text-[42px] md:text-[60px] tracking-[-1.8px] max-w-[672px] mt-5">
+              <h1 className="leading-none font-display font-medium text-[42px] md:text-[60px] tracking-[-1.8px] max-w-[672px] mt-5">
                 Rare loot & sauce <span className="text-[#ff0000]">for sale.</span>
               </h1>
 

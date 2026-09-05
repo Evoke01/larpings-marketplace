@@ -59,7 +59,7 @@ export default function HomePage() {
   useEffect(() => {
     supabase
       .from('listings')
-      .select('id, handle, price, platform, category')
+      .select('id, handle, price, platform, category, views')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(12)
@@ -127,7 +127,7 @@ export default function HomePage() {
             The marketplace for grails & services — {liveDropsCount !== null ? liveDropsCount : "..."} live drops
           </span>
 
-          <h1 className="mt-6 text-5xl font-semibold leading-none tracking-[-2.16px]" style={{ textShadow: "rgba(9,9,11,0.9) 0px 2px 30px, rgba(9,9,11,0.7) 0px 1px 6px" }}>
+          <h1 className="mt-6 text-5xl font-display font-semibold leading-none tracking-[-2.16px]" style={{ textShadow: "rgba(9,9,11,0.9) 0px 2px 30px, rgba(9,9,11,0.7) 0px 1px 6px" }}>
             Your life is boring.<br />
             <span className="inline-block mt-3">
               <span
@@ -282,7 +282,13 @@ export default function HomePage() {
                 </div>
                 <p className="text-2xl font-medium mb-4 truncate">@{l.handle}</p>
                 <div className="flex justify-between items-center">
-                  <span className="font-mono text-sm">${Number(l.price).toLocaleString()}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-sm">${Number(l.price).toLocaleString()}</span>
+                    <span className="flex items-center gap-1 text-[#93939f] text-xs">
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                      {l.views || 0}
+                    </span>
+                  </div>
                   <span className="text-[#93939f] text-xs font-medium flex items-center gap-1 group-hover:text-white transition-colors">
                     View
                     <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
